@@ -940,6 +940,52 @@ final class DataStore {
         }
     }
 
+    // MARK: - Card analytics
+
+    /// Records a card analytics event (share/save) keyed by the user's card slug.
+    /// Best-effort: failures are ignored so sharing is never disrupted.
+    func recordCardEvent(_ eventType: String, source: String? = nil) {
+        guard let token, let slug = profile?.cardSlug, !slug.isEmpty else { return }
+        var values: [String: AnyEncodable] = [
+            "slug": AnyEncodable(slug),
+            "event_type": AnyEncodable(eventType),
+        ]
+        if let userId = session.userId { values["user_id"] = AnyEncodable(userId) }
+        if let source { values["source"] = AnyEncodable(source) }
+        Task {
+            try? await service.insert(table: "card_events", token: token, values: values)
+        }
+    }
+
+    /// Fetches aggregate view/share/save counts for the user's card slug.
+    func fetchCardAnalytics() async -> CardAnalytics? {
+        guard let token, let slug = profile?.cardSlug, !slug.isEmpty else { return nil }
+        do {
+            let rows = try await service.fetch(
+                [CardEventRow].self,
+                table: "card_events",
+                token: token,
+                query: [
+                    URLQueryItem(name: "slug", value: "eq.\(slug)"),
+                    URLQueryItem(name: "select", value: "event_type"),
+                    URLQueryItem(name: "limit", value: "5000"),
+                ]
+            )
+            var analytics = CardAnalytics()
+            for row in rows {
+                switch row.eventType {
+                case "view": analytics.views += 1
+                case "share": analytics.shares += 1
+                case "save_contact": analytics.saves += 1
+                default: break
+                }
+            }
+            return analytics
+        } catch {
+            return nil
+        }
+    }
+
     private static func shortDate() -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium

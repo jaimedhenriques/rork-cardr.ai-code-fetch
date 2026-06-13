@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { buildCardLink } from "@/lib/publicOrigin";
+import { trackCardEvent } from "@/lib/cardAnalytics";
 import type { QrStyle } from "@/components/QrCustomizer";
 
 interface Profile {
@@ -29,26 +30,36 @@ export function useCardSharing(profile: Profile) {
     ].filter(Boolean).join("\n");
   }, [profile]);
 
-  const cardLink = useMemo(() => {
-    const slug = profile.card_slug || (profile.name ? profile.name.toLowerCase().replace(/\s+/g, "-") : "card");
-    return buildCardLink(slug);
-  }, [profile]);
+  const slug = useMemo(
+    () => profile.card_slug || (profile.name ? profile.name.toLowerCase().replace(/\s+/g, "-") : "card"),
+    [profile],
+  );
+
+  const cardLink = useMemo(() => buildCardLink(slug), [slug]);
+
+  const track = useCallback(
+    (source: string) => { void trackCardEvent(slug, "share", source); },
+    [slug],
+  );
 
   const handleShare = useCallback(async () => {
     if (navigator.share) {
       try {
         await navigator.share({ title: profile.name, text: `Check out ${profile.name}'s digital card`, url: cardLink });
+        track("native_share");
       } catch { /* user cancelled */ }
     } else {
       await navigator.clipboard.writeText(cardLink);
+      track("copy_link");
       toast.success("Card link copied");
     }
-  }, [profile.name, cardLink]);
+  }, [profile.name, cardLink, track]);
 
   const handleCopyLink = useCallback(async () => {
     await navigator.clipboard.writeText(cardLink);
+    track("copy_link");
     toast.success("Card link copied");
-  }, [cardLink]);
+  }, [cardLink, track]);
 
   const handleSaveVCF = useCallback(() => {
     if (!profile.name) { toast.error("Fill in your card details first"); return; }
@@ -87,34 +98,40 @@ export function useCardSharing(profile: Profile) {
   const handleShareViaText = useCallback(() => {
     const body = encodeURIComponent(`Hey! Here's my digital business card: ${cardLink}`);
     window.open(`sms:?&body=${body}`, "_blank");
-  }, [cardLink]);
+    track("sms");
+  }, [cardLink, track]);
 
   const handleShareViaEmail = useCallback(() => {
     const subject = encodeURIComponent(`${profile.name} — Digital Business Card`);
     const body = encodeURIComponent(`Hi,\n\nHere's my digital business card:\n${cardLink}\n\nBest,\n${profile.name}`);
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
-  }, [profile.name, cardLink]);
+    track("email");
+  }, [profile.name, cardLink, track]);
 
   const handleShareViaWhatsApp = useCallback(() => {
     const text = encodeURIComponent(`Hey! Here's my digital business card: ${cardLink}`);
     window.open(`https://wa.me/?text=${text}`, "_blank");
-  }, [cardLink]);
+    track("whatsapp");
+  }, [cardLink, track]);
 
   const handleShareViaLinkedIn = useCallback(() => {
     const url = encodeURIComponent(cardLink);
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, "_blank");
-  }, [cardLink]);
+    track("linkedin");
+  }, [cardLink, track]);
 
   const handleShareViaInstagram = useCallback(() => {
     navigator.clipboard.writeText(cardLink);
     window.open("instagram://story-camera", "_blank");
+    track("instagram");
     toast.success("Card link copied — paste it in your Instagram Story");
-  }, [cardLink]);
+  }, [cardLink, track]);
 
   const handleShareViaX = useCallback(() => {
     const text = encodeURIComponent(`Check out my digital business card! ${cardLink}`);
     window.open(`https://x.com/intent/tweet?text=${text}`, "_blank");
-  }, [cardLink]);
+    track("x");
+  }, [cardLink, track]);
 
   const handleNameDrop = useCallback(() => {
     toast("NameDrop requires NFC hardware — hold your phone near another iPhone to share", { icon: "📡", duration: 4000 });

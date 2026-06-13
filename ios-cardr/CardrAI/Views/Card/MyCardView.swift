@@ -11,6 +11,8 @@ struct MyCardView: View {
     @State private var revealQR = false
     @State private var nfc = NFCSharingService()
     @State private var showNFCResult = false
+    @State private var analytics: CardAnalytics?
+    @State private var loadingAnalytics = true
 
     private var profile: Profile? { data.profile }
     private var design: CardDesign { CardDesign(rawValue: designRaw) ?? .gradient }
@@ -21,6 +23,7 @@ struct MyCardView: View {
                 VStack(spacing: 20) {
                     digitalCard
                     designPicker
+                    analyticsCard
                     if let profile { detailCard(profile) }
                     shareButtons
                 }
@@ -73,6 +76,7 @@ struct MyCardView: View {
             .onAppear {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.15)) { revealQR = true }
             }
+            .task { await loadAnalytics() }
         }
     }
 
@@ -248,6 +252,7 @@ struct MyCardView: View {
         VStack(spacing: 10) {
             Button {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                data.recordCardEvent("share", source: "qr_fullscreen")
                 showFullScreen = true
             } label: {
                 Label("Show QR to share", systemImage: "qrcode")
@@ -263,6 +268,7 @@ struct MyCardView: View {
 
             Button {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                data.recordCardEvent("share", source: "share_link")
                 showShareSheet = true
             } label: {
                 Label("Share link", systemImage: "square.and.arrow.up")
@@ -278,6 +284,7 @@ struct MyCardView: View {
             if NFCSharingService.isAvailable {
                 Button {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    data.recordCardEvent("share", source: "nfc")
                     nfc.writeCardLink(data.cardLink)
                 } label: {
                     Label(nfc.status == .scanning ? "Hold near an NFC tag…" : "Write to NFC tag", systemImage: "wave.3.right.circle.fill")
@@ -303,6 +310,61 @@ struct MyCardView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Analytics
+
+    private func loadAnalytics() async {
+        loadingAnalytics = true
+        analytics = await data.fetchCardAnalytics()
+        loadingAnalytics = false
+    }
+
+    private var analyticsCard: some View {
+        CardSurface {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.primary)
+                    Text("Card Analytics")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                }
+                HStack(spacing: 10) {
+                    statTile("Views", analytics?.views, "eye.fill", Theme.primary)
+                    statTile("Shares", analytics?.shares, "square.and.arrow.up.fill", Theme.accent)
+                    statTile("Saves", analytics?.saves, "person.crop.circle.badge.plus", .green)
+                }
+                if !loadingAnalytics, let analytics, analytics.total == 0 {
+                    Text("No activity yet. Share your card to start tracking views.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.inkSecondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+        }
+    }
+
+    private func statTile(_ label: String, _ value: Int?, _ icon: String, _ color: Color) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(color)
+            Text(loadingAnalytics ? "—" : "\(value ?? 0)")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Theme.ink)
+                .contentTransition(.numericText())
+            Text(label.uppercased())
+                .font(.system(size: 9, weight: .semibold))
+                .tracking(0.5)
+                .foregroundStyle(Theme.inkSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Theme.surfaceMuted)
+        .clipShape(.rect(cornerRadius: 12))
     }
 
     private var nfcStatusKey: String {

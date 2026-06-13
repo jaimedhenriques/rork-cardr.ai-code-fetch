@@ -1515,6 +1515,33 @@ export type Database = {
           },
         ]
       }
+      card_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          slug: string
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          slug: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          slug?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       meeting_notes: {
         Row: {
           action_items: Json | null

@@ -11,6 +11,7 @@ import SharingActions from "@/components/card/SharingActions";
 import QRModal from "@/components/card/QRModal";
 import ShareMenuModal from "@/components/card/ShareMenuModal";
 import CardEditForm from "@/components/card/CardEditForm";
+import CardAnalyticsCard from "@/components/card/CardAnalyticsCard";
 import { useCardSharing } from "@/hooks/useCardSharing";
 
 const MyCard = () => {
@@ -76,6 +77,8 @@ const MyCard = () => {
         onSaveQRImage={saveQRImage}
         onQrStyleChange={setQrStyle}
       />
+
+      <CardAnalyticsCard slug={(profile as { card_slug?: string }).card_slug} />
 
       <QRModal
         open={showQR}

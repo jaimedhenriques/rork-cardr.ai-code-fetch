@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
+import { trackCardEvent } from "@/lib/cardAnalytics";
 
 interface PublicProfile {
   name: string;
@@ -37,6 +38,7 @@ const PublicCard = () => {
           setNotFound(true);
         } else {
           setProfile(data.profile);
+          void trackCardEvent(slug, "view", "public_page");
         }
       } catch {
         setNotFound(true);
@@ -70,6 +72,7 @@ const PublicCard = () => {
     a.download = `${profile.name.replace(/\s+/g, "_")}.vcf`;
     a.click();
     URL.revokeObjectURL(url);
+    void trackCardEvent(profile.card_slug, "save_contact", "public_page");
   }, [profile, vcardString]);
 
   const companyMark = profile?.company ? profile.company.slice(0, 2).toUpperCase() : "CS";
