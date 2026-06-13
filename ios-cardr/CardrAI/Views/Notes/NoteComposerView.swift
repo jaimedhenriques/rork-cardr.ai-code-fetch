@@ -14,12 +14,14 @@ struct NoteComposerView: View {
     @State private var isProcessing = false
     @State private var processingStep = ""
     @State private var savedNote: MeetingNote?
+    @State private var selectedTemplate: NoteTemplate = .default
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
                     titleField
+                    templatePicker
                     recorderCard
                     liveTranscriptCard
                     manualNotesCard
@@ -63,6 +65,46 @@ struct NoteComposerView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .disabled(recorder.isRecording || isProcessing)
+        }
+    }
+
+    // MARK: - Template picker
+
+    private var templatePicker: some View {
+        CardSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Note type", systemImage: "square.grid.2x2")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+                Menu {
+                    ForEach(NoteTemplate.all) { template in
+                        Button {
+                            selectedTemplate = template
+                        } label: {
+                            Label("\(template.emoji)  \(template.label)", systemImage: selectedTemplate.id == template.id ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(selectedTemplate.emoji)
+                            .font(.system(size: 18))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(selectedTemplate.label)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Theme.ink)
+                            Text(selectedTemplate.summary)
+                                .font(.caption)
+                                .foregroundStyle(Theme.inkSecondary)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.inkSecondary)
+                    }
+                }
+                .disabled(recorder.isRecording || isProcessing)
+            }
         }
     }
 
@@ -238,7 +280,7 @@ struct NoteComposerView: View {
         var insights: DataStore.NoteInsights?
         if combined.count > 10 {
             processingStep = "Generating insights…"
-            insights = await data.generateInsights(transcript: combined, durationSeconds: seconds)
+            insights = await data.generateInsights(transcript: combined, durationSeconds: seconds, templateId: selectedTemplate.id)
         }
 
         processingStep = "Saving…"
@@ -264,7 +306,7 @@ struct NoteComposerView: View {
         if manualNotes.trimmingCharacters(in: .whitespaces).count >= 20 {
             processingStep = "Generating insights…"
             let text = "Title: \(title)\n\n\(manualNotes)"
-            insights = await data.generateInsights(transcript: text, durationSeconds: 0)
+            insights = await data.generateInsights(transcript: text, durationSeconds: 0, templateId: selectedTemplate.id)
         }
 
         let note = await data.addNote(
