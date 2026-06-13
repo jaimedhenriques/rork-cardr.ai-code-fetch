@@ -810,6 +810,48 @@ final class DataStore {
         }
     }
 
+    /// Sends recorded audio to the `transcribe-diarize` edge function and returns
+    /// a speaker-labelled transcript ([mm:ss] Speaker 1: …) using a server-side
+    /// transcription model. Returns nil when no speech could be transcribed.
+    func transcribeWithDiarization(_ audio: Data, language: String = "en", fallback: String = "") async -> String? {
+        guard let token else { return nil }
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("transcribe-diarize"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 120
+        request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        func appendField(_ name: String, _ value: String) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
+        }
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: audio/wav\r\n\r\n".data(using: .utf8)!)
+        body.append(audio)
+        body.append("\r\n".data(using: .utf8)!)
+        appendField("langCode", language)
+        if !fallback.isEmpty { appendField("fallbackText", fallback) }
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let transcript = obj["transcript"] as? String,
+                  !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { return nil }
+            return transcript
+        } catch {
+            return nil
+        }
+    }
+
     /// Calls the `meeting-notes` edge function to summarise a transcript / notes.
     func generateInsights(transcript: String, durationSeconds: Int, templateId: String? = nil) async -> NoteInsights? {
         guard let token, transcript.trimmingCharacters(in: .whitespacesAndNewlines).count > 10 else { return nil }

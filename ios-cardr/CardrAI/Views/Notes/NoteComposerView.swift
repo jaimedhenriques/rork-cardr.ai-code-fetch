@@ -265,12 +265,21 @@ struct NoteComposerView: View {
     }
 
     private func stopAndProcess() async {
-        let (liveTranscript, seconds) = recorder.stop()
+        let (liveTranscript, seconds, audio) = recorder.stop()
         isProcessing = true
         defer { isProcessing = false }
 
         let trimmedLive = liveTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
-        let transcript: String? = trimmedLive.isEmpty ? nil : trimmedLive
+
+        // Prefer a server-side diarized transcript (Speaker 1 / Speaker 2 labels)
+        // when we captured audio; fall back to the on-device live transcript.
+        var transcript: String? = trimmedLive.isEmpty ? nil : trimmedLive
+        if let audio, audio.count > 4096 {
+            processingStep = "Separating speakers…"
+            if let diarized = await data.transcribeWithDiarization(audio, fallback: trimmedLive) {
+                transcript = diarized
+            }
+        }
 
         let combined = [transcript, manualNotes]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }

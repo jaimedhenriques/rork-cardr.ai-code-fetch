@@ -107,7 +107,10 @@ const NoteRecord = () => {
           formData.append("language", TRANSCRIPTION_LANGUAGES.find(l => l.code === language)?.label || language);
           formData.append("langCode", language);
 
-          const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`;
+          // Server-side transcription with real speaker diarization — returns a
+          // Speaker 1 / Speaker 2 labelled transcript so the AI summary and the
+          // saved note read like a real conversation.
+          const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-diarize`;
           const resp = await fetch(url, {
             method: "POST",
             headers: {
@@ -122,7 +125,7 @@ const NoteRecord = () => {
               finalTranscript = result.transcript;
               transcriptSource = result.source || "ai";
             }
-          } else if (resp.status === 429 || resp.status === 402) {
+          } else if (resp.status === 429 || resp.status === 402) {  // eslint-disable-line
             const err = await resp.json();
             toast.error(err.error || "AI service unavailable");
           }

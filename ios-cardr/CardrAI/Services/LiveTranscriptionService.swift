@@ -24,6 +24,10 @@ final class LiveTranscriptionService: NSObject {
     private var task: SFSpeechRecognitionTask?
     private var timer: Timer?
     private var finalizedText = ""
+    /// The same tapped audio is written here so it can be uploaded for
+    /// server-side speaker diarization after the session ends.
+    private var audioFile: AVAudioFile?
+    private var recordingURL: URL?
 
     /// Whether live transcription can run on this device/simulator.
     var isSupported: Bool {
@@ -77,9 +81,24 @@ final class LiveTranscriptionService: NSObject {
         let format = inputNode.outputFormat(forBus: 0)
         guard format.channelCount > 0 else { return false }
 
+        // Capture the same audio to a 16-bit PCM WAV for server-side diarization.
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("cardr-note-\(UUID().uuidString).wav")
+        let fileSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: format.sampleRate,
+            AVNumberOfChannelsKey: format.channelCount,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsBigEndianKey: false,
+        ]
+        audioFile = try? AVAudioFile(forWriting: url, settings: fileSettings)
+        recordingURL = audioFile == nil ? nil : url
+
         inputNode.removeTap(onBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             self?.request?.append(buffer)
+            try? self?.audioFile?.write(from: buffer)
             let level = Self.rmsLevel(buffer)
             Task { @MainActor in self?.pushLevel(level) }
         }
@@ -126,8 +145,9 @@ final class LiveTranscriptionService: NSObject {
         startTimer()
     }
 
-    /// Stops the session and returns the final transcript and duration in seconds.
-    func stop() -> (transcript: String, duration: Int) {
+    /// Stops the session and returns the final transcript, duration in seconds,
+    /// and the captured audio (16-bit PCM WAV) for server-side diarization.
+    func stop() -> (transcript: String, duration: Int, audio: Data?) {
         timer?.invalidate()
         timer = nil
         engine.inputNode.removeTap(onBus: 0)
@@ -140,8 +160,16 @@ final class LiveTranscriptionService: NSObject {
         isPaused = false
         let finalDuration = Int(duration.rounded())
         let text = transcript.isEmpty ? finalizedText : transcript
+        // Closing the AVAudioFile flushes the WAV header before we read it.
+        audioFile = nil
+        var audio: Data?
+        if let url = recordingURL {
+            audio = try? Data(contentsOf: url)
+            try? FileManager.default.removeItem(at: url)
+        }
+        recordingURL = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        return (text, finalDuration)
+        return (text, finalDuration, audio)
     }
 
     func cancel() {
@@ -157,6 +185,9 @@ final class LiveTranscriptionService: NSObject {
         duration = 0
         transcript = ""
         finalizedText = ""
+        audioFile = nil
+        if let url = recordingURL { try? FileManager.default.removeItem(at: url) }
+        recordingURL = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
