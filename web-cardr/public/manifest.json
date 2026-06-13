@@ -1,0 +1,46 @@
+{
+  "name": "Cardr — Lead Intelligence Platform",
+  "short_name": "Cardr",
+  "description": "Scan badges, capture meeting notes with AI, enrich leads, and run your pipeline — all in one app.",
+  "id": "/?source=pwa",
+  "start_url": "/app?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#F5F1EB",
+  "theme_color": "#F5F1EB",
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/app-icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan a badge",
+      "short_name": "Scan",
+      "description": "Open the camera to scan a business card or badge",
+      "url": "/app/scan?source=pwa-shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Contacts",
+      "short_name": "Contacts",
+      "description": "Browse and export your saved contacts",
+      "url": "/app/contacts?source=pwa-shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My digital card",
+      "short_name": "My card",
+      "description": "Show your shareable digital business card",
+      "url": "/app/card?source=pwa-shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

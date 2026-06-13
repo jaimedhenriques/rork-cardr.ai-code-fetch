@@ -1,0 +1,302 @@
+/* Inter as the cross-platform fallback. SF Pro will load natively on Apple devices. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;650;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 96%;
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 240 10% 12%;
+
+    --muted: 40 20% 92%;
+    --muted-foreground: 240 5% 50%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 217 91% 60%;
+
+    --radius: 1rem;
+
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+
+    --primary-light: 217 91% 95%;
+    --success-light: 160 84% 93%;
+    --warning-light: 38 92% 93%;
+    --destructive-light: 0 72% 94%;
+
+    --gradient-start: 217 91% 60%;
+    --gradient-end: 199 89% 48%;
+    --shadow-brand: 0 12px 35px -12px hsl(var(--primary) / 0.25);
+
+    /* iOS-style frosted glass surfaces */
+    --glass-bg: 0 0% 100% / 0.72;
+    --glass-border: 240 6% 90% / 0.6;
+    --glass-blur: 24px;
+
+    /* Premium elevation scale — neutral, layered, never harsh */
+    --shadow-xs: 0 1px 2px 0 hsl(240 10% 12% / 0.04);
+    --shadow-sm: 0 1px 3px 0 hsl(240 10% 12% / 0.05), 0 1px 2px -1px hsl(240 10% 12% / 0.04);
+    --shadow-md: 0 4px 12px -2px hsl(240 10% 12% / 0.06), 0 2px 4px -2px hsl(240 10% 12% / 0.04);
+    --shadow-lg: 0 12px 28px -8px hsl(240 10% 12% / 0.10), 0 4px 10px -4px hsl(240 10% 12% / 0.05);
+    --shadow-xl: 0 24px 48px -12px hsl(240 10% 12% / 0.14), 0 8px 20px -8px hsl(240 10% 12% / 0.06);
+    --shadow-ring: 0 0 0 1px hsl(240 10% 12% / 0.04);
+
+    /* Motion tokens — used by transitions across the app */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --duration-fast: 150ms;
+    --duration-base: 220ms;
+    --duration-slow: 320ms;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+    /* iOS uses optical sizing on SF Pro automatically */
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* All numerals use proportional figures by default — opt into tabular via .tabular-nums */
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
+  }
+
+  /* Apple-style display headings */
+  h1, h2, h3, h4 {
+    @apply font-display;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1, "ss02" 1;
+  }
+
+  /* All numbers/timers/counters get tabular figures globally for stability */
+  .tabular-nums,
+  time,
+  [data-tabular],
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1, "kern" 1;
+  }
+}
+
+@layer utilities {
+  .card-elevated {
+    @apply bg-card rounded-2xl border border-border/60;
+    box-shadow: var(--shadow-sm), var(--shadow-ring);
+  }
+
+  .card-interactive {
+    @apply card-elevated transition-all hover:border-primary/30 active:scale-[0.985];
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--ease-out-quart);
+  }
+  .card-interactive:hover {
+    box-shadow: var(--shadow-lg), var(--shadow-ring);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    @apply text-primary-foreground font-semibold rounded-2xl px-6 py-3.5 transition-all active:scale-[0.97];
+    background: hsl(var(--primary));
+    box-shadow: var(--shadow-brand), inset 0 1px 0 hsl(0 0% 100% / 0.12);
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--ease-out-quart);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 16px 40px -12px hsl(var(--primary) / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.18);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-foreground font-semibold rounded-2xl px-6 py-3.5 transition-all active:scale-[0.97] hover:bg-secondary/80;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-muted-foreground font-semibold rounded-2xl px-6 py-3.5 transition-all active:scale-[0.97] hover:text-foreground hover:bg-secondary/60;
+  }
+
+  .badge-pill {
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full tracking-tight;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold text-muted-foreground uppercase tracking-[0.08em];
+  }
+
+  .input-field {
+    @apply w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all;
+  }
+
+  .avatar-circle {
+    @apply rounded-full text-primary-foreground flex items-center justify-center font-semibold;
+    background: hsl(var(--primary));
+  }
+
+  /* iOS-style frosted glass surface */
+  .glass-card {
+    background: hsl(var(--glass-bg));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid hsl(var(--glass-border));
+    @apply rounded-2xl;
+    box-shadow: 0 4px 20px -8px hsl(0 0% 0% / 0.06);
+  }
+
+  .glass-bar {
+    background: hsl(var(--glass-bg));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border-bottom: 1px solid hsl(var(--glass-border));
+  }
+
+  .scanner-shell {
+    @apply bg-background text-foreground;
+  }
+
+  .scanner-panel {
+    @apply glass-card;
+  }
+
+  /* Apple-style typography helpers (mirrors iOS HIG semantic scale) */
+  .text-title-large { @apply font-display text-4xl font-bold tracking-tight; }
+  .text-title-1 { @apply font-display text-3xl font-bold tracking-tight; }
+  .text-title-2 { @apply font-display text-2xl font-semibold tracking-tight; }
+  .text-title-3 { @apply font-display text-xl font-semibold tracking-tight; }
+  .text-headline { @apply text-base font-semibold tracking-tight; }
+  .text-body { @apply text-base font-normal; }
+  .text-callout { @apply text-sm font-normal; }
+  .text-subheadline { @apply text-sm font-medium; }
+  .text-footnote { @apply text-xs font-normal text-muted-foreground; }
+  .text-caption-1 { @apply text-xs font-medium; }
+  .text-caption-2 { @apply text-2xs font-medium uppercase tracking-wider; }
+
+  /* iOS-style timer (Voice Memos style) — large, tabular, kerning-perfect */
+  .timer-display {
+    @apply font-mono font-light tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1, "ss01" 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* Hover lift like iOS widgets */
+  .lift-on-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  .lift-on-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -8px hsl(0 0% 0% / 0.12);
+  }
+
+  /* Apple-style segmented control track */
+  .segmented-track {
+    @apply bg-secondary/70 rounded-xl p-1 flex gap-1;
+  }
+
+  /* Subtle shimmer for loading skeletons */
+  .skeleton {
+    @apply relative overflow-hidden bg-muted/70 rounded-lg;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.55), transparent);
+  }
+
+  /* Premium focus ring — apply on top of any interactive element */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Section heading used at the top of grouped content */
+  .heading-section {
+    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/80;
+  }
+
+  /* Hairline divider with subtle gradient fade */
+  .divider-soft {
+    @apply h-px w-full;
+    background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
+  }
+
+  /* Gradient text for accent moments — keep restrained */
+  .text-gradient-brand {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Premium elevation utilities */
+  .elev-sm { box-shadow: var(--shadow-sm), var(--shadow-ring); }
+  .elev-md { box-shadow: var(--shadow-md), var(--shadow-ring); }
+  .elev-lg { box-shadow: var(--shadow-lg), var(--shadow-ring); }
+  .elev-xl { box-shadow: var(--shadow-xl), var(--shadow-ring); }
+}
+
+/* Global polish: refined selection color, smoother scrolling, slimmer scrollbars */
+@layer base {
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
+  html { scroll-behavior: smooth; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border: 2px solid hsl(var(--background));
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+  ::-webkit-scrollbar-track { background: transparent; }
+}
+
+@keyframes fadeSlideIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideRightIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateX(0px);
+  }
+}
+
+@keyframes testimonialIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px) scale(1);
+  }
+}

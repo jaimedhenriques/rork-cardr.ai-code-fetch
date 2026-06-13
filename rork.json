@@ -1,0 +1,18 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "cardr",
+      "path": "web-cardr",
+      "framework": "web"
+    },
+    {
+      "name": "Cardr",
+      "path": "ios-cardr",
+      "framework": "swift",
+      "settings": {
+        "displayName": "Cardr.AI"
+      }
+    }
+  ]
+}
