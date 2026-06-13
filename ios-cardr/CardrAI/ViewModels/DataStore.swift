@@ -946,6 +946,88 @@ final class DataStore {
         return formatter.string(from: Date())
     }
 
+    // MARK: - Note ↔ contact linking
+
+    /// Loads the contacts linked to a meeting note via `meeting_participants`.
+    func participants(for noteId: String) async -> [MeetingParticipant] {
+        guard let token else { return [] }
+        do {
+            return try await service.fetch(
+                [MeetingParticipant].self,
+                table: "meeting_participants",
+                token: token,
+                query: [URLQueryItem(name: "meeting_note_id", value: "eq.\(noteId)")]
+            )
+        } catch {
+            return []
+        }
+    }
+
+    /// Links a CRM contact to a meeting note. Optionally logs a follow-up
+    /// activity on the contact for each open action item so nothing is lost.
+    @discardableResult
+    func linkContact(_ contact: Contact, toNote note: MeetingNote, createTasks: Bool) async -> MeetingParticipant? {
+        guard let token, let userId = session.userId else {
+            loadError = "You need to be signed in to link contacts."
+            return nil
+        }
+        let values: [String: AnyEncodable] = [
+            "user_id": AnyEncodable(userId),
+            "meeting_note_id": AnyEncodable(note.id),
+            "contact_id": AnyEncodable(contact.id),
+            "name": AnyEncodable(contact.name),
+        ]
+        do {
+            let created = try await service.insertReturning(
+                [MeetingParticipant].self,
+                table: "meeting_participants",
+                token: token,
+                values: [values]
+            )
+            if createTasks, let items = note.actionItems, !items.isEmpty {
+                await logFollowUps(items, forContact: contact, note: note, userId: userId, token: token)
+            }
+            return created.first
+        } catch {
+            loadError = "Could not link contact to note."
+            return nil
+        }
+    }
+
+    /// Removes a contact link from a meeting note.
+    func unlinkParticipant(_ participant: MeetingParticipant) async {
+        guard let token else { return }
+        do {
+            try await service.delete(table: "meeting_participants", token: token, match: ["id": participant.id])
+        } catch {
+            loadError = "Could not remove the linked contact."
+        }
+    }
+
+    /// Logs each action item as a contact activity so they surface in the CRM.
+    private func logFollowUps(_ items: [String], forContact contact: Contact, note: MeetingNote, userId: String, token: String) async {
+        let rows: [[String: AnyEncodable]] = items.map { item in
+            [
+                "user_id": AnyEncodable(userId),
+                "contact_id": AnyEncodable(contact.id),
+                "type": AnyEncodable("task"),
+                "title": AnyEncodable(item),
+                "description": AnyEncodable("From note “\(note.title)”"),
+            ]
+        }
+        guard !rows.isEmpty else { return }
+        do {
+            try await service.insertReturning(
+                [ContactActivityStub].self,
+                table: "contact_activities",
+                token: token,
+                values: rows
+            )
+        } catch {
+            // Activity logging is best-effort; the link still succeeded.
+        }
+    }
+
     // MARK: - Events
 
     /// Loads the user's events and all event-contact links.

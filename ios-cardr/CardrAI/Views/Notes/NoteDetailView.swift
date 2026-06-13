@@ -11,6 +11,9 @@ struct NoteDetailView: View {
     @State private var completed: Set<String> = []
     @State private var isEditing = false
     @State private var isSaving = false
+    @State private var participants: [MeetingParticipant] = []
+    @State private var showContactPicker = false
+    @State private var isLinking = false
 
     init(note: MeetingNote) {
         self.note = note
@@ -32,6 +35,7 @@ struct NoteDetailView: View {
                               items: bindingFor(\.followUps), checkable: true)
                 checklistCard("Decisions", icon: "flag.fill", tint: Theme.success,
                               items: bindingFor(\.decisions), checkable: false)
+                linkedContactsCard
                 if let topics = draft.keyTopics, !topics.isEmpty {
                     chips("Key topics", items: topics)
                 }
@@ -54,6 +58,15 @@ struct NoteDetailView: View {
         .background(Theme.background)
         .navigationTitle(draft.title)
         .navigationBarTitleDisplayMode(.inline)
+        .task { participants = await data.participants(for: note.id) }
+        .sheet(isPresented: $showContactPicker) {
+            NoteContactPickerView(
+                linkedContactIds: Set(participants.compactMap { $0.contactId }),
+                hasActionItems: !(draft.actionItems?.isEmpty ?? true)
+            ) { contact, createTasks in
+                await link(contact, createTasks: createTasks)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if isSaving {
@@ -115,6 +128,83 @@ struct NoteDetailView: View {
                     .lineLimit(3...12)
             }
         }
+    }
+
+    // MARK: - Linked contacts
+
+    private var linkedContactsCard: some View {
+        CardSurface {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 6) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.primary)
+                    Text("People")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer(minLength: 0)
+                    if isLinking { ProgressView().controlSize(.small) }
+                }
+
+                if participants.isEmpty {
+                    Text("Link this note to a contact to keep your CRM in sync.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.inkSecondary)
+                }
+
+                ForEach(participants) { participant in
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(Theme.primary.opacity(0.12))
+                            .frame(width: 30, height: 30)
+                            .overlay(
+                                Text(initials(participant.name))
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(Theme.primary)
+                            )
+                        Text(participant.name)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                        Spacer()
+                        Button {
+                            Task { await unlink(participant) }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(Theme.inkSecondary.opacity(0.6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                Button {
+                    showContactPicker = true
+                } label: {
+                    Label("Link a contact", systemImage: "plus.circle.fill")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.primary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func initials(_ name: String) -> String {
+        let parts = name.split(separator: " ").prefix(2)
+        return parts.compactMap { $0.first }.map(String.init).joined().uppercased()
+    }
+
+    private func link(_ contact: Contact, createTasks: Bool) async {
+        isLinking = true
+        defer { isLinking = false }
+        if let participant = await data.linkContact(contact, toNote: note, createTasks: createTasks) {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            participants.append(participant)
+        }
+    }
+
+    private func unlink(_ participant: MeetingParticipant) async {
+        await data.unlinkParticipant(participant)
+        participants.removeAll { $0.id == participant.id }
     }
 
     // MARK: - Editable checklist

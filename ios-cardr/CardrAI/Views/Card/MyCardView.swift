@@ -9,6 +9,8 @@ struct MyCardView: View {
     @State private var showEdit = false
     @State private var showFullScreen = false
     @State private var revealQR = false
+    @State private var nfc = NFCSharingService()
+    @State private var showNFCResult = false
 
     private var profile: Profile? { data.profile }
     private var design: CardDesign { CardDesign(rawValue: designRaw) ?? .gradient }
@@ -43,6 +45,22 @@ struct MyCardView: View {
             }
             .sheet(isPresented: $showEdit) {
                 EditCardView(profile: data.profile)
+            }
+            .onChange(of: nfcStatusKey) { _, _ in
+                switch nfc.status {
+                case .success:
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    showNFCResult = true
+                case .failure:
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    showNFCResult = true
+                default: break
+                }
+            }
+            .alert("NFC", isPresented: $showNFCResult) {
+                Button("OK", role: .cancel) { nfc.reset() }
+            } message: {
+                Text(nfcMessage)
             }
             .fullScreenCover(isPresented: $showFullScreen) {
                 CardShareScreen(
@@ -257,6 +275,23 @@ struct MyCardView: View {
             }
             .buttonStyle(PressableButtonStyle())
 
+            if NFCSharingService.isAvailable {
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    nfc.writeCardLink(data.cardLink)
+                } label: {
+                    Label(nfc.status == .scanning ? "Hold near an NFC tag…" : "Write to NFC tag", systemImage: "wave.3.right.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .foregroundStyle(Theme.ink)
+                        .background(Theme.surfaceMuted)
+                        .clipShape(.rect(cornerRadius: 14))
+                }
+                .buttonStyle(PressableButtonStyle())
+                .disabled(nfc.status == .scanning)
+            }
+
             if let slug = profile?.cardSlug, !slug.isEmpty {
                 Button {
                     if let url = URL(string: "https://cardr.ai/card/\(slug)") { openURL(url) }
@@ -267,6 +302,23 @@ struct MyCardView: View {
                         .padding(.vertical, 6)
                 }
             }
+        }
+    }
+
+    private var nfcStatusKey: String {
+        switch nfc.status {
+        case .idle: return "idle"
+        case .scanning: return "scanning"
+        case .success: return "success"
+        case .failure(let message): return "failure-\(message)"
+        }
+    }
+
+    private var nfcMessage: String {
+        switch nfc.status {
+        case .success: return "Your card link was written to the tag. Anyone who taps it opens your card."
+        case .failure(let message): return message
+        default: return ""
         }
     }
 
