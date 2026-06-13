@@ -6,6 +6,17 @@ interface StopResult {
   duration: number;
 }
 
+/**
+ * Audio source for a recording session:
+ * - "mic": your microphone only (in-person meetings, calls on speaker).
+ * - "system": the other participants' audio captured from a shared browser
+ *   tab or your screen (e.g. Zoom/Meet/Teams running in the browser) — this is
+ *   what lets Cardr transcribe people you're talking to on a video call.
+ * - "both": mixes your mic with the shared tab/system audio so the whole
+ *   conversation is captured in one track.
+ */
+export type AudioSource = "mic" | "system" | "both";
+
 export const useAudioRecorder = (lang: string = "en-US") => {
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -23,9 +34,13 @@ export const useAudioRecorder = (lang: string = "en-US") => {
   const startedAtRef = useRef(0);
   const lastFinalAtRef = useRef(0);
   const speakerIdxRef = useRef(1);
+  // Streams + Web Audio graph we must tear down on stop.
+  const sourceStreamsRef = useRef<MediaStream[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const isSupported = typeof window !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
   const isSpeechSupported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  const isSystemAudioSupported = typeof window !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
   useEffect(() => {
     return () => {
@@ -37,8 +52,45 @@ export const useAudioRecorder = (lang: string = "en-US") => {
     };
   }, []);
 
-  const start = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const start = useCallback(async (source: AudioSource = "mic") => {
+    // Build the recording stream from the requested source(s). For "system"
+    // and "both" we ask the browser to share a tab/screen with its audio, then
+    // (for "both") mix it with the mic into a single track via Web Audio.
+    sourceStreamsRef.current = [];
+    let stream: MediaStream;
+
+    if (source === "mic") {
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      sourceStreamsRef.current.push(mic);
+      stream = mic;
+    } else {
+      const display = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+      sourceStreamsRef.current.push(display);
+      if (display.getAudioTracks().length === 0) {
+        display.getTracks().forEach((t) => t.stop());
+        throw new Error("no-system-audio");
+      }
+
+      if (source === "system") {
+        stream = display;
+      } else {
+        // "both": mix mic + shared audio into one output track.
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        sourceStreamsRef.current.push(mic);
+        const ctx = new AudioContext();
+        audioContextRef.current = ctx;
+        const destination = ctx.createMediaStreamDestination();
+        ctx.createMediaStreamSource(display).connect(destination);
+        ctx.createMediaStreamSource(mic).connect(destination);
+        stream = new MediaStream([
+          ...destination.stream.getAudioTracks(),
+          ...display.getVideoTracks(),
+        ]);
+      }
+    }
 
     // MediaRecorder for actual audio capture
     audioChunksRef.current = [];
@@ -54,6 +106,12 @@ export const useAudioRecorder = (lang: string = "en-US") => {
     mediaRecorder.onstop = () => {
       const blob = new Blob(audioChunksRef.current, { type: mimeType });
       stream.getTracks().forEach((t) => t.stop());
+      sourceStreamsRef.current.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+      sourceStreamsRef.current = [];
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
       if (resolveStopRef.current) {
         resolveStopRef.current({
           audioBlob: blob,
@@ -179,5 +237,5 @@ export const useAudioRecorder = (lang: string = "en-US") => {
     });
   }, []);
 
-  return { recording, paused, duration, liveText, isSupported, isSpeechSupported, start, stop, pause, resume };
+  return { recording, paused, duration, liveText, isSupported, isSpeechSupported, isSystemAudioSupported, start, stop, pause, resume };
 };

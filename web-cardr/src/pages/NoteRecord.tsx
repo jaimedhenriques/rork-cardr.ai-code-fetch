@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2 } from "lucide-react";
+import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones } from "lucide-react";
+import type { AudioSource } from "@/hooks/useAudioRecorder";
 import { NOTE_TEMPLATES, NoteTemplate } from "@/lib/note-templates";
 import PageHeader from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,13 +51,20 @@ const NoteRecord = () => {
     return NOTE_TEMPLATES[0];
   });
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [audioSource, setAudioSource] = useState<AudioSource>("mic");
   const autoStarted = useRef(false);
+
+  const AUDIO_SOURCES: { id: AudioSource; label: string; hint: string; icon: typeof Mic }[] = [
+    { id: "mic", label: t("noteRecord.sourceMic"), hint: t("noteRecord.sourceMicHint"), icon: Mic },
+    { id: "system", label: t("noteRecord.sourceMeeting"), hint: t("noteRecord.sourceMeetingHint"), icon: MonitorSpeaker },
+    { id: "both", label: t("noteRecord.sourceBoth"), hint: t("noteRecord.sourceBothHint"), icon: Headphones },
+  ];
 
   // Auto-start recording when arriving from phone dialer
   useEffect(() => {
     if (prefill.autoRecord && !autoStarted.current && recorder.isSupported && !recorder.recording) {
       autoStarted.current = true;
-      recorder.start().then(() => {
+      recorder.start("mic").then(() => {
         setGlobalRecording(title || "Recording…", prefill.contactName);
       }).catch(() => {
         toast.error(t("noteRecord.micError"));
@@ -66,12 +74,16 @@ const NoteRecord = () => {
 
   const handleStart = useCallback(async () => {
     try {
-      await recorder.start();
+      await recorder.start(audioSource);
       setGlobalRecording(title || "Recording…", prefill.contactName);
-    } catch {
-      toast.error(t("noteRecord.micError"));
+    } catch (e) {
+      if (e instanceof Error && e.message === "no-system-audio") {
+        toast.error(t("noteRecord.noSystemAudio"));
+      } else {
+        toast.error(audioSource === "mic" ? t("noteRecord.micError") : t("noteRecord.shareCancelled"));
+      }
     }
-  }, [recorder, title, prefill.contactName, setGlobalRecording]);
+  }, [recorder, title, prefill.contactName, setGlobalRecording, audioSource, t]);
 
   const handleStop = useCallback(async () => {
     setProcessing(true);
@@ -262,6 +274,32 @@ const NoteRecord = () => {
             className="flex-1 text-lg font-display font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40"
           />
         </div>
+
+        {/* Audio source picker — mic, meeting (tab/system) audio, or both */}
+        {recorder.isSystemAudioSupported && !phoneNumber && (
+          <div className="mb-4">
+            <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-card border border-border">
+              {AUDIO_SOURCES.map((s) => {
+                const Icon = s.icon;
+                const active = audioSource === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => !recorder.recording && setAudioSource(s.id)}
+                    disabled={recorder.recording}
+                    className={`relative flex flex-col items-center gap-1 py-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-primary-foreground shadow-md" : "text-muted-foreground hover:bg-secondary"}`}
+                  >
+                    <Icon size={16} />
+                    <span className="text-[11px] font-semibold leading-none">{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5 px-1 text-center">
+              {AUDIO_SOURCES.find((s) => s.id === audioSource)?.hint}
+            </p>
+          </div>
+        )}
 
         {/* Template selector */}
         <div className="relative mb-4">

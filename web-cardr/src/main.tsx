@@ -10,4 +10,14 @@ if (isNative()) {
   setTimeout(() => { hideSplash(); }, 600);
 }
 
+// Register the service worker so the web app is installable as a desktop/mobile
+// PWA (Chrome shows "Install") and launches instantly. Skipped in native shells.
+if ("serviceWorker" in navigator && !isNative() && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((err) => {
+      console.error("Service worker registration failed:", err);
+    });
+  });
+}
+
 createRoot(document.getElementById("root")!).render(<App />);

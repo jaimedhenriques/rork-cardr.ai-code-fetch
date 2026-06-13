@@ -810,6 +810,14 @@ export const EN_STRINGS: Record<string, string> = {
   "noteRecord.failedSave": "Failed to save notes",
   "noteRecord.somethingWrong": "Something went wrong",
   "noteRecord.calledContact": "Called contact",
+  "noteRecord.sourceMic": "Mic",
+  "noteRecord.sourceMicHint": "Records your microphone — best for in-person meetings or calls on speaker.",
+  "noteRecord.sourceMeeting": "Meeting",
+  "noteRecord.sourceMeetingHint": "Captures the other participants by sharing your video-call tab — pick the tab and enable \"Share tab audio\".",
+  "noteRecord.sourceBoth": "Both",
+  "noteRecord.sourceBothHint": "Mixes your mic with the shared call audio so the whole conversation is captured.",
+  "noteRecord.noSystemAudio": "No audio was shared. When sharing, choose a tab and turn on \"Share tab audio\".",
+  "noteRecord.shareCancelled": "Screen share was cancelled.",
 
   // Notes page — group labels
   "notes.todayLabel": "Today",
