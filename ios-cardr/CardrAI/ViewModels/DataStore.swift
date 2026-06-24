@@ -18,6 +18,36 @@ final class DataStore {
     var sequences: [AutomationSequence] = []
     var sequenceRuns: [SequenceRun] = []
 
+    /// The event new scans are auto-assigned to, persisted across launches.
+    var activeEventId: String? {
+        didSet {
+            UserDefaults.standard.set(activeEventId, forKey: "cardr.activeEventId")
+        }
+    }
+    /// When on, every new scan is linked to the active event automatically.
+    var autoAssignToEvent: Bool {
+        didSet {
+            UserDefaults.standard.set(autoAssignToEvent, forKey: "cardr.autoAssignToEvent")
+        }
+    }
+    /// Contact IDs saved during the current scanning session (for batch export).
+    var sessionContactIds: [String] = []
+
+    // Organization management
+    var organization: Organization?
+    var orgMembers: [OrgMember] = []
+    var orgInvitations: [OrgInvitation] = []
+    var orgDomains: [OrgDomain] = []
+    var isLoadingOrg = false
+
+    // Platform (super) admin
+    var isPlatformAdmin = false
+    var platformUsers: [PlatformUser] = []
+    var platformSubscriptions: [PlatformSubscription] = []
+    var platformUsage: [PlatformUsage] = []
+    var platformOrgs: [PlatformOrg] = []
+    var isLoadingPlatform = false
+
     var isLoadingContacts = false
     var isLoadingNotes = false
     var isLoadingStages = false
@@ -25,16 +55,25 @@ final class DataStore {
     var isLoadingEvents = false
     var loadError: String?
 
-    private let service = SupabaseService.shared
+    let service = SupabaseService.shared
     private let realtime = RealtimeClient.shared
     private unowned let session: SessionStore
     private var realtimeStarted = false
 
     init(session: SessionStore) {
         self.session = session
+        self.activeEventId = UserDefaults.standard.string(forKey: "cardr.activeEventId")
+        self.autoAssignToEvent = (UserDefaults.standard.object(forKey: "cardr.autoAssignToEvent") as? Bool) ?? true
     }
 
-    private var token: String? { session.accessToken }
+    /// The currently selected active event, if any.
+    var activeEvent: Event? {
+        guard let activeEventId else { return nil }
+        return events.first { $0.id == activeEventId }
+    }
+
+    var token: String? { session.accessToken }
+    var currentUserId: String? { session.userId }
 
     // MARK: - Realtime
 

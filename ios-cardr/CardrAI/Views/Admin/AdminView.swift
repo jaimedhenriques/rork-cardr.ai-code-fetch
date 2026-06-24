@@ -12,9 +12,12 @@ struct AdminView: View {
                 accountCard
                 usageGrid
                 breakdown
-                if data.canEditBranding {
-                    BrandingEditorView()
-                }
+                Text("ORGANIZATION")
+                    .font(.caption2.weight(.bold)).tracking(0.8)
+                    .foregroundStyle(Theme.inkSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 6)
+                OrgAdminView()
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
@@ -23,7 +26,22 @@ struct AdminView: View {
         .background(Theme.background)
         .navigationTitle("Admin Panel")
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await data.loadAll() }
+        .toolbar {
+            if data.isPlatformAdmin {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        PlatformAdminView()
+                    } label: {
+                        Image(systemName: "shield.lefthalf.filled")
+                    }
+                }
+            }
+        }
+        .refreshable { await data.loadAll(); await data.loadOrganization() }
+        .task {
+            await data.loadOrganization()
+            await data.checkPlatformAdmin()
+        }
     }
 
     private var accountCard: some View {

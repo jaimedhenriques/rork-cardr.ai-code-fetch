@@ -15,6 +15,34 @@ struct LiveScannerView: View {
     @State private var batchMode = false
     @State private var flashFlash = false
     @State private var showTrayPop = false
+    @State private var mode: ScanMode = .badge
+
+    /// The three capture modes, mirroring the web scanner.
+    enum ScanMode: String, CaseIterable, Identifiable {
+        case badge, card, qr
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .badge: return "Event Badge"
+            case .card: return "Paper Card"
+            case .qr: return "LinkedIn QR"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .badge: return "checkmark.seal"
+            case .card: return "creditcard"
+            case .qr: return "qrcode"
+            }
+        }
+        var instruction: String {
+            switch self {
+            case .badge: return "Capture the full badge, including all the text on it."
+            case .card: return "Point at a paper card, then tap the capture button."
+            case .qr: return "Point at any LinkedIn QR code to read it instantly."
+            }
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -27,6 +55,7 @@ struct LiveScannerView: View {
                 captureFlash
                 topBar
                 bottomControls
+                modeSelector
             } else {
                 unavailableState
                 closeButton
@@ -63,6 +92,36 @@ struct LiveScannerView: View {
             scanner.stop()
             dismiss()
             onCode(code)
+        }
+    }
+
+    // MARK: - Mode selector
+
+    private var modeSelector: some View {
+        VStack {
+            Spacer().frame(height: 64)
+            HStack(spacing: 8) {
+                ForEach(ScanMode.allCases) { item in
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { mode = item }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: item.icon)
+                            Text(item.label)
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(mode == item ? Color.black : .white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            mode == item ? AnyShapeStyle(.white) : AnyShapeStyle(.ultraThinMaterial),
+                            in: Capsule()
+                        )
+                    }
+                }
+            }
+            Spacer()
         }
     }
 
@@ -103,8 +162,9 @@ struct LiveScannerView: View {
     }
 
     private var hint: some View {
-        Text(scanner.framingProgress > 0.05 ? "Hold steady — capturing…" : "Position the card inside the frame")
+        Text(scanner.framingProgress > 0.05 ? "Hold steady — capturing…" : mode.instruction)
             .font(.footnote.weight(.semibold))
+            .multilineTextAlignment(.center)
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)

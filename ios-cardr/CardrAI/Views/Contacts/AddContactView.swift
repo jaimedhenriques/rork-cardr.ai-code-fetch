@@ -6,9 +6,15 @@ struct AddContactView: View {
     @Environment(DataStore.self) private var data
     @Environment(\.dismiss) private var dismiss
 
+    /// Optional pre-filled values (e.g. from a partial scan).
+    var prefill: ContactDraft?
+    /// Called with the created contact after a successful save.
+    var onSaved: ((Contact) -> Void)?
+
     @State private var draft = ContactDraft()
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var didApplyPrefill = false
 
     var body: some View {
         NavigationStack {
@@ -46,6 +52,12 @@ struct AddContactView: View {
             }
             .navigationTitle("New Contact")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if let prefill, !didApplyPrefill {
+                    draft = prefill
+                    didApplyPrefill = true
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -88,6 +100,11 @@ struct AddContactView: View {
             let success = await data.addContact(draft)
             isSaving = false
             if success {
+                if let onSaved, let created = data.contacts.first(where: {
+                    $0.name == draft.name.trimmingCharacters(in: .whitespaces)
+                }) {
+                    onSaved(created)
+                }
                 dismiss()
             } else {
                 errorMessage = data.loadError ?? "Could not save contact. Please try again."

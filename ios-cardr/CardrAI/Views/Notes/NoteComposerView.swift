@@ -8,8 +8,14 @@ struct NoteComposerView: View {
     @Environment(DataStore.self) private var data
     @Environment(\.dismiss) private var dismiss
 
+    /// Optional title to pre-fill (e.g. when recording from a calendar event).
+    var prefillTitle: String?
+    /// When true, recording starts automatically on appear.
+    var autoStart: Bool = false
+
     @State private var recorder = LiveTranscriptionService()
     @State private var title = ""
+    @State private var didApplyPrefill = false
     @State private var manualNotes = ""
     @State private var isProcessing = false
     @State private var processingStep = ""
@@ -49,6 +55,13 @@ struct NoteComposerView: View {
                 NoteDetailView(note: note)
             }
             .interactiveDismissDisabled(recorder.isRecording || isProcessing)
+            .task {
+                if !didApplyPrefill {
+                    didApplyPrefill = true
+                    if let prefillTitle, title.isEmpty { title = prefillTitle }
+                    if autoStart { await startRecording() }
+                }
+            }
         }
     }
 
