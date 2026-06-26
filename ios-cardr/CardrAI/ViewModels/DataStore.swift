@@ -807,9 +807,13 @@ final class DataStore {
     struct NoteInsights {
         var summary: String?
         var keyTopics: [String] = []
-        var actionItems: [String] = []
-        var followUps: [String] = []
+        var actionItems: [NoteAction] = []
+        var followUps: [NoteFollowUp] = []
         var decisions: [String] = []
+        var insights: [String] = []
+        var mentionedPeople: [MentionedPerson] = []
+        var openQuestions: [String] = []
+        var analytics: MeetingAnalytics?
     }
 
     /// Sends recorded audio to the `transcribe-audio` edge function and returns
@@ -908,13 +912,7 @@ final class DataStore {
             guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else { return nil }
             guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let notes = obj["notes"] as? [String: Any] else { return nil }
-            var result = NoteInsights()
-            result.summary = notes["summary"] as? String
-            result.keyTopics = (notes["keyTopics"] as? [String]) ?? []
-            result.actionItems = (notes["actionItems"] as? [String]) ?? []
-            result.followUps = (notes["followUps"] as? [String]) ?? []
-            result.decisions = (notes["decisions"] as? [String]) ?? []
-            return result
+            return Self.parseInsights(notes)
         } catch {
             return nil
         }
@@ -964,6 +962,18 @@ final class DataStore {
         if let decisions = insights?.decisions, !decisions.isEmpty {
             values["decisions"] = AnyEncodable(decisions)
         }
+        if let extra = insights?.insights, !extra.isEmpty {
+            values["insights"] = AnyEncodable(extra)
+        }
+        if let people = insights?.mentionedPeople, !people.isEmpty {
+            values["mentioned_people"] = AnyEncodable(people)
+        }
+        if let questions = insights?.openQuestions, !questions.isEmpty {
+            values["open_questions"] = AnyEncodable(questions)
+        }
+        if let analytics = insights?.analytics, analytics.hasContent {
+            values["analytics"] = AnyEncodable(analytics)
+        }
 
         do {
             let created = try await service.insertReturning(
@@ -999,6 +1009,7 @@ final class DataStore {
         values["follow_ups"] = AnyEncodable(note.followUps ?? [])
         values["decisions"] = AnyEncodable(note.decisions ?? [])
         values["key_topics"] = AnyEncodable(note.keyTopics ?? [])
+        values["category"] = AnyEncodable(note.category)
         do {
             try await service.update(table: "meeting_notes", token: token, match: ["id": note.id], values: values)
             return true
@@ -1067,6 +1078,104 @@ final class DataStore {
         }
     }
 
+    /// Parses the `notes` payload from the `meeting-notes` edge function into a
+    /// structured `NoteInsights`, mirroring the web `handleSummarize` mapping.
+    private static func parseInsights(_ notes: [String: Any]) -> NoteInsights {
+        var result = NoteInsights()
+        result.summary = notes["summary"] as? String
+        result.keyTopics = (notes["keyTopics"] as? [String]) ?? []
+        result.decisions = (notes["decisions"] as? [String]) ?? []
+        result.insights = (notes["insights"] as? [String]) ?? []
+        result.openQuestions = (notes["openQuestions"] as? [String]) ?? []
+
+        result.actionItems = (notes["actionItems"] as? [Any] ?? []).compactMap { raw in
+            if let str = raw as? String { return NoteAction(task: str) }
+            guard let obj = raw as? [String: Any], let task = obj["task"] as? String else { return nil }
+            return NoteAction(
+                task: task,
+                owner: obj["owner"] as? String,
+                deadline: obj["deadline"] as? String,
+                done: obj["done"] as? Bool,
+                priority: obj["priority"] as? String
+            )
+        }
+
+        result.followUps = (notes["followUps"] as? [Any] ?? []).compactMap { raw in
+            if let str = raw as? String { return NoteFollowUp(description: str) }
+            guard let obj = raw as? [String: Any] else { return nil }
+            let desc = (obj["description"] as? String) ?? (obj["task"] as? String) ?? ""
+            guard !desc.isEmpty else { return nil }
+            return NoteFollowUp(description: desc, with: obj["with"] as? String, urgency: obj["urgency"] as? String)
+        }
+
+        result.mentionedPeople = (notes["mentionedPeople"] as? [Any] ?? []).compactMap { raw in
+            if let str = raw as? String { return MentionedPerson(name: str) }
+            guard let obj = raw as? [String: Any], let name = obj["name"] as? String else { return nil }
+            return MentionedPerson(name: name, role: obj["role"] as? String, context: obj["context"] as? String)
+        }
+
+        if let analytics = notes["analytics"] as? [String: Any] {
+            var parsed = MeetingAnalytics()
+            parsed.talkTimeRatio = analytics["talkTimeRatio"] as? [String: Double]
+            parsed.questionsAsked = analytics["questionsAsked"] as? Int
+            parsed.sentimentScore = analytics["sentimentScore"] as? Double
+            parsed.sentimentLabel = analytics["sentimentLabel"] as? String
+            parsed.engagementLevel = analytics["engagementLevel"] as? String
+            parsed.topSpeaker = analytics["topSpeaker"] as? String
+            parsed.keyMetrics = (analytics["keyMetrics"] as? [[String: Any]])?.compactMap { m in
+                guard let label = m["label"] as? String, let value = m["value"] as? String else { return nil }
+                return NoteMetric(label: label, value: value, icon: m["icon"] as? String)
+            }
+            if parsed.hasContent { result.analytics = parsed }
+        }
+        return result
+    }
+
+    /// Re-runs the AI on a note's content and persists the refreshed insights.
+    /// Returns the updated note on success.
+    @discardableResult
+    func reanalyzeNote(_ note: MeetingNote, templateId: String? = nil) async -> MeetingNote? {
+        let text = note.transcript ?? note.manualNotes ?? ""
+        guard text.trimmingCharacters(in: .whitespacesAndNewlines).count > 10 else { return nil }
+        let prompt = "Title: \(note.title)\n\n\(text)"
+        guard let insights = await generateInsights(
+            transcript: prompt,
+            durationSeconds: note.durationSeconds ?? 0,
+            templateId: templateId
+        ) else { return nil }
+        guard let token else { return nil }
+
+        var updated = note
+        if let summary = insights.summary, !summary.isEmpty { updated.summary = summary }
+        if !insights.keyTopics.isEmpty { updated.keyTopics = insights.keyTopics }
+        if !insights.actionItems.isEmpty { updated.actionItems = insights.actionItems }
+        if !insights.followUps.isEmpty { updated.followUps = insights.followUps }
+        if !insights.decisions.isEmpty { updated.decisions = insights.decisions }
+        if !insights.insights.isEmpty { updated.insights = insights.insights }
+        if !insights.mentionedPeople.isEmpty { updated.mentionedPeople = insights.mentionedPeople }
+        if !insights.openQuestions.isEmpty { updated.openQuestions = insights.openQuestions }
+        if let analytics = insights.analytics { updated.analytics = analytics }
+
+        var values: [String: AnyEncodable] = [:]
+        values["summary"] = AnyEncodable(updated.summary ?? "")
+        values["key_topics"] = AnyEncodable(updated.keyTopics ?? [])
+        values["action_items"] = AnyEncodable(updated.actionItems ?? [])
+        values["follow_ups"] = AnyEncodable(updated.followUps ?? [])
+        values["decisions"] = AnyEncodable(updated.decisions ?? [])
+        values["insights"] = AnyEncodable(updated.insights ?? [])
+        values["mentioned_people"] = AnyEncodable(updated.mentionedPeople ?? [])
+        values["open_questions"] = AnyEncodable(updated.openQuestions ?? [])
+        if let analytics = updated.analytics { values["analytics"] = AnyEncodable(analytics) }
+        do {
+            try await service.update(table: "meeting_notes", token: token, match: ["id": note.id], values: values)
+            if let index = notes.firstIndex(where: { $0.id == note.id }) { notes[index] = updated }
+            return updated
+        } catch {
+            loadError = "Could not re-analyze note."
+            return nil
+        }
+    }
+
     private static func shortDate() -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -1112,7 +1221,7 @@ final class DataStore {
                 values: [values]
             )
             if createTasks, let items = note.actionItems, !items.isEmpty {
-                await logFollowUps(items, forContact: contact, note: note, userId: userId, token: token)
+                await logFollowUps(items.map(\.task), forContact: contact, note: note, userId: userId, token: token)
             }
             return created.first
         } catch {

@@ -437,12 +437,15 @@ struct NotesView: View {
     private var allActionItems: [NoteActionItem] {
         data.notes.flatMap { note in
             (note.actionItems ?? []).map {
-                NoteActionItem(task: $0, noteId: note.id, noteTitle: note.title, date: note.createdDate)
+                NoteActionItem(action: $0, noteId: note.id, noteTitle: note.title, date: note.createdDate)
             }
         }
     }
 
-    private var pendingActions: [NoteActionItem] { allActionItems }
+    /// Only the not-yet-done action items, for the pending count + tab.
+    private var pendingActions: [NoteActionItem] {
+        allActionItems.filter { !$0.action.isDone }
+    }
 
     /// Notes after search + filters, plus the matched snippets per note.
     private var searchMatches: [String: [NoteSearchMatch]] {
@@ -460,8 +463,8 @@ struct NotesView: View {
             test("Notes", note.manualNotes)
             test("Category", note.category)
             (note.keyTopics ?? []).forEach { test("Topic", $0) }
-            (note.actionItems ?? []).forEach { test("Action", $0) }
-            (note.followUps ?? []).forEach { test("Follow-up", $0) }
+            (note.actionItems ?? []).forEach { test("Action", $0.task) }
+            (note.followUps ?? []).forEach { test("Follow-up", $0.description) }
             (note.decisions ?? []).forEach { test("Decision", $0) }
             test("Transcript", note.transcript)
             if !hits.isEmpty { result[note.id] = Array(hits.prefix(3)) }
@@ -548,7 +551,7 @@ struct NotesView: View {
             if let summary = note.summary, !summary.isEmpty { lines.append(summary) }
             if let items = note.actionItems, !items.isEmpty {
                 lines.append("Action items:")
-                lines.append(contentsOf: items.map { "- \($0)" })
+                lines.append(contentsOf: items.map { "- [\($0.isDone ? "x" : " ")] \($0.task)" })
             }
             return lines.joined(separator: "\n")
         }.joined(separator: "\n\n---\n\n")

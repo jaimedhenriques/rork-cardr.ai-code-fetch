@@ -1,5 +1,15 @@
 import Foundation
 
+/// A headline metric card from meeting analytics.
+nonisolated struct NoteMetric: Codable, Identifiable, Hashable {
+    var id = UUID()
+    var label: String
+    var value: String
+    var icon: String?
+
+    enum CodingKeys: String, CodingKey { case label, value, icon }
+}
+
 /// AI meeting analytics stored on a `meeting_notes` row's `analytics` jsonb.
 nonisolated struct MeetingAnalytics: Codable, Hashable {
     var questionsAsked: Int?
@@ -8,6 +18,12 @@ nonisolated struct MeetingAnalytics: Codable, Hashable {
     var engagementLevel: String?
     var topSpeaker: String?
     var talkTimeRatio: [String: Double]?
+    var keyMetrics: [NoteMetric]?
+
+    var hasContent: Bool {
+        (keyMetrics?.isEmpty == false) || (talkTimeRatio?.isEmpty == false)
+            || sentimentLabel != nil || questionsAsked != nil
+    }
 }
 
 /// A lightweight note row used by the Analytics dashboard.
