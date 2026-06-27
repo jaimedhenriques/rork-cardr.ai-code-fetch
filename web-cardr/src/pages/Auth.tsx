@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -65,10 +64,16 @@ const Auth = () => {
   };
 
   // Resolve where to send the user after successful auth.
-  // Honor a "from" path passed via location state (set by ProtectedRoute);
-  // never bounce back to /auth itself.
+  // Priority: `next` query param (carried across the Google OAuth round-trip)
+  // > a "from" path passed via location state (set by ProtectedRoute).
+  // Never bounce back to /auth itself.
+  const nextParam = new URLSearchParams(location.search).get("next");
   const fromState = (location.state as { from?: string } | null)?.from;
-  const redirectTarget = fromState && !fromState.startsWith("/auth") ? fromState : "/app";
+  const candidate = nextParam ?? fromState;
+  const redirectTarget =
+    candidate && candidate.startsWith("/") && !candidate.startsWith("/auth")
+      ? candidate
+      : "/app";
 
   useEffect(() => {
     if (user) {
@@ -81,20 +86,30 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+      // Use Supabase's native Google OAuth. This redirects to Google and
+      // back to the app, where AuthContext's onAuthStateChange picks up the
+      // session. The post-login target is carried via the `next` query param.
+      const redirectTo = `${window.location.origin}/auth${
+        redirectTarget && redirectTarget !== "/app"
+          ? `?next=${encodeURIComponent(redirectTarget)}`
+          : ""
+      }`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: { prompt: "select_account" },
+        },
       });
-      if (result.error) {
-        toast.error(result.error.message || t("auth.googleSignInFailed"));
+      if (error) {
+        toast.error(error.message || t("auth.googleSignInFailed"));
         setGoogleLoading(false);
-        return;
       }
-      if (result.redirected) return;
-      navigate(redirectTarget, { replace: true });
+      // On success the browser redirects to Google; no further action here.
     } catch (err: any) {
       toast.error(err?.message || t("auth.googleSignInFailed"));
+      setGoogleLoading(false);
     }
-    setGoogleLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
