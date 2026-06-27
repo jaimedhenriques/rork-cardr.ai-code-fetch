@@ -172,6 +172,7 @@ struct MainTabView: View {
         case .activity: ActivityView()
         case .calendar: CalendarView()
         case .events: EventsView()
+        case .phone: PhoneDialerView()
         case .export: ExportView()
         case .admin: AdminView()
         default: EmptyView()

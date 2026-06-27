@@ -10,7 +10,7 @@ enum DrawerDestination: String, Hashable, CaseIterable, Identifiable {
     // Main
     case home, scan, notes, aiChat, agents, automations
     // CRM
-    case contacts, leads, activity, calendar, events, export
+    case contacts, leads, activity, calendar, events, export, phone
     // Insights & Profile
     case integrations, analytics, myCard, admin, settings
 
@@ -30,6 +30,7 @@ enum DrawerDestination: String, Hashable, CaseIterable, Identifiable {
         case .calendar: "Calendar"
         case .events: "Events"
         case .export: "Export"
+        case .phone: "Phone"
         case .myCard: "My Card"
         case .admin: "Admin Panel"
         case .settings: "Settings"
@@ -52,6 +53,7 @@ enum DrawerDestination: String, Hashable, CaseIterable, Identifiable {
         case .calendar: "calendar"
         case .events: "flag.fill"
         case .export: "arrow.down.doc.fill"
+        case .phone: "phone.fill"
         case .myCard: "person.crop.rectangle.fill"
         case .admin: "building.2.fill"
         case .settings: "gearshape.fill"
@@ -79,7 +81,7 @@ private struct DrawerSection: Identifiable {
 
 private let drawerSections: [DrawerSection] = [
     DrawerSection(label: "Main", items: [.home, .scan, .notes, .aiChat, .agents, .automations]),
-    DrawerSection(label: "CRM", items: [.contacts, .leads, .activity, .calendar, .events, .export]),
+    DrawerSection(label: "CRM", items: [.contacts, .leads, .activity, .calendar, .events, .phone, .export]),
     DrawerSection(label: "Insights", items: [.integrations, .analytics]),
     DrawerSection(label: "Profile", items: [.myCard, .admin, .settings]),
 ]
