@@ -42,6 +42,7 @@ const Auth = () => {
   const [view, setView] = useState<View>("login");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [reviewerLoading, setReviewerLoading] = useState(false);
 
   const handleReviewerDemo = async () => {
@@ -112,6 +113,31 @@ const Auth = () => {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setAppleLoading(true);
+    try {
+      // Supabase native Apple OAuth. Mirrors the Google round-trip: redirects
+      // to Apple and back to /auth, where AuthContext picks up the session.
+      const redirectTo = `${window.location.origin}/auth${
+        redirectTarget && redirectTarget !== "/app"
+          ? `?next=${encodeURIComponent(redirectTarget)}`
+          : ""
+      }`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo },
+      });
+      if (error) {
+        toast.error(error.message);
+        setAppleLoading(false);
+      }
+      // On success the browser redirects to Apple; no further action here.
+    } catch (err: any) {
+      toast.error(err?.message || "Apple sign-in failed");
+      setAppleLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -168,10 +194,12 @@ const Auth = () => {
       testimonials={testimonials}
       loading={loading}
       googleLoading={googleLoading}
+      appleLoading={appleLoading}
       showPasswordField={view !== "forgot"}
       submitLabel={submitLabel}
       onSignIn={handleSubmit}
       onGoogleSignIn={view === "forgot" ? undefined : handleGoogleSignIn}
+      onAppleSignIn={view === "forgot" ? undefined : handleAppleSignIn}
       onResetPassword={view === "login" ? () => setView("forgot") : undefined}
       onCreateAccount={
         view === "login" ? () => setView("signup") : view === "signup" ? () => setView("login") : undefined

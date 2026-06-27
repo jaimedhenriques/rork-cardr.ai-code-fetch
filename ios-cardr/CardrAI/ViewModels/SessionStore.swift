@@ -47,6 +47,10 @@ final class SessionStore {
         await authenticate { try await self.service.signUp(email: email, password: password) }
     }
 
+    func signInWithApple(idToken: String, nonce: String) async {
+        await authenticate { try await self.service.signInWithApple(idToken: idToken, nonce: nonce) }
+    }
+
     func sendPasswordReset(email: String) async -> Bool {
         do {
             try await service.sendPasswordReset(email: email)

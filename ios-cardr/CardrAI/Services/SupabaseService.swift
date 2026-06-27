@@ -33,6 +33,17 @@ final class SupabaseService {
         )
     }
 
+    /// Exchanges an Apple identity token for a Supabase session.
+    /// `nonce` is the raw (unhashed) nonce; Supabase hashes it server-side to
+    /// match the digest Apple embedded in the identity token.
+    func signInWithApple(idToken: String, nonce: String) async throws -> AuthSession {
+        try await authRequest(
+            path: "token",
+            query: [URLQueryItem(name: "grant_type", value: "id_token")],
+            body: ["provider": "apple", "id_token": idToken, "nonce": nonce]
+        )
+    }
+
     func refresh(refreshToken: String) async throws -> AuthSession {
         try await authRequest(
             path: "token",

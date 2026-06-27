@@ -15,7 +15,7 @@ export interface PlanLimits {
 }
 
 export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
-  starter:  { contacts: 25,  enrichments: 15,  notes: 25,  transcriptionMinutes: 60,  lifetime: true },
+  starter:  { contacts: 10,  enrichments: 10,  notes: 10,  transcriptionMinutes: 60,  lifetime: true },
   pro:      { contacts: -1,  enrichments: 150, notes: -1,  transcriptionMinutes: 600, lifetime: false },
   business: { contacts: -1,  enrichments: -1,  notes: -1,  transcriptionMinutes: -1,  lifetime: false },
   teams:    { contacts: -1,  enrichments: -1,  notes: -1,  transcriptionMinutes: -1,  lifetime: false },

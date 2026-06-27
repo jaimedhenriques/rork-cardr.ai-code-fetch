@@ -1,12 +1,15 @@
 import SwiftUI
+import AuthenticationServices
 
 struct AuthView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var mode: Mode = .signIn
     @State private var email = ""
     @State private var password = ""
     @State private var showResetSent = false
+    @State private var appleNonce: String?
 
     enum Mode {
         case signIn, signUp
@@ -116,6 +119,20 @@ struct AuthView: View {
                 }
                 .disabled(!canSubmit)
 
+                orDivider
+
+                SignInWithAppleButton(.continue) { request in
+                    let nonce = AppleAuth.randomNonce()
+                    appleNonce = nonce
+                    request.requestedScopes = [.fullName, .email]
+                    request.nonce = AppleAuth.sha256(nonce)
+                } onCompletion: { result in
+                    handleApple(result)
+                }
+                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                .frame(height: 50)
+                .clipShape(.rect(cornerRadius: 14))
+
                 Button(mode.toggle) {
                     withAnimation(.snappy) {
                         mode = mode == .signIn ? .signUp : .signIn
@@ -126,6 +143,35 @@ struct AuthView: View {
                 .foregroundStyle(Theme.inkSecondary)
                 .frame(maxWidth: .infinity)
             }
+        }
+    }
+
+    private var orDivider: some View {
+        HStack(spacing: 12) {
+            Rectangle().fill(Theme.inkSecondary.opacity(0.2)).frame(height: 1)
+            Text("or")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.inkSecondary)
+            Rectangle().fill(Theme.inkSecondary.opacity(0.2)).frame(height: 1)
+        }
+    }
+
+    private func handleApple(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let auth):
+            guard
+                let credential = auth.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData = credential.identityToken,
+                let idToken = String(data: tokenData, encoding: .utf8),
+                let nonce = appleNonce
+            else {
+                session.authError = "Apple sign-in failed. Please try again."
+                return
+            }
+            Task { await session.signInWithApple(idToken: idToken, nonce: nonce) }
+        case .failure(let error):
+            if (error as? ASAuthorizationError)?.code == .canceled { return }
+            session.authError = error.localizedDescription
         }
     }
 
