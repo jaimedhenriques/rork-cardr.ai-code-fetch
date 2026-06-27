@@ -21,6 +21,7 @@ struct NoteComposerView: View {
     @State private var processingStep = ""
     @State private var savedNote: MeetingNote?
     @State private var selectedTemplate: NoteTemplate = .default
+    @AppStorage("note.language") private var languageId = "en-US"
 
     var body: some View {
         NavigationStack {
@@ -28,6 +29,7 @@ struct NoteComposerView: View {
                 VStack(spacing: 18) {
                     titleField
                     templatePicker
+                    languagePicker
                     recorderCard
                     liveTranscriptCard
                     manualNotesCard
@@ -58,6 +60,7 @@ struct NoteComposerView: View {
             .task {
                 if !didApplyPrefill {
                     didApplyPrefill = true
+                    recorder.setLanguage(languageId)
                     if let prefillTitle, title.isEmpty { title = prefillTitle }
                     if autoStart { await startRecording() }
                 }
@@ -110,6 +113,41 @@ struct NoteComposerView: View {
                                 .foregroundStyle(Theme.inkSecondary)
                                 .lineLimit(1)
                         }
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.inkSecondary)
+                    }
+                }
+                .disabled(recorder.isRecording || isProcessing)
+            }
+        }
+    }
+
+    // MARK: - Language picker
+
+    private var languagePicker: some View {
+        CardSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Spoken language", systemImage: "globe")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+                Menu {
+                    ForEach(TranscriptionLanguage.all) { language in
+                        Button {
+                            languageId = language.id
+                            recorder.setLanguage(language.id)
+                        } label: {
+                            Label("\(language.flag)  \(language.label)", systemImage: languageId == language.id ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    let current = TranscriptionLanguage.named(languageId)
+                    HStack(spacing: 10) {
+                        Text(current.flag).font(.system(size: 18))
+                        Text(current.label)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
                         Spacer()
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.system(size: 12, weight: .semibold))

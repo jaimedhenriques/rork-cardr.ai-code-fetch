@@ -19,7 +19,7 @@ final class LiveTranscriptionService: NSObject {
     var authorizationFailed = false
 
     private let engine = AVAudioEngine()
-    private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    private var recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var timer: Timer?
@@ -33,6 +33,13 @@ final class LiveTranscriptionService: NSObject {
     var isSupported: Bool {
         guard let recognizer, recognizer.isAvailable else { return false }
         return !AVAudioSession.sharedInstance().availableInputs.isNilOrEmpty
+    }
+
+    /// Switches the recognition language. Call before `start()`. Falls back to the
+    /// device locale if the requested language has no recognizer.
+    func setLanguage(_ identifier: String) {
+        let candidate = SFSpeechRecognizer(locale: Locale(identifier: identifier))
+        recognizer = candidate ?? SFSpeechRecognizer()
     }
 
     // MARK: - Permissions
@@ -223,4 +230,34 @@ final class LiveTranscriptionService: NSObject {
 
 private extension Optional where Wrapped == [AVAudioSessionPortDescription] {
     var isNilOrEmpty: Bool { self?.isEmpty ?? true }
+}
+
+/// A spoken language the recorder can transcribe live. Identifiers map to
+/// `SFSpeechRecognizer` locales; the catalog mirrors the languages Otter/Plaud
+/// surface for capture.
+nonisolated struct TranscriptionLanguage: Identifiable, Hashable {
+    let id: String
+    let label: String
+    let flag: String
+
+    static let all: [TranscriptionLanguage] = [
+        .init(id: "en-US", label: "English (US)", flag: "🇺🇸"),
+        .init(id: "en-GB", label: "English (UK)", flag: "🇬🇧"),
+        .init(id: "es-ES", label: "Spanish", flag: "🇪🇸"),
+        .init(id: "fr-FR", label: "French", flag: "🇫🇷"),
+        .init(id: "de-DE", label: "German", flag: "🇩🇪"),
+        .init(id: "it-IT", label: "Italian", flag: "🇮🇹"),
+        .init(id: "pt-BR", label: "Portuguese", flag: "🇧🇷"),
+        .init(id: "nl-NL", label: "Dutch", flag: "🇳🇱"),
+        .init(id: "sv-SE", label: "Swedish", flag: "🇸🇪"),
+        .init(id: "ar-SA", label: "Arabic", flag: "🇸🇦"),
+        .init(id: "hi-IN", label: "Hindi", flag: "🇮🇳"),
+        .init(id: "zh-CN", label: "Chinese", flag: "🇨🇳"),
+        .init(id: "ja-JP", label: "Japanese", flag: "🇯🇵"),
+        .init(id: "ko-KR", label: "Korean", flag: "🇰🇷"),
+    ]
+
+    static func named(_ id: String) -> TranscriptionLanguage {
+        all.first { $0.id == id } ?? all[0]
+    }
 }
