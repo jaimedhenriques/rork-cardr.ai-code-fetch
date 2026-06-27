@@ -59,18 +59,6 @@ enum DrawerDestination: String, Hashable, CaseIterable, Identifiable {
         case .settings: "gearshape.fill"
         }
     }
-
-    /// The bottom-tab this destination maps to, if any.
-    var tab: MainTabView.Tab? {
-        switch self {
-        case .home: .dashboard
-        case .contacts: .contacts
-        case .scan: .scan
-        case .notes: .notes
-        case .myCard: .card
-        default: nil
-        }
-    }
 }
 
 private struct DrawerSection: Identifiable {

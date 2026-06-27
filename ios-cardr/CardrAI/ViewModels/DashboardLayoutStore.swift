@@ -9,14 +9,59 @@ import SwiftUI
 final class DashboardLayoutStore {
     private static let storageKey = "cardr.dashboardSections"
     private static let quickActionsKey = "cardr.quickActions"
+    private static let navTabsKey = "cardr.navTabs"
 
     private(set) var sections: [DashboardSection]
     /// Pinned quick-action ids, in display order. Mirrors the web `quickIds`.
     private(set) var quickActionIds: [String]
+    /// Bottom tab destination ids, in display order. Mirrors the web `navIds`.
+    private(set) var navTabIds: [String]
 
     init() {
         sections = Self.load()
         quickActionIds = Self.loadQuickActions()
+        navTabIds = Self.loadNavTabs()
+    }
+
+    // MARK: - Bottom tab bar
+
+    /// The resolved bottom-tab destinations to render, in order.
+    var navTabs: [DrawerDestination] {
+        navTabIds.compactMap { NavTabCatalog.item($0) }
+    }
+
+    /// Catalog destinations not currently pinned to the tab bar, in catalog order.
+    var availableNavTabs: [DrawerDestination] {
+        NavTabCatalog.all.filter { !navTabIds.contains($0.rawValue) }
+    }
+
+    func isNavTabPinned(_ id: String) -> Bool {
+        navTabIds.contains(id)
+    }
+
+    func addNavTab(_ id: String) {
+        guard !navTabIds.contains(id),
+              navTabIds.count < NavTabCatalog.maxSelected,
+              NavTabCatalog.item(id) != nil else { return }
+        navTabIds.append(id)
+        saveNavTabs()
+    }
+
+    func removeNavTab(_ id: String) {
+        guard navTabIds.count > NavTabCatalog.minSelected,
+              let index = navTabIds.firstIndex(of: id) else { return }
+        navTabIds.remove(at: index)
+        saveNavTabs()
+    }
+
+    func moveNavTab(from source: IndexSet, to destination: Int) {
+        navTabIds.move(fromOffsets: source, toOffset: destination)
+        saveNavTabs()
+    }
+
+    func resetNavTabs() {
+        navTabIds = NavTabCatalog.defaultIds
+        saveNavTabs()
     }
 
     /// The resolved quick-action items to render on the dashboard, in order.
@@ -113,6 +158,23 @@ final class DashboardLayoutStore {
         if let data = try? JSONEncoder().encode(quickActionIds) {
             UserDefaults.standard.set(data, forKey: Self.quickActionsKey)
         }
+    }
+
+    private func saveNavTabs() {
+        if let data = try? JSONEncoder().encode(navTabIds) {
+            UserDefaults.standard.set(data, forKey: Self.navTabsKey)
+        }
+    }
+
+    private static func loadNavTabs() -> [String] {
+        guard
+            let data = UserDefaults.standard.data(forKey: navTabsKey),
+            let stored = try? JSONDecoder().decode([String].self, from: data)
+        else {
+            return NavTabCatalog.defaultIds
+        }
+        let valid = stored.filter { NavTabCatalog.item($0) != nil }
+        return valid.count >= NavTabCatalog.minSelected ? valid : NavTabCatalog.defaultIds
     }
 
     private static func loadQuickActions() -> [String] {

@@ -895,6 +895,80 @@ final class DataStore {
         }
     }
 
+    /// Builds a compact context string describing a single note for AI Q&A.
+    nonisolated static func noteContext(_ note: MeetingNote) -> String {
+        var lines: [String] = ["Title: \(note.title)"]
+        if let s = note.summary, !s.isEmpty { lines.append("Summary: \(s)") }
+        if let t = note.keyTopics, !t.isEmpty { lines.append("Key topics: \(t.joined(separator: ", "))") }
+        if let a = note.actionItems, !a.isEmpty {
+            lines.append("Action items:\n" + a.map { "- \($0.task)" }.joined(separator: "\n"))
+        }
+        if let d = note.decisions, !d.isEmpty {
+            lines.append("Decisions:\n" + d.map { "- \($0)" }.joined(separator: "\n"))
+        }
+        if let m = note.manualNotes, !m.isEmpty { lines.append("Notes: \(m)") }
+        if let tr = note.transcript, !tr.isEmpty { lines.append("Transcript:\n\(tr)") }
+        return lines.joined(separator: "\n\n")
+    }
+
+    /// Answers a question scoped to a single meeting note, reusing the `ai-chat`
+    /// edge function. Tools are disabled so it only reads from the note context.
+    func askNote(_ note: MeetingNote, question: String, history: [ChatMessage] = []) async -> String? {
+        guard let token else { return nil }
+        var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("ai-chat"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        var messages: [[String: String]] = [
+            ["role": "user", "content": "You are a meeting assistant answering questions about ONE meeting note only. Base every answer strictly on the information below and say so if something isn't covered. Keep answers concise.\n\n\(Self.noteContext(note))"],
+            ["role": "assistant", "content": "Got it — ask me anything about this meeting."],
+        ]
+        messages += history.map { ["role": $0.role.rawValue, "content": $0.content] }
+        messages.append(["role": "user", "content": question])
+
+        let body: [String: Any] = [
+            "messages": messages,
+            "contacts": [],
+            "stages": [],
+            "notes": [],
+            "enableTools": false,
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        do {
+            let (bytes, response) = try await URLSession.shared.bytes(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else { return nil }
+            let contentType = (http.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
+            if contentType.contains("application/json") {
+                var raw = Data()
+                for try await b in bytes { raw.append(b) }
+                if let obj = try? JSONSerialization.jsonObject(with: raw) as? [String: Any],
+                   let message = obj["message"] as? String, !message.isEmpty {
+                    return message
+                }
+                return nil
+            }
+            var answer = ""
+            for try await line in bytes.lines {
+                guard line.hasPrefix("data:") else { continue }
+                let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                if payload == "[DONE]" { break }
+                if let d = payload.data(using: .utf8),
+                   let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+                   let choices = obj["choices"] as? [[String: Any]],
+                   let delta = choices.first?["delta"] as? [String: Any],
+                   let content = delta["content"] as? String {
+                    answer += content
+                }
+            }
+            return answer.isEmpty ? nil : answer
+        } catch {
+            return nil
+        }
+    }
+
     /// Calls the `meeting-notes` edge function to summarise a transcript / notes.
     func generateInsights(transcript: String, durationSeconds: Int, templateId: String? = nil) async -> NoteInsights? {
         guard let token, transcript.trimmingCharacters(in: .whitespacesAndNewlines).count > 10 else { return nil }

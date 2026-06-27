@@ -11,6 +11,7 @@ struct DashboardCustomizerView: View {
 
     enum CustomizerTab: String, CaseIterable {
         case sections = "Sections"
+        case tabs = "Tabs"
         case actions = "Quick Actions"
     }
 
@@ -26,10 +27,10 @@ struct DashboardCustomizerView: View {
                     .listRowBackground(Color.clear)
                 }
 
-                if tab == .sections {
-                    sectionsContent
-                } else {
-                    quickActionsContent
+                switch tab {
+                case .sections: sectionsContent
+                case .tabs: navTabsContent
+                case .actions: quickActionsContent
                 }
             }
             .environment(\.editMode, $editMode)
@@ -39,7 +40,11 @@ struct DashboardCustomizerView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Reset") {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        if tab == .sections { store.reset() } else { store.resetQuickActions() }
+                        switch tab {
+                        case .sections: store.reset()
+                        case .tabs: store.resetNavTabs()
+                        case .actions: store.resetQuickActions()
+                        }
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -134,6 +139,62 @@ struct DashboardCustomizerView: View {
             .buttonStyle(.plain)
         }
         .opacity(section.visible ? 1 : 0.5)
+    }
+
+    // MARK: - Bottom Tabs tab
+
+    @ViewBuilder
+    private var navTabsContent: some View {
+        Section {
+            ForEach(store.navTabs) { tab in
+                navTabRow(tab, pinned: true)
+            }
+            .onMove { store.moveNavTab(from: $0, to: $1) }
+        } header: {
+            Text("Bottom tab bar")
+        } footer: {
+            Text("Drag to reorder. The middle tab becomes the raised center button. Show \(NavTabCatalog.minSelected)–\(NavTabCatalog.maxSelected) tabs.")
+        }
+
+        if !store.availableNavTabs.isEmpty {
+            Section {
+                ForEach(store.availableNavTabs) { tab in
+                    navTabRow(tab, pinned: false)
+                }
+            } header: {
+                Text("Available")
+            }
+        }
+    }
+
+    private func navTabRow(_ tab: DrawerDestination, pinned: Bool) -> some View {
+        let atMax = store.navTabIds.count >= NavTabCatalog.maxSelected
+        let atMin = store.navTabIds.count <= NavTabCatalog.minSelected
+        let disabled = pinned ? atMin : atMax
+        return HStack(spacing: 12) {
+            Image(systemName: tab.icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(pinned ? Theme.primary : Theme.inkSecondary)
+                .frame(width: 34, height: 34)
+                .background((pinned ? Theme.primary : Theme.inkSecondary).opacity(0.12))
+                .clipShape(.rect(cornerRadius: 9))
+            Text(tab.tabTitle)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(pinned ? Theme.ink : Theme.inkSecondary)
+            Spacer(minLength: 0)
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                if pinned { store.removeNavTab(tab.rawValue) } else { store.addNavTab(tab.rawValue) }
+            } label: {
+                Image(systemName: pinned ? "minus.circle.fill" : "plus.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(pinned ? Theme.destructive : Theme.primary)
+                    .opacity(disabled ? 0.3 : 1)
+            }
+            .buttonStyle(.plain)
+            .disabled(disabled)
+        }
+        .opacity(pinned ? 1 : 0.85)
     }
 
     // MARK: - Quick Actions tab

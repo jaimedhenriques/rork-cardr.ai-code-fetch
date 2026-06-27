@@ -21,6 +21,7 @@ struct NoteDetailView: View {
     @State private var shareURL: URL?
     @State private var showDeleteConfirm = false
     @State private var copied = false
+    @State private var showChat = false
     @Environment(\.dismiss) private var dismiss
 
     init(note: MeetingNote) {
@@ -34,6 +35,7 @@ struct NoteDetailView: View {
                 header
                 if isAnalyzing { analyzingBanner }
                 if draft.hasInsights && draft.hasContent && !isEditing { toolbarRow }
+                if draft.hasContent && !isEditing { askButton }
 
                 summaryCard
                 analyticsCard
@@ -50,7 +52,7 @@ struct NoteDetailView: View {
                     readSection("Notes", icon: "pencil", body: manual)
                 }
                 if let transcript = draft.transcript, !transcript.isEmpty, !isEditing {
-                    readSection("Transcript", icon: "waveform", body: transcript)
+                    transcriptCard(transcript)
                 }
                 if isEmptyNote && !isEditing {
                     Text("This note has no content yet.")
@@ -76,6 +78,7 @@ struct NoteDetailView: View {
             }
         }
         .sheet(item: $shareURL) { url in ShareSheet(items: [url]) }
+        .sheet(isPresented: $showChat) { NoteChatView(note: draft) }
         .confirmationDialog("Delete this note?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 Task { await data.deleteNote(note); dismiss() }
@@ -147,6 +150,36 @@ struct NoteDetailView: View {
                 .foregroundStyle(Theme.inkSecondary)
             }
         }
+    }
+
+    /// Prominent entry point to chat with this meeting (Granola/Plaud signature feature).
+    private var askButton: some View {
+        Button { showChat = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(Theme.brandGradient, in: RoundedRectangle(cornerRadius: 10))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Ask this meeting")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Text("Chat with the summary, transcript & action items")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.inkSecondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.inkSecondary.opacity(0.5))
+            }
+            .padding(12)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.primary.opacity(0.25), lineWidth: 1))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
     private var analyzingBanner: some View {
@@ -570,6 +603,39 @@ struct NoteDetailView: View {
                     }
                 }
                 content()
+            }
+        }
+    }
+
+    /// Renders a transcript with speaker labels styled into rows (Otter-style)
+    /// when the text is speaker-segmented; otherwise shows it as a plain block.
+    @ViewBuilder
+    private func transcriptCard(_ transcript: String) -> some View {
+        let segments = TranscriptSegment.parse(transcript)
+        sectionCard("Transcript", icon: "waveform", tint: Theme.inkSecondary,
+                    trailing: segments.contains(where: { $0.speaker != nil }) ? "\(Set(segments.compactMap { $0.speaker }).count) speakers" : nil) {
+            if segments.contains(where: { $0.speaker != nil }) {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(segments) { segment in
+                        VStack(alignment: .leading, spacing: 3) {
+                            if let speaker = segment.speaker {
+                                Text(speaker)
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(segment.tint)
+                            }
+                            Text(segment.text)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.ink.opacity(0.85))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            } else {
+                Text(transcript)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.inkSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
             }
         }
     }

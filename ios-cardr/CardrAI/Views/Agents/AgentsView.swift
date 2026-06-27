@@ -39,6 +39,9 @@ struct AgentsView: View {
             .background(Theme.background)
             .navigationTitle("Agents")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { DrawerMenuButton() }
+            }
             .navigationDestination(for: Agent.self) { agent in
                 AgentDetailView(agentId: agent.id)
             }

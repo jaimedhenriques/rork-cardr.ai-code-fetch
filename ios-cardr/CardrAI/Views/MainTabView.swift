@@ -3,7 +3,8 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(SessionStore.self) private var session
     @State private var data: DataStore
-    @State private var selection: Tab = .dashboard
+    @State private var layout = DashboardLayoutStore()
+    @State private var selectedNav: DrawerDestination = .home
     @State private var drawerOpen = false
     @State private var coverRoute: DrawerDestination?
     @State private var showSettings = false
@@ -11,60 +12,29 @@ struct MainTabView: View {
     @State private var pendingCommand: DrawerDestination?
     @State private var pendingSignOut = false
 
-    enum Tab: Hashable, CaseIterable {
-        case dashboard, contacts, scan, notes, card
-
-        var title: String {
-            switch self {
-            case .dashboard: "Home"
-            case .contacts: "Contacts"
-            case .scan: "Scan"
-            case .notes: "Notes"
-            case .card: "My Card"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .dashboard: "square.grid.2x2.fill"
-            case .contacts: "person.2.fill"
-            case .scan: "camera.viewfinder"
-            case .notes: "note.text"
-            case .card: "person.crop.rectangle.fill"
-            }
-        }
-    }
-
     init(session: SessionStore) {
         _data = State(initialValue: DataStore(session: session))
     }
 
     /// The drawer item currently active, used to highlight the menu.
     private var current: DrawerDestination {
-        if let coverRoute { return coverRoute }
-        switch selection {
-        case .dashboard: return .home
-        case .contacts: return .contacts
-        case .scan: return .scan
-        case .notes: return .notes
-        case .card: return .myCard
-        }
+        coverRoute ?? selectedNav
     }
 
     var body: some View {
         ZStack {
             Group {
-                switch selection {
-                case .dashboard: DashboardView()
-                case .contacts: ContactsView()
-                case .scan: ScanView()
-                case .notes: NotesView()
-                case .card: MyCardView()
-                }
+                tabRoot(for: selectedNav)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .safeAreaInset(edge: .bottom) {
-                CardrAITabBar(selection: $selection)
+                CardrAITabBar(tabs: layout.navTabs, selected: selectedNav) { destination in
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    withAnimation(.snappy(duration: 0.25)) {
+                        selectedNav = destination
+                        coverRoute = nil
+                    }
+                }
             }
             .ignoresSafeArea(.keyboard)
 
@@ -89,6 +59,7 @@ struct MainTabView: View {
         .id(data.themeVersion)
         .tint(Theme.primary)
         .environment(data)
+        .environment(layout)
         .environment(\.openDrawer) { drawerOpen = true }
         .environment(\.openCommandPalette) { showCommandPalette = true }
         .environment(\.openDestination) { handleSelect($0) }
@@ -133,13 +104,48 @@ struct MainTabView: View {
 
     private func handleSelect(_ destination: DrawerDestination) {
         withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { drawerOpen = false }
-        if let tab = destination.tab {
-            selection = tab
+        if NavTabCatalog.all.contains(destination) {
+            // Anything renderable as a tab root becomes the active root.
+            selectedNav = destination
             coverRoute = nil
         } else if destination == .settings {
             showSettings = true
         } else {
             coverRoute = destination
+        }
+    }
+
+    /// Renders the active bottom-nav destination as a full tab root. Destinations
+    /// that own their `NavigationStack` render directly; the rest are wrapped so
+    /// they always expose a drawer button.
+    @ViewBuilder
+    private func tabRoot(for destination: DrawerDestination) -> some View {
+        switch destination {
+        case .home: DashboardView()
+        case .contacts: ContactsView()
+        case .scan: ScanView()
+        case .notes: NotesView()
+        case .myCard: MyCardView()
+        case .agents: AgentsView()
+        case .leads: wrappedRoot { PipelineView() }
+        case .events: wrappedRoot { EventsView() }
+        case .calendar: wrappedRoot { CalendarView() }
+        case .aiChat: wrappedRoot { AIChatView() }
+        case .automations: wrappedRoot { AutomationsView() }
+        case .admin: wrappedRoot { AdminView() }
+        default: DashboardView()
+        }
+    }
+
+    /// Wraps a destination that lacks its own `NavigationStack` so it renders as a
+    /// proper tab root with a leading drawer button.
+    @ViewBuilder
+    private func wrappedRoot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        NavigationStack {
+            content()
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) { DrawerMenuButton() }
+                }
         }
     }
 
@@ -195,17 +201,21 @@ extension EnvironmentValues {
     }
 }
 
-/// Floating glass tab bar with an elevated center scan button — mirrors the web `BottomNav`.
+/// Floating glass tab bar with an elevated center button — mirrors the web `BottomNav`.
+/// Renders the user's chosen tabs; the middle item becomes the raised center button.
 private struct CardrAITabBar: View {
-    @Binding var selection: MainTabView.Tab
+    let tabs: [DrawerDestination]
+    let selected: DrawerDestination
+    let onSelect: (DrawerDestination) -> Void
 
-    private let order: [MainTabView.Tab] = [.dashboard, .contacts, .scan, .notes, .card]
+    /// Index of the raised center item (the middle of the list), matching the web.
+    private var centerIndex: Int { tabs.isEmpty ? 0 : tabs.count / 2 }
 
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
-            ForEach(order, id: \.self) { tab in
-                if tab == .scan {
-                    centerButton
+            ForEach(Array(tabs.enumerated()), id: \.element) { index, tab in
+                if index == centerIndex {
+                    centerButton(tab)
                         .frame(maxWidth: .infinity)
                 } else {
                     tabItem(tab)
@@ -225,16 +235,17 @@ private struct CardrAITabBar: View {
         .padding(.bottom, 6)
     }
 
-    private func tabItem(_ tab: MainTabView.Tab) -> some View {
-        let isActive = selection == tab
+    private func tabItem(_ tab: DrawerDestination) -> some View {
+        let isActive = selected == tab
         return Button {
-            withAnimation(.snappy(duration: 0.25)) { selection = tab }
+            onSelect(tab)
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: tab.icon)
                     .font(.system(size: 18, weight: isActive ? .bold : .medium))
-                Text(tab.title)
+                Text(tab.tabTitle)
                     .font(.system(size: 10, weight: isActive ? .bold : .medium))
+                    .lineLimit(1)
             }
             .foregroundStyle(isActive ? Theme.primary : Theme.inkSecondary)
             .frame(maxWidth: .infinity)
@@ -247,10 +258,10 @@ private struct CardrAITabBar: View {
         .buttonStyle(.plain)
     }
 
-    private var centerButton: some View {
-        let isActive = selection == .scan
+    private func centerButton(_ tab: DrawerDestination) -> some View {
+        let isActive = selected == tab
         return Button {
-            withAnimation(.snappy(duration: 0.25)) { selection = .scan }
+            onSelect(tab)
         } label: {
             VStack(spacing: 3) {
                 ZStack {
@@ -258,14 +269,15 @@ private struct CardrAITabBar: View {
                         .fill(Theme.brandGradient)
                         .frame(width: 52, height: 52)
                         .shadow(color: Theme.primary.opacity(0.4), radius: 12, y: 6)
-                    Image(systemName: MainTabView.Tab.scan.icon)
+                    Image(systemName: tab.icon)
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(.white)
                 }
                 .scaleEffect(isActive ? 1.05 : 1)
-                Text("Scan")
+                Text(tab.tabTitle)
                     .font(.system(size: 10, weight: isActive ? .bold : .medium))
                     .foregroundStyle(isActive ? Theme.primary : Theme.inkSecondary)
+                    .lineLimit(1)
             }
             .offset(y: -18)
         }

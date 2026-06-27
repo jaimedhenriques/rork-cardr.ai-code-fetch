@@ -14,10 +14,10 @@ struct DashboardView: View {
     @Environment(DataStore.self) private var data
     @Environment(\.openURL) private var openURL
     @Environment(\.openDestination) private var openDestination
+    @Environment(DashboardLayoutStore.self) private var layout
     @State private var showShareSheet = false
     @State private var showSettings = false
     @State private var showCustomizer = false
-    @State private var layout = DashboardLayoutStore()
 
     var body: some View {
         NavigationStack {
