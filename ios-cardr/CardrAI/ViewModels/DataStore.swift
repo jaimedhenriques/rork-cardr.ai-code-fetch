@@ -1748,6 +1748,270 @@ final class DataStore {
         }
     }
 
+    /// Generated sequence draft returned by the `generate-sequence` edge function.
+    struct GeneratedSequence {
+        var name: String
+        var description: String
+        var steps: [SequenceStep]
+    }
+
+    /// Calls the `generate-sequence` edge function to draft a multi-step sequence.
+    func generateSequence(goal: String, channel: String, tone: String, steps: Int, audience: String) async -> GeneratedSequence? {
+        guard let token else { return nil }
+        var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("generate-sequence"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let body: [String: Any] = ["goal": goal, "channel": channel, "tone": tone, "steps": steps, "audience": audience]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let seq = obj["sequence"] as? [String: Any] else { return nil }
+            let rawSteps = seq["steps"] as? [[String: Any]] ?? []
+            let parsed: [SequenceStep] = rawSteps.enumerated().map { index, s in
+                SequenceStep(
+                    id: nil,
+                    stepOrder: (s["step_order"] as? Int) ?? index + 1,
+                    channel: (s["channel"] as? String) ?? "email",
+                    delayDays: (s["delay_days"] as? Int) ?? (index == 0 ? 0 : 3),
+                    subjectTemplate: s["subject_template"] as? String,
+                    bodyTemplate: (s["body_template"] as? String) ?? ""
+                )
+            }
+            return GeneratedSequence(
+                name: (seq["name"] as? String) ?? "",
+                description: (seq["description"] as? String) ?? "",
+                steps: parsed
+            )
+        } catch {
+            return nil
+        }
+    }
+
+    /// Creates a sequence and its steps, then refreshes the list. Returns the new id.
+    @discardableResult
+    func createSequence(name: String, description: String, channel: String, tone: String, goal: String, steps: [SequenceStep]) async -> String? {
+        guard let token, let userId = session.userId else {
+            loadError = "You need to be signed in."
+            return nil
+        }
+        do {
+            var seqValues: [String: AnyEncodable] = [
+                "user_id": AnyEncodable(userId),
+                "name": AnyEncodable(name),
+                "channel": AnyEncodable(channel),
+                "tone": AnyEncodable(tone),
+            ]
+            if !description.trimmingCharacters(in: .whitespaces).isEmpty {
+                seqValues["description"] = AnyEncodable(description)
+            }
+            if !goal.trimmingCharacters(in: .whitespaces).isEmpty {
+                seqValues["goal"] = AnyEncodable(goal)
+            }
+            let created = try await service.insertReturning(
+                [AutomationSequence].self,
+                table: "automation_sequences",
+                token: token,
+                values: [seqValues]
+            )
+            guard let sequence = created.first else { return nil }
+            let stepValues: [[String: AnyEncodable]] = steps.enumerated().map { index, step in
+                var v: [String: AnyEncodable] = [
+                    "sequence_id": AnyEncodable(sequence.id),
+                    "user_id": AnyEncodable(userId),
+                    "step_order": AnyEncodable(index + 1),
+                    "channel": AnyEncodable(step.channel),
+                    "delay_days": AnyEncodable(step.delayDays),
+                    "body_template": AnyEncodable(step.bodyTemplate),
+                ]
+                if let subject = step.subjectTemplate, !subject.isEmpty {
+                    v["subject_template"] = AnyEncodable(subject)
+                }
+                return v
+            }
+            if !stepValues.isEmpty {
+                try await service.insert(table: "automation_sequence_steps", token: token, values: stepValues[0])
+                for v in stepValues.dropFirst() {
+                    try await service.insert(table: "automation_sequence_steps", token: token, values: v)
+                }
+            }
+            await loadSequences()
+            return sequence.id
+        } catch {
+            loadError = "Could not create sequence."
+            return nil
+        }
+    }
+
+    /// Loads the steps for a sequence (used when enrolling contacts).
+    func loadSteps(sequenceId: String) async -> [SequenceStep] {
+        guard let token else { return [] }
+        do {
+            return try await service.fetch(
+                [SequenceStep].self,
+                table: "automation_sequence_steps",
+                token: token,
+                query: [
+                    URLQueryItem(name: "sequence_id", value: "eq.\(sequenceId)"),
+                    URLQueryItem(name: "order", value: "step_order.asc"),
+                ]
+            )
+        } catch {
+            return []
+        }
+    }
+
+    /// Fills `{{name}}` style placeholders from a contact, mirroring the web helper.
+    private func fillPlaceholders(_ template: String, contact: Contact) -> String {
+        guard !template.isEmpty else { return "" }
+        let first = contact.name.split(separator: " ").first.map(String.init) ?? "there"
+        return template
+            .replacingOccurrences(of: "{{name}}", with: first.isEmpty ? "there" : first)
+            .replacingOccurrences(of: "{{full_name}}", with: contact.name)
+            .replacingOccurrences(of: "{{company}}", with: contact.company?.isEmpty == false ? contact.company! : "your company")
+            .replacingOccurrences(of: "{{title}}", with: contact.title?.isEmpty == false ? contact.title! : "your role")
+            .replacingOccurrences(of: "{{industry}}", with: contact.industry?.isEmpty == false ? contact.industry! : "your industry")
+    }
+
+    /// Enrolls contacts into a sequence — creates a draft run plus personalized
+    /// message drafts per step. Returns how many enrolled. Mirrors the web flow.
+    @discardableResult
+    func enrollContacts(sequenceId: String, contactIds: [String]) async -> Int {
+        guard let token, let userId = session.userId else { return 0 }
+        let steps = await loadSteps(sequenceId: sequenceId)
+        guard !steps.isEmpty else {
+            loadError = "Sequence has no steps."
+            return 0
+        }
+        let selected = contacts.filter { contactIds.contains($0.id) }
+        var enrolled = 0
+        for contact in selected {
+            do {
+                let runs = try await service.insertReturning(
+                    [SequenceRun].self,
+                    table: "automation_sequence_runs",
+                    token: token,
+                    values: [[
+                        "sequence_id": AnyEncodable(sequenceId),
+                        "contact_id": AnyEncodable(contact.id),
+                        "user_id": AnyEncodable(userId),
+                        "status": AnyEncodable("draft"),
+                    ]]
+                )
+                guard let run = runs.first else { continue }
+                let now = Date()
+                for step in steps {
+                    var v: [String: AnyEncodable] = [
+                        "run_id": AnyEncodable(run.id),
+                        "user_id": AnyEncodable(userId),
+                        "channel": AnyEncodable(step.channel),
+                        "body": AnyEncodable(fillPlaceholders(step.bodyTemplate, contact: contact)),
+                        "status": AnyEncodable("pending"),
+                        "scheduled_at": AnyEncodable(Self.isoString(now.addingTimeInterval(Double(step.delayDays) * 86400))),
+                    ]
+                    if let stepId = step.id { v["step_id"] = AnyEncodable(stepId) }
+                    if let subject = step.subjectTemplate, !subject.isEmpty {
+                        v["subject"] = AnyEncodable(fillPlaceholders(subject, contact: contact))
+                    }
+                    try await service.insert(table: "automation_sequence_messages", token: token, values: v)
+                }
+                enrolled += 1
+            } catch {
+                continue
+            }
+        }
+        await loadSequences()
+        return enrolled
+    }
+
+    /// Loads the message drafts for a run, ordered by schedule.
+    func loadRunMessages(runId: String) async -> [RunMessage] {
+        guard let token else { return [] }
+        do {
+            return try await service.fetch(
+                [RunMessage].self,
+                table: "automation_sequence_messages",
+                token: token,
+                query: [
+                    URLQueryItem(name: "run_id", value: "eq.\(runId)"),
+                    URLQueryItem(name: "order", value: "scheduled_at.asc"),
+                ]
+            )
+        } catch {
+            return []
+        }
+    }
+
+    /// Updates a message's body/subject/status.
+    func updateMessage(id: String, body: String? = nil, subject: String? = nil, status: String? = nil) async {
+        guard let token else { return }
+        var values: [String: AnyEncodable] = [:]
+        if let body { values["body"] = AnyEncodable(body) }
+        if let subject { values["subject"] = AnyEncodable(subject) }
+        if let status { values["status"] = AnyEncodable(status) }
+        guard !values.isEmpty else { return }
+        try? await service.update(table: "automation_sequence_messages", token: token, match: ["id": id], values: values)
+    }
+
+    /// Approves & triggers a run: marks it running and its pending messages approved.
+    func triggerRun(_ run: SequenceRun) async {
+        guard let token else { return }
+        do {
+            try await service.update(
+                table: "automation_sequence_runs",
+                token: token,
+                match: ["id": run.id],
+                values: ["status": AnyEncodable("running"), "started_at": AnyEncodable(Self.isoString(Date()))]
+            )
+            try await service.update(
+                table: "automation_sequence_messages",
+                token: token,
+                match: ["run_id": run.id, "status": "pending"],
+                values: ["status": AnyEncodable("approved")]
+            )
+            await loadSequences()
+        } catch {
+            loadError = "Could not trigger run."
+        }
+    }
+
+    /// Marks a message as sent.
+    func markMessageSent(id: String) async {
+        guard let token else { return }
+        try? await service.update(
+            table: "automation_sequence_messages",
+            token: token,
+            match: ["id": id],
+            values: ["status": AnyEncodable("sent"), "sent_at": AnyEncodable(Self.isoString(Date()))]
+        )
+    }
+
+    /// Cancels a run.
+    func cancelRun(_ run: SequenceRun) async {
+        guard let token else { return }
+        do {
+            try await service.update(
+                table: "automation_sequence_runs",
+                token: token,
+                match: ["id": run.id],
+                values: ["status": AnyEncodable("cancelled")]
+            )
+            await loadSequences()
+        } catch {
+            loadError = "Could not cancel run."
+        }
+    }
+
+    /// ISO-8601 string for timestamp columns.
+    private static func isoString(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: date)
+    }
+
     /// Loads meeting notes with their AI analytics for the Analytics dashboard.
     func loadAnalyticsNotes() async -> [AnalyticsNote] {
         guard let token else { return [] }
