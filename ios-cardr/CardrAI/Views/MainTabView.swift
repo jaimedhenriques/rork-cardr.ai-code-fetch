@@ -91,6 +91,7 @@ struct MainTabView: View {
         .environment(data)
         .environment(\.openDrawer) { drawerOpen = true }
         .environment(\.openCommandPalette) { showCommandPalette = true }
+        .environment(\.openDestination) { handleSelect($0) }
         .fullScreenCover(item: $coverRoute) { route in
             coverContent(route)
         }
@@ -177,6 +178,20 @@ struct MainTabView: View {
         case .admin: AdminView()
         default: EmptyView()
         }
+    }
+}
+
+// MARK: - Open-destination environment hook
+
+private struct OpenDestinationKey: EnvironmentKey {
+    static let defaultValue: (DrawerDestination) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    /// Routes to any app destination the way the drawer does (tab switch, sheet, or cover).
+    var openDestination: (DrawerDestination) -> Void {
+        get { self[OpenDestinationKey.self] }
+        set { self[OpenDestinationKey.self] = newValue }
     }
 }
 

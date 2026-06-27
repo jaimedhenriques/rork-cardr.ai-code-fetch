@@ -13,22 +13,24 @@ struct DashboardView: View {
     @Environment(SessionStore.self) private var session
     @Environment(DataStore.self) private var data
     @Environment(\.openURL) private var openURL
+    @Environment(\.openDestination) private var openDestination
     @State private var showShareSheet = false
     @State private var showSettings = false
+    @State private var showCustomizer = false
+    @State private var layout = DashboardLayoutStore()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    hero
-                    statsRow
-                    if !data.contacts.isEmpty { networkHealth }
-                    quickActions
-                    recentSection
+                    ForEach(layout.visibleSectionIds, id: \.self) { id in
+                        section(for: id)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 32)
+                .animation(.easeInOut(duration: 0.25), value: layout.visibleSectionIds)
             }
             .background(Theme.background)
             .navigationBarTitleDisplayMode(.inline)
@@ -44,6 +46,9 @@ struct DashboardView: View {
                         NavigationLink(value: DashboardRoute.aiChat) {
                             Image(systemName: "sparkles")
                         }
+                        Button { showCustomizer = true } label: {
+                            Image(systemName: "slider.horizontal.3")
+                        }
                         Button { showSettings = true } label: {
                             Image(systemName: "gearshape")
                         }
@@ -57,6 +62,22 @@ struct DashboardView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView()
             }
+            .sheet(isPresented: $showCustomizer) {
+                DashboardCustomizerView(store: layout)
+            }
+        }
+    }
+
+    /// Maps a saved section id to its rendered widget.
+    @ViewBuilder
+    private func section(for id: String) -> some View {
+        switch id {
+        case "greeting": hero
+        case "stats": statsRow
+        case "health": if !data.contacts.isEmpty { networkHealth }
+        case "quick_actions": quickActions
+        case "recent_contacts": recentSection
+        default: EmptyView()
         }
     }
 
@@ -254,20 +275,22 @@ struct DashboardView: View {
         return count == 0 ? "Track conferences" : "\(count) event\(count == 1 ? "" : "s")"
     }
 
+    private let quickActionColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12),
+    ]
+
     private var quickActions: some View {
-        HStack(spacing: 12) {
-            NavigationLink(value: DashboardRoute.pipeline) {
-                quickActionCard(title: "Pipeline", subtitle: "\(data.stagedContactCount) in pipeline", icon: "chart.bar.doc.horizontal.fill", tint: Theme.primary)
+        LazyVGrid(columns: quickActionColumns, spacing: 12) {
+            ForEach(layout.quickActions) { action in
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    openDestination(action.destination)
+                } label: {
+                    quickActionCard(title: action.label, subtitle: quickActionSubtitle(action.id), icon: action.icon, tint: action.tint)
+                }
+                .buttonStyle(PressableButtonStyle())
             }
-            .buttonStyle(PressableButtonStyle())
-            NavigationLink(value: DashboardRoute.events) {
-                quickActionCard(title: "Events", subtitle: eventsSubtitle, icon: "calendar", tint: Theme.warning)
-            }
-            .buttonStyle(PressableButtonStyle())
-            NavigationLink(value: DashboardRoute.export) {
-                quickActionCard(title: "Export", subtitle: "CSV · vCard", icon: "square.and.arrow.up.on.square.fill", tint: Theme.accent)
-            }
-            .buttonStyle(PressableButtonStyle())
         }
         .navigationDestination(for: DashboardRoute.self) { route in
             switch route {
@@ -276,6 +299,25 @@ struct DashboardView: View {
             case .events: EventsView()
             case .aiChat: AIChatView()
             }
+        }
+    }
+
+    /// A live, data-aware subtitle for each quick action card.
+    private func quickActionSubtitle(_ id: String) -> String {
+        switch id {
+        case "pipeline": return "\(data.stagedContactCount) in pipeline"
+        case "events": return eventsSubtitle
+        case "export": return "CSV · vCard"
+        case "scan": return "Capture a card"
+        case "card": return data.cardReady ? "Share your card" : "Set up your card"
+        case "calendar": return "Your schedule"
+        case "contacts": return "\(data.contacts.count) total"
+        case "notes": return "Meeting notes"
+        case "ai": return "Ask anything"
+        case "agents": return "Automate outreach"
+        case "automations": return "Workflows"
+        case "admin": return "Manage org"
+        default: return ""
         }
     }
 
