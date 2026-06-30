@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/context/LanguageContext";
 import ReactMarkdown from "react-markdown";
+import { SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+const CHAT_URL = `${SUPABASE_FUNCTIONS_URL}/ai-chat`;
 
 const AIChatSection = () => {
   const { contacts, folders } = useApp();
@@ -77,7 +78,7 @@ const AIChatSection = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         messages: userMessages,

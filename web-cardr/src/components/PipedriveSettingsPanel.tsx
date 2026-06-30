@@ -9,7 +9,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_FUNCTIONS_URL } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
@@ -80,10 +80,9 @@ const PipedriveSettingsPanel = () => {
     }
     setConnecting(true);
     try {
-      const projectUrl = import.meta.env.VITE_SUPABASE_URL;
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("No session");
-      const res = await fetch(`${projectUrl}/functions/v1/pipedrive-oauth/start`, {
+      const res = await fetch(`${SUPABASE_FUNCTIONS_URL}/pipedrive-oauth/start`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const json = await res.json();

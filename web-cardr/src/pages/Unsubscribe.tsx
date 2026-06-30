@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 import { useLanguage } from "@/context/LanguageContext";
 import { motion } from "framer-motion";
 import { MailX, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -22,11 +22,9 @@ const Unsubscribe = () => {
 
     const validate = async () => {
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const res = await fetch(
-          `${supabaseUrl}/functions/v1/handle-email-unsubscribe?token=${token}`,
-          { headers: { apikey: anonKey } }
+          `${SUPABASE_FUNCTIONS_URL}/handle-email-unsubscribe?token=${token}`,
+          { headers: { apikey: SUPABASE_ANON_KEY } }
         );
         const data = await res.json();
         if (res.ok && data.valid) setStatus("valid");

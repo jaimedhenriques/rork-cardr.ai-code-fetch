@@ -14,6 +14,12 @@ const SUPABASE_PUBLISHABLE_KEY =
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Resolved values (env var with hardcoded fallback) so feature code that calls
+// edge functions never ends up with `undefined/functions/v1/...` URLs when the
+// VITE_SUPABASE_* env vars are absent at build time.
+export const SUPABASE_FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
+export const SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,

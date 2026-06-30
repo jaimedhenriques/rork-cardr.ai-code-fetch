@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Send, X, Loader2, Mail, AlertTriangle, ListChecks, CalendarPlus, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 
 interface NoteChatProps {
   note: {
@@ -56,12 +57,12 @@ const NoteChat = ({ note }: NoteChatProps) => {
 
     try {
       const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/note-chat`,
+        `${SUPABASE_FUNCTIONS_URL}/note-chat`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({ messages: newMessages, note }),
         }

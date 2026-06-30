@@ -5,7 +5,7 @@ import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTe
 import type { AudioSource } from "@/hooks/useAudioRecorder";
 import { NOTE_TEMPLATES, NoteTemplate } from "@/lib/note-templates";
 import PageHeader from "@/components/PageHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
@@ -110,11 +110,11 @@ const NoteRecord = () => {
           // Server-side transcription with real speaker diarization — returns a
           // Speaker 1 / Speaker 2 labelled transcript so the AI summary and the
           // saved note read like a real conversation.
-          const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-diarize`;
+          const url = `${SUPABASE_FUNCTIONS_URL}/transcribe-diarize`;
           const resp = await fetch(url, {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
             body: formData,
           });

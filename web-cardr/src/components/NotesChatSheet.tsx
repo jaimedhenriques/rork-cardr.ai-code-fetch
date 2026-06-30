@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, X, Send, Loader2, Sparkles, Mic, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 
 interface NoteForContext {
   title: string;
@@ -28,7 +29,7 @@ const SUGGESTIONS = [
   "What key decisions were made?",
 ];
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notes-chat`;
+const CHAT_URL = `${SUPABASE_FUNCTIONS_URL}/notes-chat`;
 
 export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteForContext[]; open: boolean; onClose: () => void }) {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -86,7 +87,7 @@ export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteFo
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ messages: allMsgs, notes }),
       });
