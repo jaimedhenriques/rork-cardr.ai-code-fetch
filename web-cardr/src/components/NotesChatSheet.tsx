@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, Loader2, Sparkles, Mic, Square } from "lucide-react";
+import { MessageSquare, X, Send, Loader2, Sparkles, Mic, Square, AlertCircle, RotateCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
@@ -35,6 +35,8 @@ export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteFo
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastMessages, setLastMessages] = useState<Msg[] | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -73,12 +75,9 @@ export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteFo
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async (text: string) => {
-    if (!text.trim() || loading) return;
-    const userMsg: Msg = { role: "user", content: text.trim() };
-    const allMsgs = [...messages, userMsg];
-    setMessages(allMsgs);
-    setInput("");
+  const runChat = async (allMsgs: Msg[]) => {
+    setLastMessages(allMsgs);
+    setError(null);
     setLoading(true);
 
     let assistantSoFar = "";
@@ -94,9 +93,7 @@ export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteFo
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Request failed" }));
-        toast.error(err.error || "AI request failed");
-        setLoading(false);
-        return;
+        throw new Error(err.error || "AI request failed");
       }
 
       if (!resp.body) throw new Error("No stream");
@@ -137,11 +134,24 @@ export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteFo
           }
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Failed to get response");
+      setError(e?.message || "Failed to get response");
     }
     setLoading(false);
+  };
+
+  const send = (text: string) => {
+    if (!text.trim() || loading) return;
+    const userMsg: Msg = { role: "user", content: text.trim() };
+    const allMsgs = [...messages, userMsg];
+    setMessages(allMsgs);
+    setInput("");
+    runChat(allMsgs);
+  };
+
+  const handleRetry = () => {
+    if (lastMessages) runChat(lastMessages);
   };
 
   if (!open) return null;
@@ -205,6 +215,24 @@ export default function NotesChatSheet({ notes, open, onClose }: { notes: NoteFo
                 <div className="bg-card border border-border rounded-2xl px-4 py-3">
                   <Loader2 size={16} className="text-primary animate-spin" />
                 </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3">
+                <AlertCircle size={16} className="text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-destructive">Couldn't reach the assistant</p>
+                  <p className="text-[12px] text-destructive/80 mt-0.5 break-words">{error}</p>
+                </div>
+                <button
+                  onClick={handleRetry}
+                  disabled={loading || !lastMessages}
+                  className="flex items-center gap-1.5 rounded-lg bg-destructive/15 px-2.5 py-1.5 text-[12px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-40 shrink-0"
+                >
+                  <RotateCw size={12} className={loading ? "animate-spin" : ""} />
+                  Retry
+                </button>
               </div>
             )}
             <div ref={bottomRef} />

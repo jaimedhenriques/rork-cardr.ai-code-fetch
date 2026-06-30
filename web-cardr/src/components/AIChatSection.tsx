@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Loader2, Sparkles, Trash2, Mic, Square } from "lucide-react";
+import { Send, Bot, User, Loader2, Sparkles, Trash2, Mic, Square, AlertCircle, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -17,6 +17,8 @@ const AIChatSection = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUserMessages, setLastUserMessages] = useState<Msg[] | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [listening, setListening] = useState(false);
@@ -140,22 +142,32 @@ const AIChatSection = () => {
     }
   };
 
-  const handleSend = async (text?: string) => {
-    const message = text || input.trim();
-    if (!message || isLoading) return;
-    
-    const userMsg: Msg = { role: "user", content: message };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+  const runChat = async (userMessages: Msg[]) => {
+    setLastUserMessages(userMessages);
+    setError(null);
     setIsLoading(true);
-
     try {
-      await streamChat([...messages, userMsg]);
+      await streamChat(userMessages);
     } catch (e: any) {
-      setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I encountered an error: ${e.message}` }]);
+      setError(e?.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSend = async (text?: string) => {
+    const message = text || input.trim();
+    if (!message || isLoading) return;
+
+    const userMsg: Msg = { role: "user", content: message };
+    const next = [...messages, userMsg];
+    setMessages(next);
+    setInput("");
+    await runChat(next);
+  };
+
+  const handleRetry = () => {
+    if (lastUserMessages) runChat(lastUserMessages);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -234,6 +246,27 @@ const AIChatSection = () => {
                 <span className="text-xs text-muted-foreground">{t("ai.thinking")}</span>
               </div>
             </div>
+          )}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3"
+            >
+              <AlertCircle size={16} className="text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-[13px] font-semibold text-destructive">{t("ai.errorTitle")}</p>
+                <p className="text-[12px] text-destructive/80 mt-0.5">{error}</p>
+              </div>
+              <button
+                onClick={handleRetry}
+                disabled={isLoading || !lastUserMessages}
+                className="flex items-center gap-1.5 rounded-lg bg-destructive/15 px-2.5 py-1.5 text-[12px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-40"
+              >
+                <RotateCw size={12} className={isLoading ? "animate-spin" : ""} />
+                {t("ai.retry")}
+              </button>
+            </motion.div>
           )}
         </div>
       ) : (

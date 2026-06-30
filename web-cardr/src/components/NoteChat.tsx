@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, X, Loader2, Mail, AlertTriangle, ListChecks, CalendarPlus, Sparkles } from "lucide-react";
+import { MessageSquare, Send, X, Loader2, Mail, AlertTriangle, ListChecks, CalendarPlus, Sparkles, AlertCircle, RotateCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 
@@ -36,6 +36,8 @@ const NoteChat = ({ note }: NoteChatProps) => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastMessages, setLastMessages] = useState<Msg[] | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -45,12 +47,9 @@ const NoteChat = ({ note }: NoteChatProps) => {
     }
   }, [messages, open]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || streaming) return;
-    const userMsg: Msg = { role: "user", content: text.trim() };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setInput("");
+  const runChat = useCallback(async (newMessages: Msg[]) => {
+    setLastMessages(newMessages);
+    setError(null);
     setStreaming(true);
 
     let assistantSoFar = "";
@@ -70,9 +69,7 @@ const NoteChat = ({ note }: NoteChatProps) => {
 
       if (!resp.ok || !resp.body) {
         const err = await resp.json().catch(() => ({ error: "AI unavailable" }));
-        setMessages(prev => [...prev, { role: "assistant", content: err.error || "Something went wrong." }]);
-        setStreaming(false);
-        return;
+        throw new Error(err.error || "Something went wrong.");
       }
 
       const reader = resp.body.getReader();
@@ -114,13 +111,26 @@ const NoteChat = ({ note }: NoteChatProps) => {
           }
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("note-chat stream error:", e);
-      setMessages(prev => [...prev, { role: "assistant", content: "Failed to connect to AI." }]);
+      setError(e?.message || "Failed to connect to AI.");
     } finally {
       setStreaming(false);
     }
-  }, [messages, streaming, note]);
+  }, [note]);
+
+  const sendMessage = useCallback((text: string) => {
+    if (!text.trim() || streaming) return;
+    const userMsg: Msg = { role: "user", content: text.trim() };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput("");
+    runChat(newMessages);
+  }, [messages, streaming, runChat]);
+
+  const handleRetry = () => {
+    if (lastMessages) runChat(lastMessages);
+  };
 
   const handleQuickAction = (prompt: string) => {
     sendMessage(prompt);
@@ -211,6 +221,24 @@ const NoteChat = ({ note }: NoteChatProps) => {
                     <div className="bg-secondary rounded-2xl rounded-bl-md px-3.5 py-2.5">
                       <Loader2 size={14} className="text-primary animate-spin" />
                     </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/10 px-3.5 py-2.5">
+                    <AlertCircle size={15} className="text-destructive shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-destructive">Couldn't reach the assistant</p>
+                      <p className="text-[11px] text-destructive/80 mt-0.5 break-words">{error}</p>
+                    </div>
+                    <button
+                      onClick={handleRetry}
+                      disabled={streaming || !lastMessages}
+                      className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-40 shrink-0"
+                    >
+                      <RotateCw size={11} className={streaming ? "animate-spin" : ""} />
+                      Retry
+                    </button>
                   </div>
                 )}
               </div>

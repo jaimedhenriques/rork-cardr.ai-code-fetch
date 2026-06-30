@@ -172,6 +172,8 @@ export const EN_STRINGS: Record<string, string> = {
   "ai.placeholder": "Ask about your contacts, follow-ups, insights...",
   "ai.thinking": "Thinking...",
   "ai.clearChat": "Clear chat",
+  "ai.errorTitle": "Couldn't reach the assistant",
+  "ai.retry": "Retry",
   "ai.whoDidIMeet": "Who did I meet recently?",
   "ai.contactsInTech": "Contacts in tech",
   "ai.suggestFollowUps": "Suggest follow-ups",
