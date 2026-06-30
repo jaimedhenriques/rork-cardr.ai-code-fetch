@@ -6,10 +6,10 @@ import type { Database } from './types';
 // security on the backend governs access. These fallbacks keep the app
 // working when VITE_SUPABASE_* env vars are not provided at build time.
 const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ?? 'https://jzkngsrnykozfcuifrsl.supabase.co';
+  import.meta.env.VITE_SUPABASE_URL ?? 'https://nhalxqobrsuuzmmefeid.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-  'sb_publishable_FjvJ6VIpXw0edrLcLMKmKQ_fR69vesh';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oYWx4cW9icnN1dXptbWVmZWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMzYxNTMsImV4cCI6MjA5MDcxMjE1M30.JTMv2pWaLurqc-aCUNPkEReW1lImL6IlIpRe0k4SH0E';
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
