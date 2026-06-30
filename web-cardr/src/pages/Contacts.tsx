@@ -8,6 +8,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import LinkedInActions from "@/components/LinkedInActions";
@@ -326,10 +327,8 @@ const Contacts = () => {
   const handleEnrich = async (contact: Contact) => {
     setEnriching(contact.id);
     try {
-      const { data, error } = await supabase.functions.invoke("enrich-contact", {
-        body: { contact: { name: contact.name, company: contact.company, title: contact.title, email: contact.email } },
-      });
-      if (error) throw new Error(error.message);
+      const data = await enrichContactViaIcypeas({ name: contact.name, company: contact.company, title: contact.title, email: contact.email, linkedin: contact.linkedin, website: contact.website });
+      if (!data?.enriched) { toast.info(t("contacts.failedEnrich")); return; }
       if (data?.enriched) {
         const updates: Partial<Contact> = { enriched: true, enrichedAt: new Date().toISOString() };
         if (data.enriched.linkedin) updates.linkedin = data.enriched.linkedin;
@@ -367,10 +366,7 @@ const Contacts = () => {
       const contact = unenriched[i];
       setBulkProgress({ current: i + 1, total: unenriched.length });
       try {
-        const { data, error } = await supabase.functions.invoke("enrich-contact", {
-          body: { contact: { name: contact.name, company: contact.company, title: contact.title, email: contact.email } },
-        });
-        if (error) throw new Error(error.message);
+        const data = await enrichContactViaIcypeas({ name: contact.name, company: contact.company, title: contact.title, email: contact.email, linkedin: contact.linkedin, website: contact.website });
         if (data?.enriched) {
           const updates: Partial<Contact> = { enriched: true, enrichedAt: new Date().toISOString() };
           if (data.enriched.linkedin) updates.linkedin = data.enriched.linkedin;

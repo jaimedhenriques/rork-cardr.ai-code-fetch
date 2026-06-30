@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { triggerWebhooks } from "@/lib/webhook";
 import { fireWebhook } from "@/lib/webhooks";
 import { dedupePhonePatch } from "@/lib/phone-dedup";
+import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { cleanFolderName, findFolderByName } from "@/lib/folder-match";
 
 export interface Contact {
@@ -299,9 +300,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       saveLocal(GUEST_CONTACTS_KEY, updated);
       // Auto-enrich for guest users too
       if (!c.enriched && c.name) {
-        supabase.functions.invoke("enrich-contact", {
-          body: { contact: { name: c.name, company: c.company, title: c.title, email: c.email, linkedin: c.linkedin } },
-        }).then(({ data: enrichData }) => {
+        enrichContactViaIcypeas({ name: c.name, company: c.company, title: c.title, email: c.email, linkedin: c.linkedin, website: c.website }).then((enrichData) => {
           if (enrichData?.enriched) {
             const e = enrichData.enriched;
             const updates: Partial<Contact> = { enriched: true, enrichedAt: new Date().toISOString() };
@@ -375,9 +374,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
       // Auto-enrich in background (fire-and-forget)
       if (!mapped.enriched && mapped.name) {
-        supabase.functions.invoke("enrich-contact", {
-          body: { contact: { name: mapped.name, company: mapped.company, title: mapped.title, email: mapped.email, linkedin: mapped.linkedin } },
-        }).then(({ data: enrichData }) => {
+        enrichContactViaIcypeas({ name: mapped.name, company: mapped.company, title: mapped.title, email: mapped.email, linkedin: mapped.linkedin, website: mapped.website }).then((enrichData) => {
           if (enrichData?.enriched) {
             const e = enrichData.enriched;
             const updates: Partial<Contact> = {};

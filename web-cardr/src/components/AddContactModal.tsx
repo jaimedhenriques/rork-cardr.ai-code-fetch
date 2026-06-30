@@ -4,6 +4,7 @@ import { X, Check, Upload, UserPlus, Camera, Loader2, Image, Sparkles, Globe, Li
 import { useApp, type Contact } from "@/context/AppContext";
 
 import { supabase } from "@/integrations/supabase/client";
+import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { toast } from "sonner";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import LinkedInConnectModal from "@/components/LinkedInConnectModal";
@@ -109,10 +110,8 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
 
   const autoEnrich = useCallback(async (contactId: string, contact: Partial<Contact>) => {
     try {
-      const { data, error } = await supabase.functions.invoke("enrich-contact", {
-        body: { contact: { name: contact.name, company: contact.company, title: contact.title, email: contact.email } },
-      });
-      if (error || !data?.enriched) return;
+      const data = await enrichContactViaIcypeas({ name: contact.name, company: contact.company, title: contact.title, email: contact.email, linkedin: contact.linkedin, website: contact.website });
+      if (!data?.enriched) return;
       const updates: Partial<Contact> = { enriched: true, enrichedAt: new Date().toISOString() };
       if (data.enriched.linkedin) updates.linkedin = data.enriched.linkedin;
       if (data.enriched.website) updates.website = data.enriched.website;

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
+import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -184,9 +185,7 @@ const AIChat = () => {
           let enriched = 0;
           for (const contact of toEnrich.slice(0, 10)) {
             try {
-              const { data } = await supabase.functions.invoke("enrich-contact", {
-                body: { contact: { name: contact.name, company: contact.company, title: contact.title, email: contact.email } },
-              });
+              const data = await enrichContactViaIcypeas({ name: contact.name, company: contact.company, title: contact.title, email: contact.email, linkedin: contact.linkedin, website: contact.website });
               if (data?.enriched) {
                 const updates: Partial<Contact> = { enriched: true, enrichedAt: new Date().toISOString() };
                 if (data.enriched.linkedin) updates.linkedin = data.enriched.linkedin;
