@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Loader2, Sparkles, Mic, MicOff } from "lucide-react";
+import { Send, Bot, User, Loader2, Sparkles, Mic, MicOff, AlertCircle, RotateCw } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { useApp, type Contact } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +33,8 @@ const AIChat = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUserMessages, setLastUserMessages] = useState<Msg[] | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -307,22 +309,32 @@ const AIChat = () => {
     }
   };
 
+  const runChat = async (userMessages: Msg[]) => {
+    setLastUserMessages(userMessages);
+    setError(null);
+    setIsLoading(true);
+    try {
+      await streamChat(userMessages);
+    } catch (e: any) {
+      setError(e?.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSend = async (text?: string) => {
     const message = text || input.trim();
     if (!message || isLoading) return;
 
     const userMsg: Msg = { role: "user", content: message };
-    setMessages((prev) => [...prev, userMsg]);
+    const next = [...messages, userMsg];
+    setMessages(next);
     setInput("");
-    setIsLoading(true);
+    await runChat(next);
+  };
 
-    try {
-      await streamChat([...messages, userMsg]);
-    } catch (e: any) {
-      setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I encountered an error: ${e.message}` }]);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRetry = () => {
+    if (lastUserMessages) runChat(lastUserMessages);
   };
 
   return (
@@ -403,6 +415,27 @@ const AIChat = () => {
               <Loader2 size={14} className="animate-spin text-muted-foreground" />
             </div>
           </div>
+        )}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3"
+          >
+            <AlertCircle size={16} className="text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-destructive">{t("ai.errorTitle")}</p>
+              <p className="text-[12px] text-destructive/80 mt-0.5">{error}</p>
+            </div>
+            <button
+              onClick={handleRetry}
+              disabled={isLoading || !lastUserMessages}
+              className="flex items-center gap-1.5 rounded-lg bg-destructive/15 px-2.5 py-1.5 text-[12px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-40"
+            >
+              <RotateCw size={12} className={isLoading ? "animate-spin" : ""} />
+              {t("ai.retry")}
+            </button>
+          </motion.div>
         )}
       </div>
 
