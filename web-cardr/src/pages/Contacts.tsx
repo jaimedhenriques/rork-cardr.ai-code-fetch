@@ -1502,9 +1502,11 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
   onToggleCheck?: (id: string) => void;
 }) => {
   const { t } = useLanguage();
+  const { enrichingIds } = useApp();
   const isSelected = selectedContact?.id === contact.id;
   const currentStage = stages.find((s) => s.id === contact.stageId);
   const engagement = getEngagementScore(contact);
+  const isAutoEnriching = enrichingIds.has(contact.id) || enriching === contact.id;
 
   const handleClick = () => {
     if (bulkMode && onToggleCheck) {
@@ -1603,6 +1605,12 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
               ))}
             </PopoverContent>
           </Popover>
+        )}
+        {isAutoEnriching && !contact.enriched && (
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-primary shrink-0">
+            <Loader2 size={11} className="animate-spin" />
+            <span className="hidden sm:inline">{t("contacts.enriching")}</span>
+          </span>
         )}
         {contact.enriched && <Sparkles size={12} className="text-success shrink-0" />}
         {contact.phone && (

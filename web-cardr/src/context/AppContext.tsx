@@ -99,6 +99,8 @@ interface AppState {
   isGuest: boolean;
   contactLimit: number;
   canAddContact: boolean;
+  /** IDs of contacts currently being auto-enriched in the background. */
+  enrichingIds: Set<string>;
   setContacts: (c: Contact[]) => void;
   addContact: (c: Contact) => Promise<Contact | null> | void;
   updateContact: (id: string, updates: Partial<Contact>) => void;
@@ -204,6 +206,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [messageTemplates, setMessageTemplatesState] = useState<MessageTemplate[]>(() =>
     loadLocal<MessageTemplate[]>(TEMPLATES_KEY, DEFAULT_TEMPLATES)
   );
+  const [enrichingIds, setEnrichingIds] = useState<Set<string>>(new Set());
+
+  const markEnriching = useCallback((id: string, active: boolean) => {
+    setEnrichingIds((prev) => {
+      const next = new Set(prev);
+      if (active) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
 
   const canAddContact = contacts.length < FREE_CONTACT_LIMIT || !isGuest;
 
@@ -300,6 +312,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       saveLocal(GUEST_CONTACTS_KEY, updated);
       // Auto-enrich for guest users too
       if (!c.enriched && c.name) {
+        markEnriching(c.id, true);
         enrichContactViaIcypeas({ name: c.name, company: c.company, title: c.title, email: c.email, linkedin: c.linkedin, website: c.website }).then((enrichData) => {
           if (enrichData?.enriched) {
             const e = enrichData.enriched;
@@ -325,7 +338,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
               return newList;
             });
           }
-        }).catch((err) => console.warn("Auto-enrich failed:", err));
+        }).catch((err) => console.warn("Auto-enrich failed:", err)).finally(() => markEnriching(c.id, false));
       }
       return c;
     }
@@ -374,6 +387,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
       // Auto-enrich in background (fire-and-forget)
       if (!mapped.enriched && mapped.name) {
+        markEnriching(mapped.id, true);
         enrichContactViaIcypeas({ name: mapped.name, company: mapped.company, title: mapped.title, email: mapped.email, linkedin: mapped.linkedin, website: mapped.website }).then((enrichData) => {
           if (enrichData?.enriched) {
             const e = enrichData.enriched;
@@ -429,7 +443,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             supabase.from("contacts").update(dbUpdates).eq("id", mapped.id).eq("user_id", user!.id).then(() => {});
             setContacts((prev) => prev.map((ct) => ct.id === mapped.id ? { ...ct, ...updates } : ct));
           }
-        }).catch((err) => console.warn("Auto-enrich failed:", err));
+        }).catch((err) => console.warn("Auto-enrich failed:", err)).finally(() => markEnriching(mapped.id, false));
       }
       if (error) console.error("Error adding contact:", error);
       return mapped;
@@ -589,7 +603,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       contacts, setContacts, addContact, updateContact, deleteContact,
       folders, setFolders, addFolder, updateFolder, deleteFolder,
       profile, setProfile, loading, messageTemplates, setMessageTemplates,
-      isGuest, contactLimit: FREE_CONTACT_LIMIT, canAddContact,
+      isGuest, contactLimit: FREE_CONTACT_LIMIT, canAddContact, enrichingIds,
     }}>
       {children}
     </AppContext.Provider>
