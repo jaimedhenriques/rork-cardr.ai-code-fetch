@@ -22,6 +22,14 @@ struct NoteDetailView: View {
     @State private var showDeleteConfirm = false
     @State private var copied = false
     @State private var showChat = false
+    @State private var showFolderPicker = false
+    @State private var showTagPicker = false
+    @State private var showCategoryPicker = false
+    @State private var generatingShareLink = false
+    @State private var showEventLinker = false
+    @State private var speakerNames: [String: String] = [:]
+    @State private var editingSpeaker: String?
+    @State private var speakerDraft = ""
     @Environment(\.dismiss) private var dismiss
 
     init(note: MeetingNote) {
@@ -79,6 +87,18 @@ struct NoteDetailView: View {
         }
         .sheet(item: $shareURL) { url in ShareSheet(items: [url]) }
         .sheet(isPresented: $showChat) { NoteChatView(note: draft) }
+        .sheet(isPresented: $showFolderPicker) {
+            NoteFolderPickerView(noteId: note.id, currentFolderId: draft.folderId)
+        }
+        .sheet(isPresented: $showTagPicker) {
+            NoteTagPickerView(noteId: note.id)
+        }
+        .sheet(isPresented: $showCategoryPicker) {
+            NoteCategoryPickerView(noteId: note.id, currentCategory: draft.category)
+        }
+        .sheet(isPresented: $showEventLinker) {
+            NoteEventLinkerView(noteId: note.id, currentEventId: draft.calendarEventId)
+        }
         .confirmationDialog("Delete this note?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 Task { await data.deleteNote(note); dismiss() }
@@ -97,8 +117,20 @@ struct NoteDetailView: View {
                             Label("Edit", systemImage: "pencil")
                         }
                         Button { copyToClipboard() } label: { Label("Copy as text", systemImage: "doc.on.doc") }
-                        Button { shareURL = NoteExport.textFile(draft) } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        Button { shareURL = NoteExport.textFile(draft) } label: { Label("Share as file", systemImage: "square.and.arrow.up") }
                         Button { shareURL = NoteExport.pdf(draft) } label: { Label("Export PDF", systemImage: "arrow.down.doc") }
+                        Button { Task { await generateShareLink() } } label: {
+                            if generatingShareLink {
+                                Label("Generating…", systemImage: "link")
+                            } else {
+                                Label("Share link", systemImage: "link")
+                            }
+                        }
+                        Divider()
+                        Button { showFolderPicker = true } label: { Label("Move to folder", systemImage: "folder") }
+                        Button { showCategoryPicker = true } label: { Label("Set category", systemImage: "tag") }
+                        Button { showTagPicker = true } label: { Label("Manage tags", systemImage: "number") }
+                        Button { showEventLinker = true } label: { Label("Link event", systemImage: "calendar.badge.plus") }
                         Button { showContactPicker = true } label: { Label("Link contact", systemImage: "person.crop.circle.badge.plus") }
                         Divider()
                         Button(role: .destructive) { showDeleteConfirm = true } label: { Label("Delete", systemImage: "trash") }
@@ -609,19 +641,52 @@ struct NoteDetailView: View {
 
     /// Renders a transcript with speaker labels styled into rows (Otter-style)
     /// when the text is speaker-segmented; otherwise shows it as a plain block.
+    /// Speaker labels are tappable to rename them inline.
     @ViewBuilder
     private func transcriptCard(_ transcript: String) -> some View {
         let segments = TranscriptSegment.parse(transcript)
+        let speakers = Array(Set(segments.compactMap { $0.speaker })).sorted()
         sectionCard("Transcript", icon: "waveform", tint: Theme.inkSecondary,
-                    trailing: segments.contains(where: { $0.speaker != nil }) ? "\(Set(segments.compactMap { $0.speaker }).count) speakers" : nil) {
+                    trailing: speakers.count > 1 ? "\(speakers.count) speakers" : nil) {
             if segments.contains(where: { $0.speaker != nil }) {
                 VStack(alignment: .leading, spacing: 12) {
+                    if speakers.count > 1 {
+                        speakerLegend(speakers)
+                    }
                     ForEach(segments) { segment in
                         VStack(alignment: .leading, spacing: 3) {
                             if let speaker = segment.speaker {
-                                Text(speaker)
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(segment.tint)
+                                if editingSpeaker == speaker {
+                                    HStack(spacing: 6) {
+                                        TextField("Speaker name", text: $speakerDraft)
+                                            .font(.caption2.weight(.bold))
+                                            .foregroundStyle(segment.tint)
+                                            .textFieldStyle(.plain)
+                                            .onSubmit { commitSpeakerRename(speaker) }
+                                        Button { commitSpeakerRename(speaker) } label: {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.caption2)
+                                                .foregroundStyle(Theme.primary)
+                                        }
+                                        .buttonStyle(.plain)
+                                        Button { editingSpeaker = nil; speakerDraft = "" } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.caption2)
+                                                .foregroundStyle(Theme.inkSecondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                } else {
+                                    Button {
+                                        editingSpeaker = speaker
+                                        speakerDraft = speakerNames[speaker] ?? ""
+                                    } label: {
+                                        Text(speakerNames[speaker] ?? speaker)
+                                            .font(.caption2.weight(.bold))
+                                            .foregroundStyle(segment.tint)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             Text(segment.text)
                                 .font(.subheadline)
@@ -638,6 +703,31 @@ struct NoteDetailView: View {
                     .textSelection(.enabled)
             }
         }
+    }
+
+    private func speakerLegend(_ speakers: [String]) -> some View {
+        FlowLayout(spacing: 8) {
+            ForEach(speakers, id: \.self) { speaker in
+                let segment = TranscriptSegment(speaker: speaker, text: "")
+                HStack(spacing: 4) {
+                    Circle().fill(segment.tint).frame(width: 7, height: 7)
+                    Text(speakerNames[speaker] ?? speaker)
+                }
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(Theme.inkSecondary)
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(Theme.surfaceMuted, in: Capsule())
+            }
+        }
+    }
+
+    private func commitSpeakerRename(_ speaker: String) {
+        let trimmed = speakerDraft.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { editingSpeaker = nil; return }
+        speakerNames[speaker] = trimmed
+        editingSpeaker = nil
+        speakerDraft = ""
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     private func readSection(_ title: String, icon: String, body: String) -> some View {
@@ -798,6 +888,17 @@ struct NoteDetailView: View {
         UIPasteboard.general.string = NoteExport.markdown(draft)
         copied = true
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+
+    private func generateShareLink() async {
+        guard !generatingShareLink else { return }
+        generatingShareLink = true
+        defer { generatingShareLink = false }
+        if let url = await data.generateShareLink(for: note.id) {
+            UIPasteboard.general.string = url.absoluteString
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            shareURL = url
+        }
     }
 
     private func save() async {

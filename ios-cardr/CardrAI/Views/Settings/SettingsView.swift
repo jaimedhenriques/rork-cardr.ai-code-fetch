@@ -135,6 +135,16 @@ struct SettingsView: View {
 
     private var planSection: some View {
         SettingsSection(title: "Plan & usage") {
+            NavigationLink { PricingView() } label: {
+                SettingsRow(icon: "creditcard", tint: Theme.primary, label: "Upgrade plan")
+            }
+            .buttonStyle(.plain)
+            Divider().background(Theme.border).padding(.leading, 52)
+            NavigationLink { ReferralView() } label: {
+                SettingsRow(icon: "gift", tint: Theme.success, label: "Refer a friend")
+            }
+            .buttonStyle(.plain)
+            Divider().background(Theme.border).padding(.leading, 52)
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 12) {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -224,6 +234,16 @@ struct SettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            Divider().background(Theme.border).padding(.leading, 52)
+            NavigationLink { SupportView() } label: {
+                SettingsRow(icon: "questionmark.circle", tint: Theme.accent, label: "Support")
+            }
+            .buttonStyle(.plain)
+            Divider().background(Theme.border).padding(.leading, 52)
+            NavigationLink { PrivacyView() } label: {
+                SettingsRow(icon: "lock.shield", tint: Theme.success, label: "Privacy policy")
             }
             .buttonStyle(.plain)
             Divider().background(Theme.border).padding(.leading, 52)

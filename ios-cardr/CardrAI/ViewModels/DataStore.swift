@@ -11,6 +11,8 @@ final class DataStore {
     var stages: [PipelineStage] = []
     var tags: [Tag] = []
     var contactTags: [ContactTag] = []
+    var folders: [Folder] = []
+    var noteTags: [NoteTag] = []
     var events: [Event] = []
     var eventContacts: [EventContact] = []
     var agents: [Agent] = []
@@ -53,6 +55,7 @@ final class DataStore {
     var isLoadingStages = false
     var isLoadingTags = false
     var isLoadingEvents = false
+    var isLoadingFolders = false
     var loadError: String?
 
     let service = SupabaseService.shared
@@ -129,7 +132,8 @@ final class DataStore {
         async let s: Void = loadStages()
         async let t: Void = loadTags()
         async let e: Void = loadEvents()
-        _ = await (c, n, p, s, t, e)
+        async let f: Void = loadFolders()
+        _ = await (c, n, p, s, t, e, f)
     }
 
     func loadContacts() async {
@@ -529,6 +533,217 @@ final class DataStore {
             } catch {
                 loadError = "Could not add tag."
             }
+        }
+    }
+
+    // MARK: - Folders
+
+    /// Loads the user's note folders and note-tag links.
+    func loadFolders() async {
+        guard let token else { return }
+        isLoadingFolders = true
+        defer { isLoadingFolders = false }
+        do {
+            async let foldersResult = service.fetch(
+                [Folder].self,
+                table: "folders",
+                token: token,
+                query: [URLQueryItem(name: "order", value: "name")]
+            )
+            async let noteTagsResult = service.fetch(
+                [NoteTag].self,
+                table: "note_tags",
+                token: token
+            )
+            let (loadedFolders, loadedNoteTags) = try await (foldersResult, noteTagsResult)
+            folders = loadedFolders
+            noteTags = loadedNoteTags
+        } catch {
+            // Folders are optional; keep existing values on failure.
+        }
+    }
+
+    /// Creates a new folder. Returns the created folder.
+    @discardableResult
+    func addFolder(name: String, emoji: String) async -> Folder? {
+        guard let token, let userId = session.userId else { return nil }
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        if let existing = folders.first(where: { $0.name.lowercased() == trimmed.lowercased() }) {
+            return existing
+        }
+        do {
+            let created = try await service.insertReturning(
+                [Folder].self,
+                table: "folders",
+                token: token,
+                values: [[
+                    "user_id": AnyEncodable(userId),
+                    "name": AnyEncodable(trimmed),
+                    "emoji": AnyEncodable(emoji),
+                ]]
+            )
+            if let folder = created.first {
+                folders.append(folder)
+                folders.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+                return folder
+            }
+        } catch {
+            loadError = "Could not create folder."
+        }
+        return nil
+    }
+
+    /// Deletes a folder and removes its note links locally.
+    func deleteFolder(_ folder: Folder) async {
+        guard let token else { return }
+        let previous = folders
+        folders.removeAll { $0.id == folder.id }
+        do {
+            try await service.delete(table: "folders", token: token, match: ["id": folder.id])
+        } catch {
+            folders = previous
+            loadError = "Could not delete folder."
+        }
+    }
+
+    /// Tags currently applied to a given note.
+    func tags(forNote noteId: String) -> [Tag] {
+        let ids = Set(noteTags.filter { $0.noteId == noteId }.map(\.tagId))
+        return tags.filter { ids.contains($0.id) }
+    }
+
+    /// Adds or removes a tag from a note.
+    func toggleNoteTag(_ tag: Tag, on noteId: String) async {
+        guard let token else { return }
+        if let link = noteTags.first(where: { $0.noteId == noteId && $0.tagId == tag.id }) {
+            let previous = noteTags
+            noteTags.removeAll { $0.id == link.id }
+            do {
+                try await service.delete(table: "note_tags", token: token, match: ["id": link.id])
+            } catch {
+                noteTags = previous
+                loadError = "Could not remove tag."
+            }
+        } else {
+            do {
+                let created = try await service.insertReturning(
+                    [NoteTag].self,
+                    table: "note_tags",
+                    token: token,
+                    values: [[
+                        "note_id": AnyEncodable(noteId),
+                        "tag_id": AnyEncodable(tag.id),
+                    ]]
+                )
+                noteTags.append(contentsOf: created)
+            } catch {
+                loadError = "Could not add tag."
+            }
+        }
+    }
+
+    /// Assigns a folder to a note, persisting the change.
+    func setFolder(_ folder: Folder?, on noteId: String) async {
+        guard let token else { return }
+        if let index = notes.firstIndex(where: { $0.id == noteId }) {
+            notes[index].folderId = folder?.id
+        }
+        var values: [String: AnyEncodable] = [:]
+        if let folder {
+            values["folder_id"] = AnyEncodable(folder.id)
+        } else {
+            values["folder_id"] = AnyEncodable(JSONNull())
+        }
+        do {
+            try await service.update(
+                table: "meeting_notes",
+                token: token,
+                match: ["id": noteId],
+                values: values
+            )
+        } catch {
+            loadError = "Could not assign folder."
+        }
+    }
+
+    /// Sets a category on a note, persisting the change.
+    func setCategory(_ category: String?, on noteId: String) async {
+        guard let token else { return }
+        if let index = notes.firstIndex(where: { $0.id == noteId }) {
+            notes[index].category = category
+        }
+        var values: [String: AnyEncodable] = [:]
+        if let category {
+            values["category"] = AnyEncodable(category)
+        } else {
+            values["category"] = AnyEncodable(JSONNull())
+        }
+        do {
+            try await service.update(
+                table: "meeting_notes",
+                token: token,
+                match: ["id": noteId],
+                values: values
+            )
+        } catch {
+            loadError = "Could not set category."
+        }
+    }
+
+    /// Generates a share token for a note and returns the public URL.
+    func generateShareLink(for noteId: String) async -> URL? {
+        guard let token else { return nil }
+        let tokenValue = UUID().uuidString
+        do {
+            try await service.update(
+                table: "meeting_notes",
+                token: token,
+                match: ["id": noteId],
+                values: ["share_token": AnyEncodable(tokenValue)]
+            )
+            return URL(string: "\(SupabaseConfig.projectURL)/shared/\(tokenValue)")
+        } catch {
+            loadError = "Could not generate share link."
+            return nil
+        }
+    }
+
+    // MARK: - Note ↔ event linking
+
+    /// Links a meeting note to a calendar event.
+    func linkNoteEvent(_ event: Event, noteId: String) async {
+        guard let token else { return }
+        if let index = notes.firstIndex(where: { $0.id == noteId }) {
+            notes[index].calendarEventId = event.id
+        }
+        do {
+            try await service.update(
+                table: "meeting_notes",
+                token: token,
+                match: ["id": noteId],
+                values: ["calendar_event_id": AnyEncodable(event.id)]
+            )
+        } catch {
+            loadError = "Could not link event."
+        }
+    }
+
+    /// Clears the calendar event link from a meeting note.
+    func clearNoteEvent(_ noteId: String) async {
+        guard let token else { return }
+        if let index = notes.firstIndex(where: { $0.id == noteId }) {
+            notes[index].calendarEventId = nil
+        }
+        do {
+            try await service.update(
+                table: "meeting_notes",
+                token: token,
+                match: ["id": noteId],
+                values: ["calendar_event_id": AnyEncodable(JSONNull())]
+            )
+        } catch {
+            loadError = "Could not unlink event."
         }
     }
 
@@ -1335,6 +1550,48 @@ final class DataStore {
             )
         } catch {
             // Activity logging is best-effort; the link still succeeded.
+        }
+    }
+
+    // MARK: - Contact activities
+
+    /// Loads activities for a specific contact.
+    func activities(forContact contactId: String) async -> [ContactActivity] {
+        guard let token else { return [] }
+        do {
+            return try await service.fetch(
+                [ContactActivity].self,
+                table: "contact_activities",
+                token: token,
+                query: [
+                    URLQueryItem(name: "contact_id", value: "eq.\(contactId)"),
+                    URLQueryItem(name: "order", value: "created_at.desc"),
+                    URLQueryItem(name: "limit", value: "100"),
+                ]
+            )
+        } catch {
+            return []
+        }
+    }
+
+    /// Logs a new activity on a contact. Returns true on success.
+    @discardableResult
+    func addActivity(contactId: String, type: String, title: String, description: String? = nil) async -> Bool {
+        guard let token, let userId = session.userId else { return false }
+        var values: [String: AnyEncodable] = [
+            "user_id": AnyEncodable(userId),
+            "contact_id": AnyEncodable(contactId),
+            "type": AnyEncodable(type),
+            "title": AnyEncodable(title),
+        ]
+        if let description, !description.isEmpty {
+            values["description"] = AnyEncodable(description)
+        }
+        do {
+            try await service.insert(table: "contact_activities", token: token, values: values)
+            return true
+        } catch {
+            return false
         }
     }
 

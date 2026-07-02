@@ -7,6 +7,7 @@ enum SupabaseConfig {
     static let url = URL(string: "https://nhalxqobrsuuzmmefeid.supabase.co")!
     static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oYWx4cW9icnN1dXptbWVmZWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMzYxNTMsImV4cCI6MjA5MDcxMjE1M30.JTMv2pWaLurqc-aCUNPkEReW1lImL6IlIpRe0k4SH0E"
 
+    static var projectURL: URL { url }
     static var restURL: URL { url.appendingPathComponent("rest/v1") }
     static var authURL: URL { url.appendingPathComponent("auth/v1") }
     static var functionsURL: URL { url.appendingPathComponent("functions/v1") }

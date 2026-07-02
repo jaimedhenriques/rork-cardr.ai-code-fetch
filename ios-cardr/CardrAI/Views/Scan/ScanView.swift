@@ -25,6 +25,12 @@ struct ScanView: View {
     @State private var postSaveContact: Contact?
     @State private var showSessionExport = false
     @State private var showEventPicker = false
+    @State private var showLimitAlert = false
+    @State private var showHowTo = false
+    @AppStorage("cardr.scan_intro_seen") private var introSeen = false
+
+    private var contactLimit: Int { 100 }
+    private var canAddContact: Bool { data.contacts.count < contactLimit }
 
     private struct DuplicateContext: Identifiable {
         let id = UUID()
@@ -65,7 +71,7 @@ struct ScanView: View {
                     DrawerMenuButton()
                 }
             }
-            .onAppear { animate = true }
+            .onAppear { animate = true; if !introSeen { showHowTo = true } }
             .navigationDestination(item: $createdContact) { ContactDetailView(contact: $0) }
             .sheet(isPresented: $showAddContact) {
                 AddContactView(prefill: prefillDraft) { contact in
@@ -92,6 +98,7 @@ struct ScanView: View {
             }
             .onChange(of: photoItem) { _, newItem in
                 guard let newItem else { return }
+                guard canAddContact else { showLimitAlert = true; photoItem = nil; return }
                 Task {
                     if let raw = try? await newItem.loadTransferable(type: Data.self),
                        let image = UIImage(data: raw) {
@@ -102,6 +109,14 @@ struct ScanView: View {
             }
             .overlay {
                 if phase == .reading { readingOverlay }
+            }
+            .sheet(isPresented: $showHowTo) {
+                ScanHowToView { introSeen = true; showHowTo = false }
+            }
+            .alert("Contact limit reached", isPresented: $showLimitAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("You've reached the \(contactLimit) contact limit on the free plan. Upgrade on the web app to add more.")
             }
             .alert("Couldn't read the card", isPresented: failureBinding) {
                 Button("Add manually") { openManual(with: nil) }
@@ -196,6 +211,7 @@ struct ScanView: View {
             VStack(spacing: 12) {
                 if cameraAvailable {
                     Button {
+                        guard canAddContact else { showLimitAlert = true; return }
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         showCamera = true
                     } label: {
@@ -210,6 +226,19 @@ struct ScanView: View {
                     secondaryLabel(cameraAvailable ? "Upload a photo" : "Choose a photo", icon: "photo.on.rectangle")
                 }
                 .buttonStyle(PressableButtonStyle())
+                .disabled(!canAddContact)
+
+                if !canAddContact {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.warning)
+                        Text("\(data.contacts.count)/\(contactLimit) contacts — upgrade on the web to add more")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.warning)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
             .frame(maxWidth: .infinity)
         }

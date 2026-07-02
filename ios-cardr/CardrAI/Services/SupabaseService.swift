@@ -270,3 +270,11 @@ nonisolated struct AnyEncodable: Encodable {
         try encodeClosure(encoder)
     }
 }
+
+/// Encodes as a JSON `null` value, used for clearing nullable columns.
+nonisolated struct JSONNull: Encodable {
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encodeNil()
+    }
+}

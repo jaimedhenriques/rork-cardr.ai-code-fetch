@@ -15,6 +15,7 @@ struct NotesView: View {
     @State private var showFilters = false
     @State private var showChat = false
     @State private var exportURL: URL?
+    @State private var showSettings = false
 
     enum NoteTab: String, CaseIterable, Identifiable {
         case conversations, calendar, actions
@@ -52,8 +53,15 @@ struct NotesView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { DrawerMenuButton() }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { openComposer() } label: {
-                        Image(systemName: "plus.circle.fill")
+                    HStack(spacing: 4) {
+                        Button { showSettings = true } label: {
+                            Image(systemName: "slider.horizontal.3")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Theme.inkSecondary)
+                        }
+                        Button { openComposer() } label: {
+                            Image(systemName: "plus.circle.fill")
+                        }
                     }
                 }
             }
@@ -68,6 +76,9 @@ struct NotesView: View {
             }
             .sheet(item: $exportURL) { url in
                 ShareSheet(items: [url])
+            }
+            .sheet(isPresented: $showSettings) {
+                NoteSettingsView()
             }
             .overlay(alignment: .bottom) { bottomBar }
         }
@@ -133,9 +144,16 @@ struct NotesView: View {
                         .padding(.top, 4)
                     ForEach(group.notes) { note in
                         NavigationLink(value: note) {
-                            NoteCard(note: note, matches: searchMatches[note.id] ?? [])
+                            NoteCard(note: note, matches: searchMatches[note.id] ?? [], folder: noteFolder(note.id), tags: noteTagList(note.id))
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                Task { await data.deleteNote(note) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
@@ -249,6 +267,16 @@ struct NotesView: View {
                 }
                 ForEach(Array(filters.categories), id: \.self) { category in
                     chip(category) { filters.categories.remove(category) }
+                }
+                ForEach(Array(filters.folderIds), id: \.self) { fid in
+                    if let folder = data.folders.first(where: { $0.id == fid }) {
+                        chip("\(folder.emoji ?? "📁") \(folder.name)") { filters.folderIds.remove(fid) }
+                    }
+                }
+                ForEach(Array(filters.tagIds), id: \.self) { tid in
+                    if let tag = data.tags.first(where: { $0.id == tid }) {
+                        chip(tag.name) { filters.tagIds.remove(tid) }
+                    }
                 }
                 Button("Clear") { filters = NoteFilterState() }
                     .font(.caption.weight(.medium))
@@ -466,6 +494,9 @@ struct NotesView: View {
             (note.actionItems ?? []).forEach { test("Action", $0.task) }
             (note.followUps ?? []).forEach { test("Follow-up", $0.description) }
             (note.decisions ?? []).forEach { test("Decision", $0) }
+            (note.insights ?? []).forEach { test("Insight", $0) }
+            (note.openQuestions ?? []).forEach { test("Question", $0) }
+            (note.mentionedPeople ?? []).forEach { test("Person", "\($0.name)\($0.role.map { " (\($0))" } ?? "")") }
             test("Transcript", note.transcript)
             if !hits.isEmpty { result[note.id] = Array(hits.prefix(3)) }
         }
@@ -493,6 +524,19 @@ struct NotesView: View {
             list = list.filter { note in
                 guard let category = note.category else { return false }
                 return filters.categories.contains(category)
+            }
+        }
+        if !filters.folderIds.isEmpty {
+            list = list.filter { note in
+                guard let fid = note.folderId else { return false }
+                return filters.folderIds.contains(fid)
+            }
+        }
+        if !filters.tagIds.isEmpty {
+            let noteTagMap = Dictionary(grouping: data.noteTags, by: { $0.noteId })
+            list = list.filter { note in
+                let tids = Set(noteTagMap[note.id]?.map(\.tagId) ?? [])
+                return filters.tagIds.allSatisfy { tids.contains($0) }
             }
         }
         if filters.hasActions {
@@ -545,6 +589,15 @@ struct NotesView: View {
         showComposer = true
     }
 
+    private func noteFolder(_ noteId: String) -> Folder? {
+        guard let fid = data.notes.first(where: { $0.id == noteId })?.folderId else { return nil }
+        return data.folders.first { $0.id == fid }
+    }
+
+    private func noteTagList(_ noteId: String) -> [Tag] {
+        data.tags(forNote: noteId)
+    }
+
     private func exportNotes() {
         let text = data.notes.map { note -> String in
             var lines = ["# \(note.title)"]
@@ -567,6 +620,8 @@ struct NotesView: View {
 private struct NoteCard: View {
     let note: MeetingNote
     let matches: [NoteSearchMatch]
+    var folder: Folder?
+    var tags: [Tag] = []
 
     var body: some View {
         CardSurface(padding: 14) {
@@ -597,6 +652,23 @@ private struct NoteCard: View {
                             .foregroundStyle(Theme.inkSecondary)
                             .padding(.horizontal, 7).padding(.vertical, 2)
                             .background(Theme.surfaceMuted, in: Capsule())
+                    }
+                    if let folder {
+                        Text("\(folder.emoji ?? "📁") \(folder.name)")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(Theme.primary)
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Theme.primary.opacity(0.1), in: Capsule())
+                    }
+                    ForEach(tags.prefix(3)) { tag in
+                        HStack(spacing: 3) {
+                            Circle().fill(Color(hex: tag.hexValue)).frame(width: 5, height: 5)
+                            Text(tag.name)
+                        }
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color(hex: tag.hexValue))
+                        .padding(.horizontal, 7).padding(.vertical, 2)
+                        .background(Color(hex: tag.hexValue).opacity(0.1), in: Capsule())
                     }
 
                     if matches.isEmpty {

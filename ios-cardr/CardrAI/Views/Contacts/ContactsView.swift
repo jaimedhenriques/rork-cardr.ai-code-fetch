@@ -48,6 +48,20 @@ struct ContactsView: View {
     @State private var shareItems: [Any] = []
     @State private var showShare = false
     @State private var showBulkDeleteConfirm = false
+    @State private var groupBy: GroupBy = .none
+
+    enum GroupBy: String, CaseIterable, Identifiable {
+        case none, company, status, month
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .none: return "None"
+            case .company: return "Company"
+            case .status: return "Stage"
+            case .month: return "Month"
+            }
+        }
+    }
 
     private var filtered: [Contact] {
         var result = data.contacts
@@ -95,6 +109,9 @@ struct ContactsView: View {
                 }
                 if !selectionMode && (data.bulkEnrichProgress != nil || (data.unenrichedCount > 0 && !data.contacts.isEmpty)) {
                     enrichAllBanner
+                }
+                if !selectionMode && !data.contacts.isEmpty {
+                    groupByBar
                 }
                 listContent
             }
@@ -184,27 +201,87 @@ struct ContactsView: View {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if filtered.isEmpty {
             emptyState
-        } else {
+        } else if groupBy == .none {
             ScrollView {
                 LazyVStack(spacing: 10) {
                     ForEach(filtered) { contact in
-                        if selectionMode {
-                            Button { toggleSelect(contact.id) } label: {
-                                HStack(spacing: 10) {
-                                    checkmark(selectedIDs.contains(contact.id))
-                                    ContactRow(contact: contact)
-                                }
+                        contactRow(contact)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    ForEach(groupedContacts, id: \.label) { group in
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(group.label)
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(Theme.inkSecondary)
+                                    .textCase(.uppercase)
+                                Spacer()
+                                Text("\(group.contacts.count)")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Theme.inkSecondary.opacity(0.6))
                             }
-                            .buttonStyle(.plain)
-                        } else {
-                            NavigationLink(value: contact) { ContactRow(contact: contact) }
-                                .buttonStyle(.plain)
+                            ForEach(group.contacts) { contact in
+                                contactRow(contact)
+                            }
                         }
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func contactRow(_ contact: Contact) -> some View {
+        if selectionMode {
+            Button { toggleSelect(contact.id) } label: {
+                HStack(spacing: 10) {
+                    checkmark(selectedIDs.contains(contact.id))
+                    ContactRow(contact: contact, showEngagement: true)
+                }
+            }
+            .buttonStyle(.plain)
+        } else {
+            NavigationLink(value: contact) { ContactRow(contact: contact, showEngagement: true) }
+                .buttonStyle(.plain)
+        }
+    }
+
+    private struct ContactGroup { let label: String; let contacts: [Contact] }
+
+    private var groupedContacts: [ContactGroup] {
+        switch groupBy {
+        case .company:
+            let groups = Dictionary(grouping: filtered, by: { $0.company?.isEmpty == false ? $0.company! : "No company" })
+            return groups.sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
+                .map { ContactGroup(label: $0.key, contacts: $0.value) }
+        case .status:
+            let stageMap = Dictionary(uniqueKeysWithValues: data.stages.map { ($0.id, $0.name) })
+            let groups = Dictionary(grouping: filtered, by: { c in
+                c.stageId.flatMap { stageMap[$0] } ?? "No stage"
+            })
+            return groups.sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
+                .map { ContactGroup(label: $0.key, contacts: $0.value) }
+        case .month:
+            let f = DateFormatter()
+            f.dateFormat = "MMMM yyyy"
+            let groups = Dictionary(grouping: filtered, by: { c in
+                if let raw = c.createdAt, let d = ISO8601DateFormatter().date(from: raw) {
+                    return f.string(from: d)
+                }
+                return "Unknown"
+            })
+            return groups.sorted { $0.key > $1.key }
+                .map { ContactGroup(label: $0.key, contacts: $0.value) }
+        case .none:
+            return []
         }
     }
 
@@ -369,6 +446,35 @@ struct ContactsView: View {
     }
 
     // MARK: - Tag quick filter
+
+    private var groupByBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                Text("Group")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Theme.inkSecondary)
+                    .padding(.leading, 16)
+                ForEach(GroupBy.allCases) { option in
+                    Button {
+                        withAnimation(.snappy) { groupBy = option }
+                    } label: {
+                        Text(option.label)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(groupBy == option ? .white : Theme.inkSecondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                groupBy == option ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.surfaceMuted),
+                                in: Capsule()
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer(minLength: 16)
+            }
+            .padding(.vertical, 8)
+        }
+    }
 
     private var tagFilterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {

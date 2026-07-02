@@ -10,6 +10,12 @@ struct ContactDetailView: View {
     @State private var showTagPicker = false
     @State private var isEnriching = false
     @State private var showMailComposer = false
+    @State private var activities: [ContactActivity] = []
+    @State private var isLoadingActivities = false
+    @State private var showAddActivity = false
+    @State private var newActivityTitle = ""
+    @State private var newActivityType = "note"
+    @State private var showStagePicker = false
 
     init(contact: Contact) {
         self.initialContact = contact
@@ -24,11 +30,13 @@ struct ContactDetailView: View {
         ScrollView {
             VStack(spacing: 18) {
                 header
+                stageCard
                 quickActions
                 enrichButton
                 tagsCard
                 if hasContactInfo { infoCard }
                 if let notes = contact.notes, !notes.isEmpty { notesCard(notes) }
+                activitiesCard
                 deleteButton
             }
             .padding(.horizontal, 16)
@@ -61,6 +69,7 @@ struct ContactDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .task { await loadActivities() }
     }
 
     private var header: some View {
@@ -253,6 +262,168 @@ struct ContactDetailView: View {
                 .background(Theme.destructive.opacity(0.08))
                 .clipShape(.rect(cornerRadius: 14))
         }
+    }
+
+    // MARK: - Stage picker
+
+    @ViewBuilder
+    private var stageCard: some View {
+        if !data.stages.isEmpty {
+            CardSurface {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Pipeline stage", systemImage: "arrow.triangle.2.circlepath")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                        Spacer()
+                        let tier = Engagement.tier(for: contact)
+                        Text(tier.rawValue)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(tier.color)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(tier.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        Text(tier.label)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(Theme.inkSecondary)
+                    }
+                    Menu {
+                        Button { Task { await data.moveContact(contact, to: nil) } } label: {
+                            Label("No stage", systemImage: contact.stageId == nil ? "checkmark" : "")
+                        }
+                        ForEach(data.stages) { stage in
+                            Button { Task { await data.moveContact(contact, to: stage.id) } } label: {
+                                Label(stage.name, systemImage: stage.id == contact.stageId ? "checkmark" : "")
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if let stageId = contact.stageId,
+                               let stage = data.stages.first(where: { $0.id == stageId }) {
+                                Circle()
+                                    .fill(Color(hex: String(stage.color.dropFirst())))
+                                    .frame(width: 10, height: 10)
+                                Text(stage.name)
+                            } else {
+                                Image(systemName: "plus.circle")
+                                    .font(.caption.weight(.semibold))
+                                Text("Assign to stage")
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.inkSecondary)
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(contact.stageId != nil ? Theme.ink : Theme.inkSecondary)
+                        .padding(.horizontal, 12).padding(.vertical, 10)
+                        .background(Theme.surfaceMuted, in: RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Activity timeline
+
+    @ViewBuilder
+    private var activitiesCard: some View {
+        CardSurface {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Activity", systemImage: "clock.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                    Button { showAddActivity = true } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(Theme.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if isLoadingActivities {
+                    ProgressView().controlSize(.small)
+                } else if activities.isEmpty {
+                    Text("No activity recorded yet.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.inkSecondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(activities.prefix(20)) { activity in
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: activity.icon)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color(hex: activity.tint))
+                                    .frame(width: 32, height: 32)
+                                    .background(Color(hex: activity.tint).opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(activity.title)
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(Theme.ink)
+                                    if let desc = activity.description, !desc.isEmpty {
+                                        Text(desc)
+                                            .font(.caption)
+                                            .foregroundStyle(Theme.inkSecondary)
+                                            .lineLimit(2)
+                                    }
+                                    if let date = activity.createdDate {
+                                        Text(date.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.caption2)
+                                            .foregroundStyle(Theme.inkSecondary.opacity(0.6))
+                                    }
+                                }
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showAddActivity) {
+            NavigationStack {
+                Form {
+                    Section {
+                        TextField("What happened?", text: $newActivityTitle)
+                        Picker("Type", selection: $newActivityType) {
+                            Text("Note").tag("note")
+                            Text("Call").tag("call")
+                            Text("Email").tag("email")
+                            Text("Meeting").tag("meeting")
+                            Text("Follow-up").tag("follow_up")
+                            Text("Other").tag("other")
+                        }
+                    }
+                    Section {
+                        Button("Log activity") {
+                            let title = newActivityTitle.trimmingCharacters(in: .whitespaces)
+                            guard !title.isEmpty else { return }
+                            Task {
+                                await data.addActivity(contactId: contact.id, type: newActivityType, title: title)
+                                newActivityTitle = ""
+                                showAddActivity = false
+                                await loadActivities()
+                            }
+                        }
+                        .fontWeight(.semibold)
+                        .disabled(newActivityTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                }
+                .navigationTitle("New Activity")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { showAddActivity = false }
+                    }
+                }
+            }
+        }
+    }
+
+    private func loadActivities() async {
+        isLoadingActivities = true
+        defer { isLoadingActivities = false }
+        activities = await data.activities(forContact: contact.id)
     }
 
     private var tagsCard: some View {

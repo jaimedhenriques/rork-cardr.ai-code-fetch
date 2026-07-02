@@ -227,9 +227,12 @@ nonisolated enum NoteSortOption: String, CaseIterable, Identifiable {
 nonisolated struct NoteFilterState: Equatable {
     var sortBy: NoteSortOption = .newest
     var categories: Set<String> = []
+    var folderIds: Set<String> = []
+    var tagIds: Set<String> = []
     var hasActions = false
 
     var activeCount: Int {
-        categories.count + (hasActions ? 1 : 0) + (sortBy != .newest ? 1 : 0)
+        categories.count + folderIds.count + tagIds.count
+            + (hasActions ? 1 : 0) + (sortBy != .newest ? 1 : 0)
     }
 }
