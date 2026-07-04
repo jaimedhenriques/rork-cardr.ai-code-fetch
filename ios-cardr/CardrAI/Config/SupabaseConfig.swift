@@ -4,8 +4,8 @@ import Foundation
 /// The anon/publishable key is safe to embed in client apps — row level
 /// security on the backend governs access.
 enum SupabaseConfig {
-    static let url = URL(string: "https://nhalxqobrsuuzmmefeid.supabase.co")!
-    static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oYWx4cW9icnN1dXptbWVmZWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMzYxNTMsImV4cCI6MjA5MDcxMjE1M30.JTMv2pWaLurqc-aCUNPkEReW1lImL6IlIpRe0k4SH0E"
+    static let url = URL(string: "https://jzkngsrnykozfcuifrsl.supabase.co")!
+    static let anonKey = "sb_publishable_FjvJ6VIpXw0edrLcLMKmKQ_fR69vesh"
 
     static var projectURL: URL { url }
     static var restURL: URL { url.appendingPathComponent("rest/v1") }
