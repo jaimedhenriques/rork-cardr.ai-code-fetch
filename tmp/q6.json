@@ -1,0 +1,1 @@
+{"query":"select id, name from storage.buckets order by 1; "}

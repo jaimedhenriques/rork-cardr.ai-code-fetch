@@ -1,0 +1,1 @@
+{"query":"select table_name, column_name, data_type from information_schema.columns where table_schema='public' and table_name in ('profiles','referral_commissions','coupon_codes','coupon_usage','webhook_subscriptions','webhook_deliveries','account_deletion_audit','subscriptions') order by table_name, ordinal_position; "}
