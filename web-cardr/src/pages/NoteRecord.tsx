@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones } from "lucide-react";
+import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2 } from "lucide-react";
 import type { AudioSource } from "@/hooks/useAudioRecorder";
+import { useDocumentPip } from "@/hooks/useDocumentPip";
+import FloatingRecorder from "@/components/FloatingRecorder";
 import { NOTE_TEMPLATES, NoteTemplate } from "@/lib/note-templates";
 import PageHeader from "@/components/PageHeader";
 import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
@@ -53,6 +55,7 @@ const NoteRecord = () => {
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [audioSource, setAudioSource] = useState<AudioSource>("mic");
   const autoStarted = useRef(false);
+  const pip = useDocumentPip();
 
   const AUDIO_SOURCES: { id: AudioSource; label: string; hint: string; icon: typeof Mic }[] = [
     { id: "mic", label: t("noteRecord.sourceMic"), hint: t("noteRecord.sourceMicHint"), icon: Mic },
@@ -86,6 +89,7 @@ const NoteRecord = () => {
   }, [recorder, title, prefill.contactName, setGlobalRecording, audioSource, t]);
 
   const handleStop = useCallback(async () => {
+    pip.close();
     setProcessing(true);
     clearGlobalRecording();
 
@@ -134,15 +138,20 @@ const NoteRecord = () => {
         }
       }
 
-      // 3. Generate AI meeting notes
+      // 3. Generate AI meeting notes (+ Granola-style enhancement of rough notes)
       let aiNotes: any = null;
-      const textForAI = [finalTranscript, manualNotes].filter(Boolean).join("\n\n---\n\n");
+      const trimmedManualNotes = manualNotes.trim();
 
-      if (textForAI.length > 10) {
+      if ((finalTranscript?.trim().length ?? 0) + trimmedManualNotes.length > 10) {
         setProcessingStep(t("noteRecord.generatingInsights"));
         try {
           const { data, error } = await supabase.functions.invoke("meeting-notes", {
-            body: { transcript: textForAI, durationSeconds: finalDuration, templateId: selectedTemplate.id },
+            body: {
+              transcript: finalTranscript || undefined,
+              manualNotes: trimmedManualNotes || undefined,
+              durationSeconds: finalDuration,
+              templateId: selectedTemplate.id,
+            },
           });
           if (!error && data?.notes) aiNotes = data.notes;
         } catch (e) {
@@ -166,6 +175,7 @@ const NoteRecord = () => {
         mentioned_people: aiNotes?.mentionedPeople || [],
         open_questions: aiNotes?.openQuestions || [],
         manual_notes: manualNotes || null,
+        enhanced_notes: typeof aiNotes?.enhancedNotes === "string" && aiNotes.enhancedNotes.trim() ? aiNotes.enhancedNotes : null,
         ...(calendarEventId ? { calendar_event_id: calendarEventId } : {}),
       };
 
@@ -226,7 +236,7 @@ const NoteRecord = () => {
     } finally {
       setProcessing(false);
     }
-  }, [recorder, title, manualNotes, user, navigate]);
+  }, [recorder, title, manualNotes, user, navigate, pip.close]);
 
   // Apple Voice Memos uses light-weight tabular digits — TimerDisplay handles formatting.
 
@@ -381,6 +391,22 @@ const NoteRecord = () => {
           )}
         </AnimatePresence>
 
+        {/* Pop out to a floating always-on-top mini recorder (Chrome/Edge desktop) */}
+        <AnimatePresence>
+          {recorder.recording && pip.isSupported && !pip.pipWindow && (
+            <motion.button
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              onClick={() => pip.open()}
+              className="mb-3 mx-auto flex items-center gap-2 px-3.5 py-2 rounded-full bg-card border border-border text-xs font-semibold text-foreground hover:bg-secondary transition-colors shadow-sm"
+            >
+              <PictureInPicture2 size={14} className="text-primary" />
+              {t("noteRecord.popOut")}
+            </motion.button>
+          )}
+        </AnimatePresence>
+
         {/* Live transcript preview */}
         <div className="flex-1 bg-card rounded-2xl border border-border p-4 mb-4 overflow-y-auto min-h-[120px]">
           {recorder.liveText ? (
@@ -477,6 +503,27 @@ const NoteRecord = () => {
           </p>
         )}
       </div>
+
+      {/* Floating mini-recorder rendered into the PiP window */}
+      {pip.pipWindow && recorder.recording && !processing && (
+        <FloatingRecorder
+          pipWindow={pip.pipWindow}
+          title={title || t("noteRecord.recording")}
+          duration={recorder.duration}
+          paused={recorder.paused}
+          liveText={recorder.liveText}
+          notes={manualNotes}
+          onNotesChange={setManualNotes}
+          onPauseToggle={recorder.paused ? recorder.resume : recorder.pause}
+          onStop={handleStop}
+          strings={{
+            listening: recorder.isSpeechSupported ? t("noteRecord.listening") : t("noteRecord.recordingAudio"),
+            jotNotes: t("noteRecord.writeNotes"),
+            stopSave: t("noteRecord.stopSave"),
+            yourNotes: t("noteRecord.yourNotes"),
+          }}
+        />
+      )}
     </div>
   );
 };

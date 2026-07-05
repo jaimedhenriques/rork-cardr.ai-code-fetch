@@ -3,13 +3,15 @@
 // Turns a meeting transcript / raw notes into structured insights using a
 // language model via the Rork AI proxy (Vercel AI Gateway).
 //
-// Request:  { transcript: string, durationSeconds?: number, templateId?: string }
+// Request:  { transcript?: string, manualNotes?: string, durationSeconds?: number, templateId?: string }
 // Response: { notes: {
 //   summary, keyTopics[], actionItems[{task, owner, deadline, priority, done}],
 //   followUps[{description, with, urgency}], decisions[], insights[],
 //   mentionedPeople[{name, role, context}], openQuestions[],
 //   analytics{questionsAsked, sentimentScore, sentimentLabel, engagementLevel,
 //             topSpeaker, talkTimeRatio, keyMetrics[{label, value}]},
+//   enhancedNotes (only when manualNotes provided — the user's rough notes
+//                  rewritten as polished Markdown grounded in the transcript),
 //   ...template-specific fields
 // } }
 //
@@ -25,6 +27,11 @@ const corsHeaders: Record<string, string> = {
 
 const MODEL = "google/gemini-3.5-flash";
 const MAX_TRANSCRIPT_CHARS = 200_000;
+const MAX_MANUAL_NOTES_CHARS = 20_000;
+
+/** Granola-style enhancement: expand the user's rough in-meeting jottings. */
+const ENHANCE_GUIDE = `The user also typed rough notes during the meeting. Add this extra JSON field:
+- "enhancedNotes": string — the user's rough notes rewritten as polished, well-structured Markdown ("## " headings, "- " bullets). Expand fragments and abbreviations into clear prose, use the transcript to fill in context, correct names, and add the specifics the user was pointing at. Preserve the user's ordering, emphasis, and intent — these are THEIR notes, made sharper. Never add facts that appear in neither the notes nor the transcript.`;
 
 /** Template-specific prompt guides, mirrored from the app's note templates. */
 const TEMPLATE_GUIDES: Record<string, string> = {
@@ -148,17 +155,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const body = await req.json().catch(() => null);
     const transcript = typeof body?.transcript === "string" ? body.transcript.trim() : "";
-    if (transcript.length < 10) {
+    const manualNotes = typeof body?.manualNotes === "string" ? body.manualNotes.trim() : "";
+    if (transcript.length + manualNotes.length < 10) {
       return jsonResponse({ error: "Transcript too short" }, 400);
     }
     const durationSeconds = Number(body?.durationSeconds) || 0;
     const templateId = typeof body?.templateId === "string" ? body.templateId : "general";
     const guide = TEMPLATE_GUIDES[templateId] ?? "";
 
-    const systemPrompt = guide ? `${BASE_PROMPT}\n\n${guide}` : BASE_PROMPT;
+    let systemPrompt = guide ? `${BASE_PROMPT}\n\n${guide}` : BASE_PROMPT;
+    if (manualNotes) systemPrompt = `${systemPrompt}\n\n${ENHANCE_GUIDE}`;
     const durationLine = durationSeconds > 0
       ? `Meeting duration: ${Math.round(durationSeconds / 60)} minutes.\n\n`
       : "";
+
+    const parts: string[] = [];
+    if (transcript) parts.push(`Transcript / notes:\n\n${transcript.slice(0, MAX_TRANSCRIPT_CHARS)}`);
+    if (manualNotes) parts.push(`User's rough notes typed during the meeting:\n\n${manualNotes.slice(0, MAX_MANUAL_NOTES_CHARS)}`);
 
     const resp = await fetch(
       `${toolkitUrl.replace(/\/$/, "")}/v2/vercel/v1/chat/completions`,
@@ -176,7 +189,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             { role: "system", content: systemPrompt },
             {
               role: "user",
-              content: `${durationLine}Transcript / notes:\n\n${transcript.slice(0, MAX_TRANSCRIPT_CHARS)}`,
+              content: `${durationLine}${parts.join("\n\n---\n\n")}`,
             },
           ],
         }),
@@ -208,6 +221,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     notes.insights = arr(notes.insights);
     notes.mentionedPeople = arr(notes.mentionedPeople);
     notes.openQuestions = arr(notes.openQuestions);
+    if (typeof notes.enhancedNotes !== "string" || !notes.enhancedNotes.trim()) {
+      delete notes.enhancedNotes;
+    }
 
     return jsonResponse({ notes, model: MODEL });
   } catch (err) {

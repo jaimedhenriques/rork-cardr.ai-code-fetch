@@ -63,6 +63,12 @@ export default function Install() {
           </ul>
         </motion.div>
 
+        <p className="text-center text-[11px] text-muted-foreground mb-2">
+          On a computer?{" "}
+          <Link to="/desktop" className="text-primary font-semibold hover:underline">
+            Set up meeting recording on desktop
+          </Link>
+        </p>
         <p className="text-center text-[11px] text-muted-foreground">
           Already a customer?{" "}
           <Link to="/app" className="text-primary font-semibold hover:underline">

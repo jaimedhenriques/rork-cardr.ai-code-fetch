@@ -48,6 +48,7 @@ interface MeetingNote {
   mentioned_people: { name: string; role?: string; context?: string }[];
   open_questions: string[];
   manual_notes: string | null;
+  enhanced_notes: string | null;
   calendar_event_id: string | null;
   category: string | null;
   folder_id: string | null;
@@ -56,6 +57,38 @@ interface MeetingNote {
 }
 
 const GUEST_NOTES_KEY = "cardscanpro_guest_notes";
+
+/** Lightweight Markdown rendering for AI-polished notes (headings, bullets, bold). */
+const renderMarkdownLite = (text: string) => {
+  const bold = (s: string) =>
+    s.split(/\*\*(.+?)\*\*/g).map((part, j) =>
+      j % 2 === 1 ? <strong key={j} className="font-semibold text-foreground">{part}</strong> : part
+    );
+  return text.split("\n").map((line, i) => {
+    const trimmed = line.trim();
+    if (!trimmed) return <div key={i} className="h-2" />;
+    if (/^#{1,3}\s/.test(trimmed)) {
+      return (
+        <p key={i} className="text-[13px] font-bold text-foreground mt-2 mb-0.5">
+          {bold(trimmed.replace(/^#{1,3}\s/, ""))}
+        </p>
+      );
+    }
+    if (/^[-*]\s/.test(trimmed)) {
+      return (
+        <div key={i} className="flex items-start gap-2 ml-1">
+          <span className="w-1 h-1 rounded-full bg-primary mt-[7px] shrink-0" />
+          <p className="text-sm text-foreground/80 leading-relaxed">{bold(trimmed.replace(/^[-*]\s/, ""))}</p>
+        </div>
+      );
+    }
+    return (
+      <p key={i} className="text-sm text-foreground/80 leading-relaxed">
+        {bold(trimmed)}
+      </p>
+    );
+  });
+};
 
 const NoteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -115,6 +148,7 @@ const NoteDetail = () => {
         mentioned_people: ((data as any).mentioned_people as any[]) || [],
         open_questions: ((data as any).open_questions as any[]) || [],
         manual_notes: data.manual_notes,
+        enhanced_notes: (data as any).enhanced_notes ?? null,
         calendar_event_id: data.calendar_event_id || null,
         category: (data as any).category || null,
         folder_id: (data as any).folder_id || null,
@@ -184,6 +218,7 @@ const NoteDetail = () => {
       const { data, error } = await supabase.functions.invoke("meeting-notes", {
         body: {
           transcript: `Title: ${note.title}\n\n${text}`,
+          manualNotes: note.transcript && note.manual_notes ? note.manual_notes : undefined,
           durationSeconds: note.duration_seconds,
           templateId: selectedTemplateId !== "general" ? selectedTemplateId : undefined,
         },
@@ -200,6 +235,7 @@ const NoteDetail = () => {
       if (data.notes.mentionedPeople?.length) updates.mentioned_people = data.notes.mentionedPeople;
       if (data.notes.openQuestions?.length) updates.open_questions = data.notes.openQuestions;
       if (data.notes.analytics) updates.analytics = data.notes.analytics;
+      if (typeof data.notes.enhancedNotes === "string" && data.notes.enhancedNotes.trim()) updates.enhanced_notes = data.notes.enhancedNotes;
       // Capture template-specific fields
       const templateFieldKeys = [
         "painPoints", "objections", "buyerQuotes", "competitorMentions", "budgetSignals", "decisionProcess",
@@ -322,6 +358,7 @@ const NoteDetail = () => {
     if (note.action_items?.length) lines.push(`## Action Items\n${note.action_items.map((a) => `- [${a.done ? "x" : " "}] ${a.task}${a.owner ? ` (${a.owner})` : ""}${a.deadline ? ` — by ${a.deadline}` : ""}`).join("\n")}\n`);
     if (note.follow_ups?.length) lines.push(`## Follow-Ups\n${note.follow_ups.map((f) => `- ${f.description}${f.with ? ` with ${f.with}` : ""}`).join("\n")}\n`);
     if (note.decisions?.length) lines.push(`## Decisions\n${note.decisions.map((d) => `- ${d}`).join("\n")}\n`);
+    if (note.enhanced_notes) lines.push(`## Polished Notes\n${note.enhanced_notes}\n`);
     if (note.manual_notes) lines.push(`## Notes\n${note.manual_notes}\n`);
     try {
       await navigator.clipboard.writeText(lines.join("\n"));
@@ -1131,6 +1168,17 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
             </>
           );
         })()}
+
+        {/* AI-polished notes — the user's rough jottings expanded via the transcript */}
+        {!editing && note.enhanced_notes && (
+          <div className="card-elevated p-4 border border-primary/15">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles size={12} className="text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">{t("noteDetail.polishedNotes")}</h3>
+            </div>
+            <div className="space-y-0.5">{renderMarkdownLite(note.enhanced_notes)}</div>
+          </div>
+        )}
 
         {editing ? (
           <div className="card-elevated p-4 border border-primary/20">

@@ -1554,6 +1554,7 @@ export type Database = {
           folder_id: string | null
           follow_ups: Json | null
           id: string
+          enhanced_notes: string | null
           insights: Json | null
           key_topics: Json | null
           manual_notes: string | null
@@ -1577,6 +1578,7 @@ export type Database = {
           folder_id?: string | null
           follow_ups?: Json | null
           id?: string
+          enhanced_notes?: string | null
           insights?: Json | null
           key_topics?: Json | null
           manual_notes?: string | null
@@ -1600,6 +1602,7 @@ export type Database = {
           folder_id?: string | null
           follow_ups?: Json | null
           id?: string
+          enhanced_notes?: string | null
           insights?: Json | null
           key_topics?: Json | null
           manual_notes?: string | null

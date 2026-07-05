@@ -800,7 +800,7 @@ export const EN_STRINGS: Record<string, string> = {
   "noteRecord.speakerHint": "Recording is active. Tap below to dial, then switch to speaker so the mic captures both sides.",
   "noteRecord.dial": "Dial",
   "noteRecord.yourNotes": "Your notes",
-  "noteRecord.writeNotes": "Write notes here…",
+  "noteRecord.writeNotes": "Jot rough notes — AI polishes them into structured notes when you stop…",
   "noteRecord.listening": "Listening… start speaking",
   "noteRecord.recordingAudio": "Recording audio… (live preview not available in this browser)",
   "noteRecord.pressRecord": "Press record to begin capturing",
@@ -820,6 +820,11 @@ export const EN_STRINGS: Record<string, string> = {
   "noteRecord.sourceBothHint": "Mixes your mic with the shared call audio so the whole conversation is captured.",
   "noteRecord.noSystemAudio": "No audio was shared. When sharing, choose a tab and turn on \"Share tab audio\".",
   "noteRecord.shareCancelled": "Screen share was cancelled.",
+  "noteRecord.popOut": "Pop out mini recorder",
+  "noteRecord.stopSave": "Stop & save",
+  "noteDetail.polishedNotes": "Polished notes",
+  "meetingPrompt.startingNow": "Starting now",
+  "meetingPrompt.record": "Record",
 
   // Notes page — group labels
   "notes.todayLabel": "Today",

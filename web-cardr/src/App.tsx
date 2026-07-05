@@ -49,6 +49,7 @@ import LandingPreview from "@/pages/LandingPreview";
 import Integrations from "@/pages/Integrations";
 import Automations from "@/pages/Automations";
 import Install from "@/pages/Install";
+import Desktop from "@/pages/Desktop";
 import Privacy from "@/pages/Privacy";
 import Support from "@/pages/Support";
 import IosReceiptSyncMount from "@/components/IosReceiptSyncMount";
@@ -56,6 +57,7 @@ import IosReceiptSyncMount from "@/components/IosReceiptSyncMount";
 import CommandPalette from "@/components/CommandPalette";
 import OnboardingWalkthrough from "@/components/OnboardingWalkthrough";
 import InstallAppPill from "@/components/InstallAppPill";
+import MeetingRecordPrompt from "@/components/MeetingRecordPrompt";
 import NativePaywallGuard from "@/components/NativePaywallGuard";
 import NativeRouteGate from "@/components/NativeRouteGate";
 
@@ -72,6 +74,7 @@ const PUBLIC_FLAT_ROUTES = new Set<string>([
   "/widget",
   "/unsubscribe",
   "/install",
+  "/desktop",
   "/privacy",
   "/support",
 ]);
@@ -128,6 +131,7 @@ const AppRoutes = () => {
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/ref/:code" element={<ReferralLanding />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/desktop" element={<Desktop />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/support" element={<Support />} />
 
@@ -170,6 +174,7 @@ const AppRoutes = () => {
           <CommandPalette />
           <OnboardingWalkthrough />
           <InstallAppPill />
+          <MeetingRecordPrompt />
         </div>
       </RecordingProvider>
     </AppProvider>
