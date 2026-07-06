@@ -21,6 +21,8 @@ struct NoteComposerView: View {
     @State private var processingStep = ""
     @State private var savedNote: MeetingNote?
     @State private var selectedTemplate: NoteTemplate = .default
+    @State private var selectedCustomTemplate: CustomNoteTemplate?
+    @State private var showTemplateManager = false
     @AppStorage("note.language") private var languageId = "en-US"
 
     var body: some View {
@@ -55,6 +57,11 @@ struct NoteComposerView: View {
             }
             .navigationDestination(item: $savedNote) { note in
                 NoteDetailView(note: note)
+            }
+            .sheet(isPresented: $showTemplateManager) {
+                CustomTemplatesView(onSelect: { template in
+                    selectedCustomTemplate = template
+                })
             }
             .interactiveDismissDisabled(recorder.isRecording || isProcessing)
             .task {
@@ -96,19 +103,37 @@ struct NoteComposerView: View {
                     ForEach(NoteTemplate.all) { template in
                         Button {
                             selectedTemplate = template
+                            selectedCustomTemplate = nil
                         } label: {
-                            Label("\(template.emoji)  \(template.label)", systemImage: selectedTemplate.id == template.id ? "checkmark" : "")
+                            Label("\(template.emoji)  \(template.label)", systemImage: selectedCustomTemplate == nil && selectedTemplate.id == template.id ? "checkmark" : "")
                         }
+                    }
+                    if !data.customTemplates.isEmpty {
+                        Section("My templates") {
+                            ForEach(data.customTemplates) { template in
+                                Button {
+                                    selectedCustomTemplate = template
+                                } label: {
+                                    Label("\(template.displayEmoji)  \(template.name)", systemImage: selectedCustomTemplate?.id == template.id ? "checkmark" : "")
+                                }
+                            }
+                        }
+                    }
+                    Divider()
+                    Button {
+                        showTemplateManager = true
+                    } label: {
+                        Label("Manage templates…", systemImage: "slider.horizontal.3")
                     }
                 } label: {
                     HStack(spacing: 10) {
-                        Text(selectedTemplate.emoji)
+                        Text(selectedCustomTemplate?.displayEmoji ?? selectedTemplate.emoji)
                             .font(.system(size: 18))
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(selectedTemplate.label)
+                            Text(selectedCustomTemplate?.name ?? selectedTemplate.label)
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(Theme.ink)
-                            Text(selectedTemplate.summary)
+                            Text(selectedCustomTemplate?.summary ?? selectedTemplate.summary)
                                 .font(.caption)
                                 .foregroundStyle(Theme.inkSecondary)
                                 .lineLimit(1)
@@ -341,7 +366,8 @@ struct NoteComposerView: View {
                 transcript: transcript ?? "",
                 manualNotes: manualTrimmed.isEmpty ? nil : manualTrimmed,
                 durationSeconds: seconds,
-                templateId: selectedTemplate.id
+                templateId: selectedTemplate.id,
+                customTemplate: selectedCustomTemplate
             )
         }
 
@@ -371,7 +397,8 @@ struct NoteComposerView: View {
                 transcript: "Title: \(title)",
                 manualNotes: manualNotes,
                 durationSeconds: 0,
-                templateId: selectedTemplate.id
+                templateId: selectedTemplate.id,
+                customTemplate: selectedCustomTemplate
             )
         }
 

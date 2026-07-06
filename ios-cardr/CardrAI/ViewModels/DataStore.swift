@@ -13,6 +13,7 @@ final class DataStore {
     var contactTags: [ContactTag] = []
     var folders: [Folder] = []
     var noteTags: [NoteTag] = []
+    var customTemplates: [CustomNoteTemplate] = []
     var events: [Event] = []
     var eventContacts: [EventContact] = []
     var agents: [Agent] = []
@@ -133,7 +134,8 @@ final class DataStore {
         async let t: Void = loadTags()
         async let e: Void = loadEvents()
         async let f: Void = loadFolders()
-        _ = await (c, n, p, s, t, e, f)
+        async let ct: Void = loadCustomTemplates()
+        _ = await (c, n, p, s, t, e, f, ct)
     }
 
     func loadContacts() async {
@@ -560,6 +562,70 @@ final class DataStore {
             noteTags = loadedNoteTags
         } catch {
             // Folders are optional; keep existing values on failure.
+        }
+    }
+
+    /// Loads the user's custom meeting-note templates.
+    func loadCustomTemplates() async {
+        guard let token else { return }
+        do {
+            customTemplates = try await service.fetch(
+                [CustomNoteTemplate].self,
+                table: "custom_note_templates",
+                token: token,
+                query: [URLQueryItem(name: "order", value: "created_at.asc")]
+            )
+        } catch {
+            // Custom templates are optional; keep existing values on failure.
+        }
+    }
+
+    /// Creates a custom meeting-note template. Returns the created template.
+    @discardableResult
+    func createCustomTemplate(
+        name: String,
+        emoji: String,
+        description: String,
+        fields: [CustomTemplateField],
+        guidance: String
+    ) async -> CustomNoteTemplate? {
+        guard let token, let userId = session.userId else { return nil }
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        do {
+            let created = try await service.insertReturning(
+                [CustomNoteTemplate].self,
+                table: "custom_note_templates",
+                token: token,
+                values: [[
+                    "user_id": AnyEncodable(userId),
+                    "name": AnyEncodable(trimmed),
+                    "emoji": AnyEncodable(emoji),
+                    "description": AnyEncodable(description),
+                    "fields": AnyEncodable(fields),
+                    "guidance": AnyEncodable(guidance),
+                ]]
+            )
+            if let template = created.first {
+                customTemplates.append(template)
+                return template
+            }
+        } catch {
+            loadError = "Could not create template."
+        }
+        return nil
+    }
+
+    /// Deletes a custom template.
+    func deleteCustomTemplate(_ template: CustomNoteTemplate) async {
+        guard let token else { return }
+        let previous = customTemplates
+        customTemplates.removeAll { $0.id == template.id }
+        do {
+            try await service.delete(table: "custom_note_templates", token: token, match: ["id": template.id])
+        } catch {
+            customTemplates = previous
+            loadError = "Could not delete template."
         }
     }
 
@@ -1190,7 +1256,7 @@ final class DataStore {
     /// Calls the `meeting-notes` edge function to summarise a transcript / notes.
     /// When `manualNotes` is provided the AI also returns polished notes
     /// (`enhancedNotes`) — the user's rough jottings expanded via the transcript.
-    func generateInsights(transcript: String, manualNotes: String? = nil, durationSeconds: Int, templateId: String? = nil) async -> NoteInsights? {
+    func generateInsights(transcript: String, manualNotes: String? = nil, durationSeconds: Int, templateId: String? = nil, customTemplate: CustomNoteTemplate? = nil) async -> NoteInsights? {
         let cleanManual = manualNotes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let cleanTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let token, cleanTranscript.count + cleanManual.count > 10 else { return nil }
@@ -1201,7 +1267,12 @@ final class DataStore {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         var body: [String: Any] = ["transcript": transcript, "durationSeconds": durationSeconds]
         if !cleanManual.isEmpty { body["manualNotes"] = cleanManual }
-        if let templateId { body["templateId"] = templateId }
+        if let customTemplate {
+            body["templateId"] = customTemplate.templateId
+            body["customTemplate"] = customTemplate.payload
+        } else if let templateId {
+            body["templateId"] = templateId
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         do {
@@ -1430,13 +1501,30 @@ final class DataStore {
             }
             if parsed.hasContent { result.analytics = parsed }
         }
+
+        // Custom-template sections, pre-collected server-side under templateFields.
+        if let rawFields = notes["templateFields"] as? [String: Any], !rawFields.isEmpty {
+            var parsedFields: [String: TemplateFieldValue] = [:]
+            for (key, value) in rawFields {
+                if let text = value as? String, !text.isEmpty {
+                    parsedFields[key] = .text(text)
+                } else if let items = value as? [String], !items.isEmpty {
+                    parsedFields[key] = .list(items)
+                }
+            }
+            if !parsedFields.isEmpty {
+                var analytics = result.analytics ?? MeetingAnalytics()
+                analytics.templateFields = parsedFields
+                result.analytics = analytics
+            }
+        }
         return result
     }
 
     /// Re-runs the AI on a note's content and persists the refreshed insights.
     /// Returns the updated note on success.
     @discardableResult
-    func reanalyzeNote(_ note: MeetingNote, templateId: String? = nil) async -> MeetingNote? {
+    func reanalyzeNote(_ note: MeetingNote, templateId: String? = nil, customTemplate: CustomNoteTemplate? = nil) async -> MeetingNote? {
         let transcript = note.transcript?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let manual = note.manualNotes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard transcript.count + manual.count > 10 else { return nil }
@@ -1445,7 +1533,8 @@ final class DataStore {
             transcript: prompt,
             manualNotes: manual.isEmpty ? nil : manual,
             durationSeconds: note.durationSeconds ?? 0,
-            templateId: templateId
+            templateId: templateId,
+            customTemplate: customTemplate
         ) else { return nil }
         guard let token else { return nil }
 

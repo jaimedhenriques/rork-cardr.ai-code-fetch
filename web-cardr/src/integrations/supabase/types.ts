@@ -842,6 +842,42 @@ export type Database = {
           },
         ]
       }
+      custom_note_templates: {
+        Row: {
+          created_at: string
+          description: string
+          emoji: string
+          fields: Json
+          guidance: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          emoji?: string
+          fields?: Json
+          guidance?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          emoji?: string
+          fields?: Json
+          guidance?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string

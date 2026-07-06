@@ -15,6 +15,7 @@ struct NoteDetailView: View {
     @State private var isAnalyzing = false
     @State private var didAutoEnhance = false
     @State private var template: NoteTemplate = .default
+    @State private var customTemplate: CustomNoteTemplate?
     @State private var participants: [MeetingParticipant] = []
     @State private var showContactPicker = false
     @State private var isLinking = false
@@ -54,6 +55,7 @@ struct NoteDetailView: View {
                 insightsCard
                 peopleCard
                 openQuestionsCard
+                templateSectionsCards
                 linkedContactsCard
                 polishedNotesCard
 
@@ -238,14 +240,26 @@ struct NoteDetailView: View {
                 ForEach(NoteTemplate.all) { item in
                     Button {
                         template = item
+                        customTemplate = nil
                     } label: {
-                        Label("\(item.emoji)  \(item.label)", systemImage: template.id == item.id ? "checkmark" : "")
+                        Label("\(item.emoji)  \(item.label)", systemImage: customTemplate == nil && template.id == item.id ? "checkmark" : "")
+                    }
+                }
+                if !data.customTemplates.isEmpty {
+                    Section("My templates") {
+                        ForEach(data.customTemplates) { item in
+                            Button {
+                                customTemplate = item
+                            } label: {
+                                Label("\(item.displayEmoji)  \(item.name)", systemImage: customTemplate?.id == item.id ? "checkmark" : "")
+                            }
+                        }
                     }
                 }
             } label: {
                 HStack(spacing: 6) {
-                    Text(template.emoji)
-                    Text(template.label).font(.caption.weight(.medium)).lineLimit(1)
+                    Text(customTemplate?.displayEmoji ?? template.emoji)
+                    Text(customTemplate?.name ?? template.label).font(.caption.weight(.medium)).lineLimit(1)
                 }
                 .foregroundStyle(Theme.inkSecondary)
                 .padding(.horizontal, 10).padding(.vertical, 6)
@@ -343,6 +357,52 @@ struct NoteDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Custom template sections
+
+    /// Renders user-defined template sections (e.g. "Red flags") stored under
+    /// `analytics.templateFields`, mirroring the web note detail.
+    @ViewBuilder
+    private var templateSectionsCards: some View {
+        if !isEditing, let fields = draft.analytics?.templateFields, !fields.isEmpty {
+            ForEach(fields.keys.sorted(), id: \.self) { key in
+                if let value = fields[key], !value.isEmpty {
+                    switch value {
+                    case .text(let text):
+                        readSection(prettifyFieldKey(key), icon: "sparkles", body: text)
+                    case .list(let items):
+                        sectionCard(prettifyFieldKey(key), icon: "sparkles", tint: Theme.primary,
+                                    trailing: "\(items.count)") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Circle()
+                                            .fill(Theme.primary)
+                                            .frame(width: 5, height: 5)
+                                            .padding(.top, 6)
+                                        Text(item)
+                                            .font(.subheadline)
+                                            .foregroundStyle(Theme.ink.opacity(0.85))
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Human label for a camelCase field key (e.g. "redFlags" → "Red Flags").
+    private func prettifyFieldKey(_ key: String) -> String {
+        var spaced = ""
+        for character in key {
+            if character.isUppercase { spaced.append(" ") }
+            spaced.append(character)
+        }
+        return spaced.trimmingCharacters(in: .whitespaces).capitalized
     }
 
     private func talkTimeBar(_ ratio: [String: Double]) -> some View {
@@ -884,7 +944,11 @@ struct NoteDetailView: View {
         guard !isAnalyzing else { return }
         isAnalyzing = true
         defer { isAnalyzing = false }
-        if let updated = await data.reanalyzeNote(draft, templateId: template.id == NoteTemplate.default.id ? nil : template.id) {
+        if let updated = await data.reanalyzeNote(
+            draft,
+            templateId: template.id == NoteTemplate.default.id ? nil : template.id,
+            customTemplate: customTemplate
+        ) {
             withAnimation(.easeOut(duration: 0.25)) { draft = updated }
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         }

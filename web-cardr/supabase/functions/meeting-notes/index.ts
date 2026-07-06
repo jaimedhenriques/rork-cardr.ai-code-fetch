@@ -3,7 +3,8 @@
 // Turns a meeting transcript / raw notes into structured insights using a
 // language model via the Rork AI proxy (Vercel AI Gateway).
 //
-// Request:  { transcript?: string, manualNotes?: string, durationSeconds?: number, templateId?: string }
+// Request:  { transcript?: string, manualNotes?: string, durationSeconds?: number, templateId?: string,
+//             customTemplate?: { name, guidance?, fields: [{ key, label, description?, type?: "list"|"text" }] } }
 // Response: { notes: {
 //   summary, keyTopics[], actionItems[{task, owner, deadline, priority, done}],
 //   followUps[{description, with, urgency}], decisions[], insights[],
@@ -12,7 +13,9 @@
 //             topSpeaker, talkTimeRatio, keyMetrics[{label, value}]},
 //   enhancedNotes (only when manualNotes provided — the user's rough notes
 //                  rewritten as polished Markdown grounded in the transcript),
-//   ...template-specific fields
+//   ...template-specific fields,
+//   templateFields (only for customTemplate — the custom fields collected
+//                   into one object keyed by field key)
 // } }
 //
 // Deploy with verify_jwt=false. Required secrets: TOOLKIT_URL, RORK_TOOLKIT_SECRET_KEY
@@ -119,6 +122,65 @@ Rules:
 - sentimentScore is -1..1. keyMetrics max 4 items.
 - Write in the same language as the transcript.`;
 
+interface CustomField {
+  key: string;
+  label: string;
+  description: string;
+  type: "list" | "text";
+}
+
+interface CustomTemplate {
+  name: string;
+  guidance: string;
+  fields: CustomField[];
+}
+
+const FIELD_KEY_RE = /^[a-zA-Z][a-zA-Z0-9]{0,40}$/;
+
+/** Validates and sanitizes a user-defined template from the request body. */
+function parseCustomTemplate(raw: any): CustomTemplate | null {
+  if (!raw || typeof raw !== "object") return null;
+  const name = typeof raw.name === "string" ? raw.name.trim().slice(0, 80) : "";
+  const guidance = typeof raw.guidance === "string" ? raw.guidance.trim().slice(0, 1200) : "";
+  const rawFields = Array.isArray(raw.fields) ? raw.fields.slice(0, 12) : [];
+  const seen = new Set<string>();
+  const fields: CustomField[] = [];
+  for (const f of rawFields) {
+    if (!f || typeof f !== "object") continue;
+    const key = typeof f.key === "string" ? f.key.trim() : "";
+    const label = typeof f.label === "string" ? f.label.trim().slice(0, 60) : "";
+    if (!FIELD_KEY_RE.test(key) || !label || seen.has(key)) continue;
+    seen.add(key);
+    fields.push({
+      key,
+      label,
+      description: typeof f.description === "string" ? f.description.trim().slice(0, 300) : "",
+      type: f.type === "text" ? "text" : "list",
+    });
+  }
+  if (!name || (fields.length === 0 && !guidance)) return null;
+  return { name, guidance, fields };
+}
+
+/** Builds the prompt guide for a user-defined template. */
+function buildCustomGuide(tpl: CustomTemplate): string {
+  const lines: string[] = [
+    `This is a "${tpl.name}" meeting (user-defined template).`,
+  ];
+  if (tpl.guidance) lines.push(tpl.guidance);
+  if (tpl.fields.length > 0) {
+    lines.push("Also include these extra JSON fields:");
+    for (const f of tpl.fields) {
+      const spec = f.type === "text"
+        ? `string — ${f.label}${f.description ? `: ${f.description}` : ""}`
+        : `string[] — ${f.label}${f.description ? `: ${f.description}` : ""}`;
+      lines.push(`- "${f.key}": ${spec}`);
+    }
+    lines.push("Only include what the transcript/notes actually support — use empty arrays or null when nothing matches.");
+  }
+  return lines.join("\n");
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -161,7 +223,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
     const durationSeconds = Number(body?.durationSeconds) || 0;
     const templateId = typeof body?.templateId === "string" ? body.templateId : "general";
-    const guide = TEMPLATE_GUIDES[templateId] ?? "";
+    const customTemplate = parseCustomTemplate(body?.customTemplate);
+    const guide = customTemplate ? buildCustomGuide(customTemplate) : (TEMPLATE_GUIDES[templateId] ?? "");
 
     let systemPrompt = guide ? `${BASE_PROMPT}\n\n${guide}` : BASE_PROMPT;
     if (manualNotes) systemPrompt = `${systemPrompt}\n\n${ENHANCE_GUIDE}`;
@@ -223,6 +286,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
     notes.openQuestions = arr(notes.openQuestions);
     if (typeof notes.enhancedNotes !== "string" || !notes.enhancedNotes.trim()) {
       delete notes.enhancedNotes;
+    }
+
+    // For custom templates, collect the user-defined fields into one object so
+    // clients can persist/render them without knowing the keys in advance.
+    if (customTemplate) {
+      const tf: Record<string, unknown> = {};
+      for (const f of customTemplate.fields) {
+        const v = notes[f.key];
+        delete notes[f.key];
+        if (v == null) continue;
+        if (f.type === "text" && typeof v === "string" && v.trim()) tf[f.key] = v.trim();
+        if (f.type === "list" && Array.isArray(v)) {
+          const items = v.filter((x: unknown) => typeof x === "string" && (x as string).trim());
+          if (items.length > 0) tf[f.key] = items;
+        }
+      }
+      if (Object.keys(tf).length > 0) notes.templateFields = tf;
     }
 
     return jsonResponse({ notes, model: MODEL });

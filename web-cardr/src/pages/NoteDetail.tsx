@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useApp } from "@/context/AppContext";
 import { NOTE_TEMPLATES } from "@/lib/note-templates";
+import { useCustomTemplates, buildCustomTemplatePayload } from "@/hooks/useCustomTemplates";
+import TemplateEditorDialog from "@/components/TemplateEditorDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -109,6 +111,8 @@ const NoteDetail = () => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("general");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const { templates: customTemplates } = useCustomTemplates();
+  const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
   const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
   const [editingSpeaker, setEditingSpeaker] = useState<string | null>(null);
   const [speakerDraft, setSpeakerDraft] = useState("");
@@ -215,12 +219,14 @@ const NoteDetail = () => {
     }
     setSummarizing(true);
     try {
+      const activeCustomTemplate = customTemplates.find((c) => `custom-${c.id}` === selectedTemplateId);
       const { data, error } = await supabase.functions.invoke("meeting-notes", {
         body: {
           transcript: `Title: ${note.title}\n\n${text}`,
           manualNotes: note.transcript && note.manual_notes ? note.manual_notes : undefined,
           durationSeconds: note.duration_seconds,
           templateId: selectedTemplateId !== "general" ? selectedTemplateId : undefined,
+          ...(activeCustomTemplate ? { customTemplate: buildCustomTemplatePayload(activeCustomTemplate) } : {}),
         },
       });
       if (error) throw new Error(error.message);
@@ -249,6 +255,10 @@ const NoteDetail = () => {
       const templateFields: Record<string, any> = {};
       for (const key of templateFieldKeys) {
         if (data.notes[key]) templateFields[key] = data.notes[key];
+      }
+      // Custom templates return their sections pre-collected by the server
+      if (data.notes.templateFields && typeof data.notes.templateFields === "object") {
+        Object.assign(templateFields, data.notes.templateFields);
       }
       if (Object.keys(templateFields).length > 0) {
         updates.analytics = { ...(updates.analytics || {}), templateFields };
@@ -587,8 +597,8 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
           <Popover open={templatePickerOpen} onOpenChange={setTemplatePickerOpen}>
             <PopoverTrigger asChild>
               <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted/50 hover:bg-muted px-2.5 py-1.5 rounded-lg transition-colors">
-                <span>{NOTE_TEMPLATES.find(t => t.id === selectedTemplateId)?.emoji || "📋"}</span>
-                <span className="max-w-[100px] truncate">{NOTE_TEMPLATES.find(t => t.id === selectedTemplateId)?.label || "General"}</span>
+                <span>{customTemplates.find(c => `custom-${c.id}` === selectedTemplateId)?.emoji || NOTE_TEMPLATES.find(t => t.id === selectedTemplateId)?.emoji || "📋"}</span>
+                <span className="max-w-[100px] truncate">{customTemplates.find(c => `custom-${c.id}` === selectedTemplateId)?.name || NOTE_TEMPLATES.find(t => t.id === selectedTemplateId)?.label || "General"}</span>
               </button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-56 p-1.5" sideOffset={4}>
@@ -608,9 +618,42 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                     </div>
                   </button>
                 ))}
+                {customTemplates.length > 0 && (
+                  <p className="px-2.5 pt-2 pb-1 text-[9px] font-bold uppercase tracking-wide text-muted-foreground border-t border-border/60 mt-1">{t("noteRecord.myTemplates")}</p>
+                )}
+                {customTemplates.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedTemplateId(`custom-${c.id}`); setTemplatePickerOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-left transition-colors ${
+                      selectedTemplateId === `custom-${c.id}` ? "bg-primary/10 text-primary" : "hover:bg-muted/80 text-foreground"
+                    }`}
+                  >
+                    <span className="text-sm">{c.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold truncate">{c.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{c.description || c.fields.map((f) => f.label).join(" · ")}</p>
+                    </div>
+                  </button>
+                ))}
+                {user && (
+                  <button
+                    onClick={() => { setTemplatePickerOpen(false); setTemplateEditorOpen(true); }}
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-left hover:bg-muted/80 transition-colors border-t border-border/60 mt-1"
+                  >
+                    <Plus size={12} className="text-primary" />
+                    <p className="text-xs font-semibold text-primary">{t("noteRecord.newTemplate")}</p>
+                  </button>
+                )}
               </div>
             </PopoverContent>
           </Popover>
+
+          <TemplateEditorDialog
+            open={templateEditorOpen}
+            onOpenChange={setTemplateEditorOpen}
+            onSaved={(tpl) => setSelectedTemplateId(`custom-${tpl.id}`)}
+          />
 
           <button onClick={handleSummarize} disabled={summarizing} className="flex items-center gap-1.5 text-xs font-semibold text-primary ml-auto">
             {summarizing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
@@ -1059,8 +1102,17 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
             relationshipSignals:  { icon: <Users size={14} />,           label: "Relationship Signals",   color: "text-primary",     bg: "bg-primary/10" },
           };
 
-          // String fields
-          const stringFields = ["decisionProcess", "morale", "closePlan", "callPurpose", "toneAssessment", "callbackNeeded"];
+          // Human label for a camelCase field key (custom template sections)
+          const prettifyKey = (k: string) =>
+            k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()).trim();
+          const stringLabels: Record<string, string> = {
+            decisionProcess: "Decision Process",
+            morale: "Morale",
+            closePlan: "Close Plan",
+            callPurpose: "Call Purpose",
+            toneAssessment: "Tone",
+            callbackNeeded: "Callback Needed",
+          };
 
           return (
             <>
@@ -1068,9 +1120,9 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                 if (!value) return null;
                 const config = sectionConfig[key];
 
-                // String-type fields
-                if (stringFields.includes(key) && typeof value === "string") {
-                  const label = key === "decisionProcess" ? "Decision Process" : key === "morale" ? "Morale" : "Close Plan";
+                // String-type fields (built-in or custom template text sections)
+                if (typeof value === "string") {
+                  const label = stringLabels[key] ?? prettifyKey(key);
                   return (
                     <motion.div key={key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -1082,19 +1134,20 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                   );
                 }
 
-                // Array of strings
-                if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string" && config) {
+                // Array of strings (custom template sections get a generic style)
+                if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
+                  const cfg = config ?? { icon: <Sparkles size={14} />, label: prettifyKey(key), color: "text-primary", bg: "bg-primary/10" };
                   return (
                     <motion.div key={key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <span className={config.color}>{config.icon}</span>
-                        <h3 className="text-sm font-semibold text-foreground">{config.label}</h3>
-                        <span className={`text-[10px] font-bold ${config.color} ${config.bg} px-2 py-0.5 rounded-full ml-auto`}>{value.length}</span>
+                        <span className={cfg.color}>{cfg.icon}</span>
+                        <h3 className="text-sm font-semibold text-foreground">{cfg.label}</h3>
+                        <span className={`text-[10px] font-bold ${cfg.color} ${cfg.bg} px-2 py-0.5 rounded-full ml-auto`}>{value.length}</span>
                       </div>
                       <div className="space-y-2">
                         {(value as string[]).map((item, i) => (
                           <div key={i} className="flex items-start gap-2.5">
-                            <div className={`w-1.5 h-1.5 rounded-full ${config.bg.replace("/10", "")} mt-2 shrink-0`} />
+                            <div className={`w-1.5 h-1.5 rounded-full ${cfg.bg.replace("/10", "")} mt-2 shrink-0`} />
                             <p className="text-sm text-foreground/80 leading-relaxed">{item}</p>
                           </div>
                         ))}

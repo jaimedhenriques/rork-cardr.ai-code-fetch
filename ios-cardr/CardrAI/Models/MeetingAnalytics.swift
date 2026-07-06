@@ -19,10 +19,14 @@ nonisolated struct MeetingAnalytics: Codable, Hashable {
     var topSpeaker: String?
     var talkTimeRatio: [String: Double]?
     var keyMetrics: [NoteMetric]?
+    /// Custom-template sections keyed by field key (e.g. "redFlags"), mirroring
+    /// the web `analytics.templateFields`.
+    var templateFields: [String: TemplateFieldValue]?
 
     var hasContent: Bool {
         (keyMetrics?.isEmpty == false) || (talkTimeRatio?.isEmpty == false)
             || sentimentLabel != nil || questionsAsked != nil
+            || (templateFields?.isEmpty == false)
     }
 }
 

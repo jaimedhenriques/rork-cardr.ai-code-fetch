@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2 } from "lucide-react";
+import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2, Plus } from "lucide-react";
 import type { AudioSource } from "@/hooks/useAudioRecorder";
 import { useDocumentPip } from "@/hooks/useDocumentPip";
 import FloatingRecorder from "@/components/FloatingRecorder";
 import { NOTE_TEMPLATES, NoteTemplate } from "@/lib/note-templates";
+import { useCustomTemplates, buildCustomTemplatePayload, CustomNoteTemplate } from "@/hooks/useCustomTemplates";
+import TemplateEditorDialog from "@/components/TemplateEditorDialog";
 import PageHeader from "@/components/PageHeader";
 import { supabase, SUPABASE_FUNCTIONS_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -53,6 +55,19 @@ const NoteRecord = () => {
     return NOTE_TEMPLATES[0];
   });
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const { templates: customTemplates } = useCustomTemplates();
+  const [selectedCustom, setSelectedCustom] = useState<CustomNoteTemplate | null>(null);
+  const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<CustomNoteTemplate | null>(null);
+
+  // Restore a prefilled custom template (e.g. re-record from a note) once loaded
+  useEffect(() => {
+    if (typeof prefill.templateId === "string" && prefill.templateId.startsWith("custom-") && !selectedCustom) {
+      const found = customTemplates.find((c) => `custom-${c.id}` === prefill.templateId);
+      if (found) setSelectedCustom(found);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customTemplates]);
   const [audioSource, setAudioSource] = useState<AudioSource>("mic");
   const autoStarted = useRef(false);
   const pip = useDocumentPip();
@@ -150,7 +165,8 @@ const NoteRecord = () => {
               transcript: finalTranscript || undefined,
               manualNotes: trimmedManualNotes || undefined,
               durationSeconds: finalDuration,
-              templateId: selectedTemplate.id,
+              templateId: selectedCustom ? `custom-${selectedCustom.id}` : selectedTemplate.id,
+              ...(selectedCustom ? { customTemplate: buildCustomTemplatePayload(selectedCustom) } : {}),
             },
           });
           if (!error && data?.notes) aiNotes = data.notes;
@@ -178,6 +194,13 @@ const NoteRecord = () => {
         enhanced_notes: typeof aiNotes?.enhancedNotes === "string" && aiNotes.enhancedNotes.trim() ? aiNotes.enhancedNotes : null,
         ...(calendarEventId ? { calendar_event_id: calendarEventId } : {}),
       };
+
+      // Persist analytics + custom-template sections captured on first analysis
+      const capturedAnalytics: Record<string, any> = { ...(aiNotes?.analytics || {}) };
+      if (aiNotes?.templateFields && Object.keys(aiNotes.templateFields).length > 0) {
+        capturedAnalytics.templateFields = aiNotes.templateFields;
+      }
+      if (Object.keys(capturedAnalytics).length > 0) noteData.analytics = capturedAnalytics;
 
       // If we have a prefilled contact (from phone dialer), ensure they're in mentioned_people
       if (prefill.contactName && !noteData.mentioned_people.some((p: any) => p.name === prefill.contactName)) {
@@ -236,7 +259,7 @@ const NoteRecord = () => {
     } finally {
       setProcessing(false);
     }
-  }, [recorder, title, manualNotes, user, navigate, pip.close]);
+  }, [recorder, title, manualNotes, user, navigate, pip.close, selectedTemplate, selectedCustom]);
 
   // Apple Voice Memos uses light-weight tabular digits — TimerDisplay handles formatting.
 
@@ -321,10 +344,10 @@ const NoteRecord = () => {
             disabled={recorder.recording}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-card border border-border text-left hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="text-base">{selectedTemplate.emoji}</span>
+            <span className="text-base">{selectedCustom ? selectedCustom.emoji : selectedTemplate.emoji}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">{selectedTemplate.label}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{selectedTemplate.description}</p>
+              <p className="text-sm font-semibold text-foreground">{selectedCustom ? selectedCustom.name : selectedTemplate.label}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{selectedCustom ? selectedCustom.description || t("noteRecord.myTemplates") : selectedTemplate.description}</p>
             </div>
             <LayoutTemplate size={14} className="text-muted-foreground shrink-0" />
           </button>
@@ -334,22 +357,67 @@ const NoteRecord = () => {
               animate={{ opacity: 1, y: 0 }}
               className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl bg-card border border-border shadow-lg overflow-hidden"
             >
-              {NOTE_TEMPLATES.map((t) => (
+              {NOTE_TEMPLATES.map((tpl) => (
                 <button
-                  key={t.id}
-                  onClick={() => { setSelectedTemplate(t); setShowTemplatePicker(false); }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-secondary transition-colors ${selectedTemplate.id === t.id ? "bg-primary/10" : ""}`}
+                  key={tpl.id}
+                  onClick={() => { setSelectedTemplate(tpl); setSelectedCustom(null); setShowTemplatePicker(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-secondary transition-colors ${!selectedCustom && selectedTemplate.id === tpl.id ? "bg-primary/10" : ""}`}
                 >
-                  <span className="text-base">{t.emoji}</span>
+                  <span className="text-base">{tpl.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${selectedTemplate.id === t.id ? "text-primary font-semibold" : "text-foreground"}`}>{t.label}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{t.description}</p>
+                    <p className={`text-sm font-medium ${!selectedCustom && selectedTemplate.id === tpl.id ? "text-primary font-semibold" : "text-foreground"}`}>{tpl.label}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{tpl.description}</p>
                   </div>
                 </button>
               ))}
+              {customTemplates.length > 0 && (
+                <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border-t border-border/60">{t("noteRecord.myTemplates")}</p>
+              )}
+              {customTemplates.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setSelectedCustom(c); setShowTemplatePicker(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-secondary transition-colors ${selectedCustom?.id === c.id ? "bg-primary/10" : ""}`}
+                >
+                  <span className="text-base">{c.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${selectedCustom?.id === c.id ? "text-primary font-semibold" : "text-foreground"}`}>{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{c.description || c.fields.map((f) => f.label).join(" · ")}</p>
+                  </div>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); setEditingTemplate(c); setTemplateEditorOpen(true); setShowTemplatePicker(false); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTemplate(c); setTemplateEditorOpen(true); setShowTemplatePicker(false); } }}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary transition-colors shrink-0"
+                  >
+                    <Pencil size={12} />
+                  </span>
+                </button>
+              ))}
+              {user && (
+                <button
+                  onClick={() => { setEditingTemplate(null); setTemplateEditorOpen(true); setShowTemplatePicker(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-secondary transition-colors border-t border-border/60"
+                >
+                  <span className="w-[18px] flex justify-center"><Plus size={14} className="text-primary" /></span>
+                  <p className="text-sm font-semibold text-primary">{t("noteRecord.newTemplate")}</p>
+                </button>
+              )}
             </motion.div>
           )}
         </div>
+
+        <TemplateEditorDialog
+          open={templateEditorOpen}
+          onOpenChange={setTemplateEditorOpen}
+          template={editingTemplate}
+          onSaved={(tpl) => { setSelectedCustom(tpl); setEditingTemplate(null); }}
+          onDeleted={(deletedId) => {
+            if (selectedCustom?.id === deletedId) setSelectedCustom(null);
+            setEditingTemplate(null);
+          }}
+        />
 
         {/* Apple Voice Memos-style timer */}
         <div className="flex justify-center mb-4">
