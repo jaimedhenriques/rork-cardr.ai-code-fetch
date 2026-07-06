@@ -111,7 +111,7 @@ const NoteDetail = () => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("general");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
-  const { templates: customTemplates } = useCustomTemplates();
+  const { templates: customTemplates, myTemplates, teamTemplates } = useCustomTemplates();
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
   const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
   const [editingSpeaker, setEditingSpeaker] = useState<string | null>(null);
@@ -618,10 +618,10 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                     </div>
                   </button>
                 ))}
-                {customTemplates.length > 0 && (
+                {myTemplates.length > 0 && (
                   <p className="px-2.5 pt-2 pb-1 text-[9px] font-bold uppercase tracking-wide text-muted-foreground border-t border-border/60 mt-1">{t("noteRecord.myTemplates")}</p>
                 )}
-                {customTemplates.map((c) => (
+                {myTemplates.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => { setSelectedTemplateId(`custom-${c.id}`); setTemplatePickerOpen(false); }}
@@ -634,6 +634,26 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                       <p className="text-xs font-semibold truncate">{c.name}</p>
                       <p className="text-[10px] text-muted-foreground truncate">{c.description || c.fields.map((f) => f.label).join(" · ")}</p>
                     </div>
+                    {c.isShared && <Users size={10} className="text-primary/70 shrink-0" />}
+                  </button>
+                ))}
+                {teamTemplates.length > 0 && (
+                  <p className="px-2.5 pt-2 pb-1 text-[9px] font-bold uppercase tracking-wide text-muted-foreground border-t border-border/60 mt-1">{t("noteRecord.teamTemplates")}</p>
+                )}
+                {teamTemplates.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelectedTemplateId(`custom-${c.id}`); setTemplatePickerOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-left transition-colors ${
+                      selectedTemplateId === `custom-${c.id}` ? "bg-primary/10 text-primary" : "hover:bg-muted/80 text-foreground"
+                    }`}
+                  >
+                    <span className="text-sm">{c.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold truncate">{c.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{c.description || c.fields.map((f) => f.label).join(" · ")}</p>
+                    </div>
+                    <Users size={10} className="text-muted-foreground shrink-0" />
                   </button>
                 ))}
                 {user && (

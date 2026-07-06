@@ -823,6 +823,7 @@ export const EN_STRINGS: Record<string, string> = {
   "noteRecord.popOut": "Pop out mini recorder",
   "noteRecord.stopSave": "Stop & save",
   "noteRecord.myTemplates": "My templates",
+  "noteRecord.teamTemplates": "Team templates",
   "noteRecord.newTemplate": "New template",
 
   // Custom summary templates
@@ -848,6 +849,8 @@ export const EN_STRINGS: Record<string, string> = {
   "templates.create": "Create template",
   "templates.delete": "Delete",
   "templates.edit": "Edit",
+  "templates.shareWithTeam": "Share with my team",
+  "templates.shareWithTeamHint": "Everyone in your organization can use this template",
   "noteDetail.polishedNotes": "Polished notes",
   "meetingPrompt.startingNow": "Starting now",
   "meetingPrompt.record": "Record",

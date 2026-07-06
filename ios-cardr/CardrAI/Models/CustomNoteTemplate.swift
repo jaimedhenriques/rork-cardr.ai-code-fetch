@@ -24,10 +24,18 @@ nonisolated struct CustomNoteTemplate: Codable, Identifiable, Hashable {
     var fields: [CustomTemplateField]?
     var guidance: String?
     var createdAt: String?
+    /// Owner's user id — used to split "My templates" from org-shared ones.
+    var userId: String?
+    var orgId: String?
+    /// Shared with the owner's organization.
+    var isShared: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, name, emoji, description, fields, guidance
         case createdAt = "created_at"
+        case userId = "user_id"
+        case orgId = "org_id"
+        case isShared = "is_shared"
     }
 
     var displayEmoji: String {

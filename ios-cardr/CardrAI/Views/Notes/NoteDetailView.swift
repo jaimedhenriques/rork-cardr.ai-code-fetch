@@ -245,9 +245,20 @@ struct NoteDetailView: View {
                         Label("\(item.emoji)  \(item.label)", systemImage: customTemplate == nil && template.id == item.id ? "checkmark" : "")
                     }
                 }
-                if !data.customTemplates.isEmpty {
+                if !data.myCustomTemplates.isEmpty {
                     Section("My templates") {
-                        ForEach(data.customTemplates) { item in
+                        ForEach(data.myCustomTemplates) { item in
+                            Button {
+                                customTemplate = item
+                            } label: {
+                                Label("\(item.displayEmoji)  \(item.name)", systemImage: customTemplate?.id == item.id ? "checkmark" : "")
+                            }
+                        }
+                    }
+                }
+                if !data.teamCustomTemplates.isEmpty {
+                    Section("Team templates") {
+                        ForEach(data.teamCustomTemplates) { item in
                             Button {
                                 customTemplate = item
                             } label: {

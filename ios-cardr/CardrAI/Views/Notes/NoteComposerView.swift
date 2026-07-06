@@ -108,9 +108,20 @@ struct NoteComposerView: View {
                             Label("\(template.emoji)  \(template.label)", systemImage: selectedCustomTemplate == nil && selectedTemplate.id == template.id ? "checkmark" : "")
                         }
                     }
-                    if !data.customTemplates.isEmpty {
+                    if !data.myCustomTemplates.isEmpty {
                         Section("My templates") {
-                            ForEach(data.customTemplates) { template in
+                            ForEach(data.myCustomTemplates) { template in
+                                Button {
+                                    selectedCustomTemplate = template
+                                } label: {
+                                    Label("\(template.displayEmoji)  \(template.name)", systemImage: selectedCustomTemplate?.id == template.id ? "checkmark" : "")
+                                }
+                            }
+                        }
+                    }
+                    if !data.teamCustomTemplates.isEmpty {
+                        Section("Team templates") {
+                            ForEach(data.teamCustomTemplates) { template in
                                 Button {
                                     selectedCustomTemplate = template
                                 } label: {

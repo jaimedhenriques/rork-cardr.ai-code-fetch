@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2, Plus } from "lucide-react";
+import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2, Plus, Users } from "lucide-react";
 import type { AudioSource } from "@/hooks/useAudioRecorder";
 import { useDocumentPip } from "@/hooks/useDocumentPip";
 import FloatingRecorder from "@/components/FloatingRecorder";
@@ -55,7 +55,7 @@ const NoteRecord = () => {
     return NOTE_TEMPLATES[0];
   });
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const { templates: customTemplates } = useCustomTemplates();
+  const { templates: customTemplates, myTemplates, teamTemplates } = useCustomTemplates();
   const [selectedCustom, setSelectedCustom] = useState<CustomNoteTemplate | null>(null);
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomNoteTemplate | null>(null);
@@ -370,10 +370,10 @@ const NoteRecord = () => {
                   </div>
                 </button>
               ))}
-              {customTemplates.length > 0 && (
+              {myTemplates.length > 0 && (
                 <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border-t border-border/60">{t("noteRecord.myTemplates")}</p>
               )}
-              {customTemplates.map((c) => (
+              {myTemplates.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => { setSelectedCustom(c); setShowTemplatePicker(false); }}
@@ -384,6 +384,7 @@ const NoteRecord = () => {
                     <p className={`text-sm font-medium ${selectedCustom?.id === c.id ? "text-primary font-semibold" : "text-foreground"}`}>{c.name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{c.description || c.fields.map((f) => f.label).join(" · ")}</p>
                   </div>
+                  {c.isShared && <Users size={11} className="text-primary/70 shrink-0" />}
                   <span
                     role="button"
                     tabIndex={0}
@@ -393,6 +394,23 @@ const NoteRecord = () => {
                   >
                     <Pencil size={12} />
                   </span>
+                </button>
+              ))}
+              {teamTemplates.length > 0 && (
+                <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border-t border-border/60">{t("noteRecord.teamTemplates")}</p>
+              )}
+              {teamTemplates.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setSelectedCustom(c); setShowTemplatePicker(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-secondary transition-colors ${selectedCustom?.id === c.id ? "bg-primary/10" : ""}`}
+                >
+                  <span className="text-base">{c.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${selectedCustom?.id === c.id ? "text-primary font-semibold" : "text-foreground"}`}>{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{c.description || c.fields.map((f) => f.label).join(" · ")}</p>
+                  </div>
+                  <Users size={11} className="text-muted-foreground shrink-0" />
                 </button>
               ))}
               {user && (

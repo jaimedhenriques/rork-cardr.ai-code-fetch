@@ -45,41 +45,65 @@ struct CustomTemplatesView: View {
 
     private var templateList: some View {
         List {
-            Section {
-                ForEach(data.customTemplates) { template in
-                    Button {
-                        onSelect?(template)
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Text(template.displayEmoji)
-                                .font(.system(size: 22))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(template.name)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(Theme.ink)
-                                Text(template.summary)
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.inkSecondary)
-                                    .lineLimit(2)
+            if !data.myCustomTemplates.isEmpty {
+                Section {
+                    ForEach(data.myCustomTemplates) { template in
+                        templateRow(template, isTeam: false)
+                    }
+                    .onDelete { offsets in
+                        let targets = offsets.map { data.myCustomTemplates[$0] }
+                        Task {
+                            for template in targets {
+                                await data.deleteCustomTemplate(template)
                             }
-                            Spacer(minLength: 0)
                         }
                     }
+                } header: {
+                    Text("My templates")
+                } footer: {
+                    Text("Templates tell the AI exactly what to extract from your meetings. Tap one to use it for the next analysis.")
                 }
-                .onDelete { offsets in
-                    let targets = offsets.map { data.customTemplates[$0] }
-                    Task {
-                        for template in targets {
-                            await data.deleteCustomTemplate(template)
-                        }
+            }
+            if !data.teamCustomTemplates.isEmpty {
+                Section {
+                    ForEach(data.teamCustomTemplates) { template in
+                        templateRow(template, isTeam: true)
                     }
+                } header: {
+                    Text("Team templates")
+                } footer: {
+                    Text("Shared by teammates in your organization. Only the owner can edit or delete them.")
                 }
-            } footer: {
-                Text("Templates tell the AI exactly what to extract from your meetings. Tap one to use it for the next analysis.")
             }
         }
         .scrollContentBackground(.hidden)
+    }
+
+    private func templateRow(_ template: CustomNoteTemplate, isTeam: Bool) -> some View {
+        Button {
+            onSelect?(template)
+            dismiss()
+        } label: {
+            HStack(spacing: 12) {
+                Text(template.displayEmoji)
+                    .font(.system(size: 22))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(template.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.ink)
+                    Text(template.summary)
+                        .font(.caption)
+                        .foregroundStyle(Theme.inkSecondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                if isTeam || template.isShared == true {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(isTeam ? Theme.inkSecondary : Theme.primary.opacity(0.7))
+                }
+            }
+        }
     }
 
     private var emptyState: some View {

@@ -850,7 +850,9 @@ export type Database = {
           fields: Json
           guidance: string
           id: string
+          is_shared: boolean
           name: string
+          org_id: string | null
           updated_at: string
           user_id: string
         }
@@ -861,7 +863,9 @@ export type Database = {
           fields?: Json
           guidance?: string
           id?: string
+          is_shared?: boolean
           name: string
+          org_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -872,7 +876,9 @@ export type Database = {
           fields?: Json
           guidance?: string
           id?: string
+          is_shared?: boolean
           name?: string
+          org_id?: string | null
           updated_at?: string
           user_id?: string
         }

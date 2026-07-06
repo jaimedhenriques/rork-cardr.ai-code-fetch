@@ -580,6 +580,18 @@ final class DataStore {
         }
     }
 
+    /// Templates the signed-in user owns (editable and deletable).
+    var myCustomTemplates: [CustomNoteTemplate] {
+        guard let userId = session.userId else { return customTemplates }
+        return customTemplates.filter { $0.userId == nil || $0.userId == userId }
+    }
+
+    /// Templates shared by teammates in the user's organization.
+    var teamCustomTemplates: [CustomNoteTemplate] {
+        guard let userId = session.userId else { return [] }
+        return customTemplates.filter { $0.userId != nil && $0.userId != userId }
+    }
+
     /// Creates a custom meeting-note template. Returns the created template.
     @discardableResult
     func createCustomTemplate(
@@ -587,24 +599,30 @@ final class DataStore {
         emoji: String,
         description: String,
         fields: [CustomTemplateField],
-        guidance: String
+        guidance: String,
+        shareWithTeam: Bool = false
     ) async -> CustomNoteTemplate? {
         guard let token, let userId = session.userId else { return nil }
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         do {
+            var values: [String: AnyEncodable] = [
+                "user_id": AnyEncodable(userId),
+                "name": AnyEncodable(trimmed),
+                "emoji": AnyEncodable(emoji),
+                "description": AnyEncodable(description),
+                "fields": AnyEncodable(fields),
+                "guidance": AnyEncodable(guidance),
+            ]
+            if shareWithTeam, let orgId {
+                values["is_shared"] = AnyEncodable(true)
+                values["org_id"] = AnyEncodable(orgId)
+            }
             let created = try await service.insertReturning(
                 [CustomNoteTemplate].self,
                 table: "custom_note_templates",
                 token: token,
-                values: [[
-                    "user_id": AnyEncodable(userId),
-                    "name": AnyEncodable(trimmed),
-                    "emoji": AnyEncodable(emoji),
-                    "description": AnyEncodable(description),
-                    "fields": AnyEncodable(fields),
-                    "guidance": AnyEncodable(guidance),
-                ]]
+                values: [values]
             )
             if let template = created.first {
                 customTemplates.append(template)

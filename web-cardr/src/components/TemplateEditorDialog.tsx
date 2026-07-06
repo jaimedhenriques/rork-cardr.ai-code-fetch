@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Loader2, List, AlignLeft } from "lucide-react";
+import { Plus, Trash2, Loader2, List, AlignLeft, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -34,12 +35,13 @@ const EMOJI_CHOICES = ["📝", "🎤", "🧠", "🤝", "🎓", "🩺", "⚖️",
  */
 const TemplateEditorDialog = ({ open, onOpenChange, template, onSaved, onDeleted }: TemplateEditorDialogProps) => {
   const { t } = useLanguage();
-  const { saveTemplate, deleteTemplate, saving } = useCustomTemplates();
+  const { saveTemplate, deleteTemplate, saving, orgId } = useCustomTemplates();
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("📝");
   const [description, setDescription] = useState("");
   const [guidance, setGuidance] = useState("");
   const [fields, setFields] = useState<EditableField[]>([{ label: "", description: "", type: "list" }]);
+  const [shared, setShared] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ const TemplateEditorDialog = ({ open, onOpenChange, template, onSaved, onDeleted
       setEmoji(template.emoji || "📝");
       setDescription(template.description);
       setGuidance(template.guidance);
+      setShared(template.isShared);
       setFields(
         template.fields.length > 0
           ? template.fields.map((f) => ({ label: f.label, description: f.description, type: f.type }))
@@ -59,6 +62,7 @@ const TemplateEditorDialog = ({ open, onOpenChange, template, onSaved, onDeleted
       setEmoji("📝");
       setDescription("");
       setGuidance("");
+      setShared(false);
       setFields([{ label: "", description: "", type: "list" }]);
     }
   }, [open, template]);
@@ -96,6 +100,7 @@ const TemplateEditorDialog = ({ open, onOpenChange, template, onSaved, onDeleted
         description: description.trim(),
         fields: cleanFields,
         guidance: guidance.trim(),
+        isShared: shared,
       });
       toast.success(t("templates.saved"));
       onOpenChange(false);
@@ -229,6 +234,20 @@ const TemplateEditorDialog = ({ open, onOpenChange, template, onSaved, onDeleted
               className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/50 resize-none"
             />
           </div>
+
+          {/* Team sharing */}
+          {orgId && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border/60">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Users size={15} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground">{t("templates.shareWithTeam")}</p>
+                <p className="text-[11px] text-muted-foreground">{t("templates.shareWithTeamHint")}</p>
+              </div>
+              <Switch checked={shared} onCheckedChange={setShared} />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-2 pt-1">

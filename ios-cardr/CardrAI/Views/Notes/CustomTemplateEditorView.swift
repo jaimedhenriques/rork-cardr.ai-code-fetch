@@ -14,6 +14,7 @@ struct CustomTemplateEditorView: View {
     @State private var descriptionText = ""
     @State private var guidance = ""
     @State private var sections: [EditableSection] = [EditableSection()]
+    @State private var shareWithTeam = false
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -83,6 +84,17 @@ struct CustomTemplateEditorView: View {
                         .lineLimit(3...5)
                 } header: {
                     Text("Extra instructions (optional)")
+                }
+
+                if data.orgId != nil {
+                    Section {
+                        Toggle(isOn: $shareWithTeam) {
+                            Label("Share with my team", systemImage: "person.2")
+                        }
+                        .tint(Theme.primary)
+                    } footer: {
+                        Text("Everyone in your organization can use this template for their own meetings.")
+                    }
                 }
 
                 if let errorMessage {
@@ -168,7 +180,8 @@ struct CustomTemplateEditorView: View {
             emoji: emoji,
             description: descriptionText.trimmingCharacters(in: .whitespaces),
             fields: fields,
-            guidance: guidance.trimmingCharacters(in: .whitespaces)
+            guidance: guidance.trimmingCharacters(in: .whitespaces),
+            shareWithTeam: shareWithTeam
         ) {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             onCreated?(created)
