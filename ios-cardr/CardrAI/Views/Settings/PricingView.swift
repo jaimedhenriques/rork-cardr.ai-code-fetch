@@ -6,7 +6,7 @@ struct PricingView: View {
     @Environment(\.openURL) private var openURL
     @State private var annual = true
 
-    private struct Plan {
+    private struct Plan: Identifiable {
         let id: String
         let name: String
         let icon: String

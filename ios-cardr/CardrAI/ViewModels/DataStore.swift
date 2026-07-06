@@ -1021,6 +1021,8 @@ final class DataStore {
     /// AI insights returned by the `meeting-notes` edge function.
     struct NoteInsights {
         var summary: String?
+        /// AI-polished markdown version of the user's rough notes (web `enhanced_notes`).
+        var enhancedNotes: String?
         var keyTopics: [String] = []
         var actionItems: [NoteAction] = []
         var followUps: [NoteFollowUp] = []
@@ -1121,6 +1123,7 @@ final class DataStore {
         if let d = note.decisions, !d.isEmpty {
             lines.append("Decisions:\n" + d.map { "- \($0)" }.joined(separator: "\n"))
         }
+        if let e = note.enhancedNotes, !e.isEmpty { lines.append("Polished notes:\n\(e)") }
         if let m = note.manualNotes, !m.isEmpty { lines.append("Notes: \(m)") }
         if let tr = note.transcript, !tr.isEmpty { lines.append("Transcript:\n\(tr)") }
         return lines.joined(separator: "\n\n")
@@ -1185,14 +1188,19 @@ final class DataStore {
     }
 
     /// Calls the `meeting-notes` edge function to summarise a transcript / notes.
-    func generateInsights(transcript: String, durationSeconds: Int, templateId: String? = nil) async -> NoteInsights? {
-        guard let token, transcript.trimmingCharacters(in: .whitespacesAndNewlines).count > 10 else { return nil }
+    /// When `manualNotes` is provided the AI also returns polished notes
+    /// (`enhancedNotes`) — the user's rough jottings expanded via the transcript.
+    func generateInsights(transcript: String, manualNotes: String? = nil, durationSeconds: Int, templateId: String? = nil) async -> NoteInsights? {
+        let cleanManual = manualNotes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let cleanTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let token, cleanTranscript.count + cleanManual.count > 10 else { return nil }
         var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("meeting-notes"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         var body: [String: Any] = ["transcript": transcript, "durationSeconds": durationSeconds]
+        if !cleanManual.isEmpty { body["manualNotes"] = cleanManual }
         if let templateId { body["templateId"] = templateId }
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
@@ -1239,6 +1247,7 @@ final class DataStore {
         put("manual_notes", manualNotes)
         put("transcript", transcript)
         put("summary", insights?.summary)
+        put("enhanced_notes", insights?.enhancedNotes)
         if let topics = insights?.keyTopics, !topics.isEmpty {
             values["key_topics"] = AnyEncodable(topics)
         }
@@ -1372,6 +1381,10 @@ final class DataStore {
     private static func parseInsights(_ notes: [String: Any]) -> NoteInsights {
         var result = NoteInsights()
         result.summary = notes["summary"] as? String
+        if let polished = notes["enhancedNotes"] as? String,
+           !polished.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            result.enhancedNotes = polished
+        }
         result.keyTopics = (notes["keyTopics"] as? [String]) ?? []
         result.decisions = (notes["decisions"] as? [String]) ?? []
         result.insights = (notes["insights"] as? [String]) ?? []
@@ -1424,11 +1437,13 @@ final class DataStore {
     /// Returns the updated note on success.
     @discardableResult
     func reanalyzeNote(_ note: MeetingNote, templateId: String? = nil) async -> MeetingNote? {
-        let text = note.transcript ?? note.manualNotes ?? ""
-        guard text.trimmingCharacters(in: .whitespacesAndNewlines).count > 10 else { return nil }
-        let prompt = "Title: \(note.title)\n\n\(text)"
+        let transcript = note.transcript?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let manual = note.manualNotes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard transcript.count + manual.count > 10 else { return nil }
+        let prompt = transcript.isEmpty ? "Title: \(note.title)" : "Title: \(note.title)\n\n\(transcript)"
         guard let insights = await generateInsights(
             transcript: prompt,
+            manualNotes: manual.isEmpty ? nil : manual,
             durationSeconds: note.durationSeconds ?? 0,
             templateId: templateId
         ) else { return nil }
@@ -1436,6 +1451,7 @@ final class DataStore {
 
         var updated = note
         if let summary = insights.summary, !summary.isEmpty { updated.summary = summary }
+        if let polished = insights.enhancedNotes, !polished.isEmpty { updated.enhancedNotes = polished }
         if !insights.keyTopics.isEmpty { updated.keyTopics = insights.keyTopics }
         if !insights.actionItems.isEmpty { updated.actionItems = insights.actionItems }
         if !insights.followUps.isEmpty { updated.followUps = insights.followUps }
@@ -1454,6 +1470,9 @@ final class DataStore {
         values["insights"] = AnyEncodable(updated.insights ?? [])
         values["mentioned_people"] = AnyEncodable(updated.mentionedPeople ?? [])
         values["open_questions"] = AnyEncodable(updated.openQuestions ?? [])
+        if let polished = updated.enhancedNotes, !polished.isEmpty {
+            values["enhanced_notes"] = AnyEncodable(polished)
+        }
         if let analytics = updated.analytics { values["analytics"] = AnyEncodable(analytics) }
         do {
             try await service.update(table: "meeting_notes", token: token, match: ["id": note.id], values: values)

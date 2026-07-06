@@ -99,6 +99,8 @@ nonisolated struct MeetingNote: Codable, Identifiable, Hashable {
     var summary: String?
     var transcript: String?
     var manualNotes: String?
+    /// AI-polished version of the user's rough notes (markdown), mirroring web `enhanced_notes`.
+    var enhancedNotes: String?
     var category: String?
     var folderId: String?
     var calendarEventId: String?
@@ -117,6 +119,7 @@ nonisolated struct MeetingNote: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, title, summary, transcript, category, decisions, insights, analytics
         case manualNotes = "manual_notes"
+        case enhancedNotes = "enhanced_notes"
         case folderId = "folder_id"
         case calendarEventId = "calendar_event_id"
         case durationSeconds = "duration_seconds"

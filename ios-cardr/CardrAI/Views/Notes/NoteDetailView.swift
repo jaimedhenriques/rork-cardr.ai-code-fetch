@@ -55,6 +55,7 @@ struct NoteDetailView: View {
                 peopleCard
                 openQuestionsCard
                 linkedContactsCard
+                polishedNotesCard
 
                 if let manual = draft.manualNotes, !manual.isEmpty, !isEditing {
                     readSection("Notes", icon: "pencil", body: manual)
@@ -118,6 +119,7 @@ struct NoteDetailView: View {
                         }
                         Button { copyToClipboard() } label: { Label("Copy as text", systemImage: "doc.on.doc") }
                         Button { shareURL = NoteExport.textFile(draft) } label: { Label("Share as file", systemImage: "square.and.arrow.up") }
+                        Button { shareURL = NoteExport.markdownFile(draft) } label: { Label("Export Markdown", systemImage: "doc.plaintext") }
                         Button { shareURL = NoteExport.pdf(draft) } label: { Label("Export PDF", systemImage: "arrow.down.doc") }
                         Button { Task { await generateShareLink() } } label: {
                             if generatingShareLink {
@@ -279,6 +281,19 @@ struct NoteDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.ink.opacity(0.85))
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    // MARK: - Polished notes
+
+    /// The user's rough jottings expanded into clean markdown by the AI
+    /// (mirrors the web "Polished notes" section).
+    @ViewBuilder
+    private var polishedNotesCard: some View {
+        if !isEditing, let polished = draft.enhancedNotes, !polished.isEmpty {
+            sectionCard("Polished Notes", icon: "wand.and.stars", tint: Theme.primary) {
+                MarkdownLiteText(text: polished)
             }
         }
     }

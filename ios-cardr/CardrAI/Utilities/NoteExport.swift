@@ -67,6 +67,11 @@ enum NoteExport {
             lines.append(questions.map { "- \($0)" }.joined(separator: "\n"))
             lines.append("")
         }
+        if let polished = note.enhancedNotes, !polished.isEmpty {
+            lines.append("## Polished Notes")
+            lines.append(polished)
+            lines.append("")
+        }
         if let manual = note.manualNotes, !manual.isEmpty {
             lines.append("## Notes")
             lines.append(manual)
@@ -80,6 +85,18 @@ enum NoteExport {
         let safe = note.title.isEmpty ? "meeting-notes" : note.title
             .replacingOccurrences(of: "[^A-Za-z0-9]+", with: "-", options: .regularExpression)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).txt")
+        do {
+            try markdown(note).data(using: .utf8)?.write(to: url)
+            return url
+        } catch { return nil }
+    }
+
+    /// Writes the markdown to a temporary `.md` file (Obsidian/Notion-ready)
+    /// and returns its URL — mirrors the web Markdown export.
+    static func markdownFile(_ note: MeetingNote) -> URL? {
+        let safe = note.title.isEmpty ? "meeting-notes" : note.title
+            .replacingOccurrences(of: "[^A-Za-z0-9]+", with: "-", options: .regularExpression)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).md")
         do {
             try markdown(note).data(using: .utf8)?.write(to: url)
             return url
@@ -173,6 +190,22 @@ enum NoteExport {
                     bullets(people.map { p in p.role.map { "\(p.name) — \($0)" } ?? p.name })
                 }
                 if let questions = note.openQuestions, !questions.isEmpty { heading("Open Questions"); bullets(questions) }
+                if let polished = note.enhancedNotes, !polished.isEmpty {
+                    heading("Polished Notes")
+                    for rawLine in polished.split(separator: "\n", omittingEmptySubsequences: false) {
+                        let line = rawLine.trimmingCharacters(in: .whitespaces)
+                            .replacingOccurrences(of: "**", with: "")
+                        if line.isEmpty { y += 4; continue }
+                        if line.hasPrefix("#") {
+                            let text = line.replacingOccurrences(of: "^#{1,4}\\s*", with: "", options: .regularExpression)
+                            draw(text, font: .systemFont(ofSize: 11, weight: .semibold), color: ink, spacingAfter: 4)
+                        } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
+                            draw("•  \(String(line.dropFirst(2)))", font: .systemFont(ofSize: 11), color: ink, spacingAfter: 4)
+                        } else {
+                            draw(line, font: .systemFont(ofSize: 11), color: ink, spacingAfter: 4)
+                        }
+                    }
+                }
                 if let manual = note.manualNotes, !manual.isEmpty {
                     heading("Notes"); draw(manual, font: .systemFont(ofSize: 11), color: ink, spacingAfter: 6)
                 }

@@ -332,15 +332,17 @@ struct NoteComposerView: View {
             }
         }
 
-        let combined = [transcript, manualNotes]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .joined(separator: "\n\n---\n\n")
+        let manualTrimmed = manualNotes.trimmingCharacters(in: .whitespacesAndNewlines)
 
         var insights: DataStore.NoteInsights?
-        if combined.count > 10 {
+        if (transcript?.count ?? 0) + manualTrimmed.count > 10 {
             processingStep = "Generating insights…"
-            insights = await data.generateInsights(transcript: combined, durationSeconds: seconds, templateId: selectedTemplate.id)
+            insights = await data.generateInsights(
+                transcript: transcript ?? "",
+                manualNotes: manualTrimmed.isEmpty ? nil : manualTrimmed,
+                durationSeconds: seconds,
+                templateId: selectedTemplate.id
+            )
         }
 
         processingStep = "Saving…"
@@ -365,8 +367,12 @@ struct NoteComposerView: View {
         var insights: DataStore.NoteInsights?
         if manualNotes.trimmingCharacters(in: .whitespaces).count >= 20 {
             processingStep = "Generating insights…"
-            let text = "Title: \(title)\n\n\(manualNotes)"
-            insights = await data.generateInsights(transcript: text, durationSeconds: 0, templateId: selectedTemplate.id)
+            insights = await data.generateInsights(
+                transcript: "Title: \(title)",
+                manualNotes: manualNotes,
+                durationSeconds: 0,
+                templateId: selectedTemplate.id
+            )
         }
 
         let note = await data.addNote(
