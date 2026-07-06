@@ -914,6 +914,21 @@ export const EN_STRINGS: Record<string, string> = {
   "analytics.recordToSee": "Record meetings and analyze them with AI to see trends",
   "analytics.across": "across",
   "analytics.meeting": "meeting",
+  "analytics.myInsights": "My insights",
+  "analytics.team": "Team",
+  "analytics.teamMeetings": "Team Meetings",
+  "analytics.actionItems": "Action Items",
+  "analytics.completedLower": "completed",
+  "analytics.meetingsOverTime": "Meetings Over Time",
+  "analytics.memberLeaderboard": "Member Leaderboard",
+  "analytics.openActionItems": "Open Action Items",
+  "analytics.noTeamData": "No team meetings yet",
+  "analytics.teamRecordToSee": "When your teammates record meetings, team trends appear here",
+  "analytics.talkBalance": "Talk Balance",
+  "analytics.avgTopSpeakerShare": "avg top-speaker share",
+  "analytics.teamLoadFailed": "Could not load team analytics",
+  "analytics.lastMeeting": "Last meeting",
+  "analytics.noMeetingsYet": "No meetings yet",
 
 
   // Unsubscribe page

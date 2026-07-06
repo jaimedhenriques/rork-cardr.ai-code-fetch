@@ -1,0 +1,1 @@
+{"query": "delete from meeting_notes where user_id in ('ea063e6b-b709-4530-848a-f613579a1e3a','03afc7df-1de5-4792-93af-6f98fd1431b3','5d7dc792-17f6-43a0-9741-8a7f3d65ac7b');\ndelete from org_members where org_id = '11111111-2222-3333-4444-555555550001';\ndelete from organizations where id = '11111111-2222-3333-4444-555555550001';"}

@@ -3,10 +3,17 @@ import SwiftUI
 /// Analytics — mirrors the web `Analytics` page. Aggregates AI meeting insights
 /// (sentiment, questions, engagement, top speakers) over a selectable range.
 struct AnalyticsView: View {
+    private enum Scope: String, CaseIterable, Identifiable {
+        case me = "My insights"
+        case team = "Team"
+        var id: String { rawValue }
+    }
+
     @Environment(DataStore.self) private var data
     @State private var notes: [AnalyticsNote] = []
     @State private var loaded = false
     @State private var rangeDays = 30
+    @State private var scope: Scope = .me
 
     private let ranges: [(label: String, days: Int)] = [
         ("7d", 7), ("30d", 30), ("90d", 90), ("All", 9999),
@@ -77,8 +84,11 @@ struct AnalyticsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if data.orgId != nil { scopePicker }
                 rangePicker
-                if !loaded {
+                if scope == .team {
+                    TeamAnalyticsSection(rangeDays: rangeDays)
+                } else if !loaded {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
                 } else if withAnalytics.isEmpty {
                     emptyState
@@ -100,6 +110,30 @@ struct AnalyticsView: View {
             loaded = true
         }
         .refreshable { notes = await data.loadAnalyticsNotes() }
+    }
+
+    private var scopePicker: some View {
+        HStack(spacing: 4) {
+            ForEach(Scope.allCases) { option in
+                let active = scope == option
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { scope = option }
+                } label: {
+                    Text(option.rawValue)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(active ? Theme.ink : Theme.inkSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(active ? Theme.surface : .clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 9))
+                        .shadow(color: active ? .black.opacity(0.08) : .clear, radius: 3, y: 1)
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
+        .padding(4)
+        .background(Theme.surfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var rangePicker: some View {

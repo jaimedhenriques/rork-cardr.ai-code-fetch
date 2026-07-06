@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import TeamAnalytics from "@/components/TeamAnalytics";
 import { motion } from "framer-motion";
 import { BarChart3, MessageCircleQuestion, Smile, Meh, Frown, Zap, TrendingUp, Users, Mic } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -42,9 +44,25 @@ const SentimentIcon = ({ score }: { score: number }) => {
 export default function Analytics() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [notes, setNotes] = useState<NoteWithAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [rangeDays, setRangeDays] = useState(30);
+  const [scope, setScope] = useState<"me" | "team">("me");
+  const [hasOrg, setHasOrg] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("org_members")
+        .select("org_id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      setHasOrg(!!data);
+    })();
+  }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -145,6 +163,25 @@ export default function Analytics() {
       </div>
 
       <div className="px-4 pt-4 space-y-4">
+        {/* Scope toggle (only shown for org members) */}
+        {hasOrg && (
+          <div className="flex p-1 bg-muted/50 rounded-xl">
+            {(["me", "team"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setScope(s)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  scope === s
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {s === "me" ? t("analytics.myInsights") : t("analytics.team")}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Range Picker */}
         <div className="flex gap-2">
           {RANGE_OPTIONS.map((r) => (
@@ -162,7 +199,9 @@ export default function Analytics() {
           ))}
         </div>
 
-        {loading ? (
+        {scope === "team" && hasOrg ? (
+          <TeamAnalytics rangeDays={rangeDays} />
+        ) : loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>

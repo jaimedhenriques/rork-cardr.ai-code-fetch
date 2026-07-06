@@ -2410,6 +2410,25 @@ final class DataStore {
         }
     }
 
+    /// Calls the `team-analytics` edge function for org-wide meeting stats.
+    /// Returns nil when signed out, not in an organization, or on failure.
+    func loadTeamAnalytics(rangeDays: Int) async -> TeamAnalytics? {
+        guard let token, orgId != nil else { return nil }
+        var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("team-analytics"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ["rangeDays": rangeDays])
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else { return nil }
+            return try? JSONDecoder().decode(TeamAnalytics.self, from: data)
+        } catch {
+            return nil
+        }
+    }
+
     var thisWeekCount: Int {
         let formatter = ISO8601DateFormatter()
         let weekAgo = Date().addingTimeInterval(-7 * 24 * 3600)
