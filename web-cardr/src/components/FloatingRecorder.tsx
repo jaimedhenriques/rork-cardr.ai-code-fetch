@@ -63,16 +63,16 @@ const FloatingRecorder = ({
         <span
           className={`w-2.5 h-2.5 rounded-full shrink-0 ${paused ? "bg-amber-500" : "bg-red-500 animate-pulse"}`}
         />
-        <span className="text-sm font-bold tabular-nums text-foreground">{formatTime(duration)}</span>
+        <span className="text-timestamp text-sm font-semibold text-foreground">{formatTime(duration)}</span>
         <span className="text-xs text-muted-foreground truncate flex-1 text-right">{title}</span>
       </div>
 
       {/* Live transcript */}
       <div ref={transcriptRef} className="flex-1 overflow-y-auto px-3 py-2 min-h-0">
         {liveText ? (
-          <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">{liveText}</p>
+          <p className="text-[14px] leading-relaxed text-foreground/90 whitespace-pre-wrap">{liveText}</p>
         ) : (
-          <p className="text-xs text-muted-foreground/60 italic">{strings.listening}</p>
+          <p className="text-[14px] text-muted-foreground/60 italic">{strings.listening}</p>
         )}
       </div>
 
@@ -89,7 +89,7 @@ const FloatingRecorder = ({
           onChange={(e) => onNotesChange(e.target.value)}
           placeholder={strings.jotNotes}
           rows={3}
-          className="w-full rounded-lg bg-card border border-border p-2 text-xs text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full rounded-lg bg-card border border-border p-2 text-[14px] text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
         />
       </div>
 

@@ -563,7 +563,7 @@ const Notes = () => {
                                 )}
                                 <p className="text-headline text-foreground truncate">{note.title || t("notes.untitledMeeting")}</p>
                               </div>
-                              <div className="flex items-center gap-2 mt-1 text-2xs text-muted-foreground tabular-nums">
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground tabular-nums">
                                 <span>{format(parseISO(note.created_at), "h:mm a")}</span>
                                 {note.duration_seconds > 0 && (
                                   <span>· {formatDur(note.duration_seconds)}</span>
@@ -590,7 +590,7 @@ const Notes = () => {
                                 })}
                               </div>
                               {note.summary && !searchMatches[note.id] && (
-                                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{note.summary}</p>
+                                <p className="text-[13px] text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{note.summary}</p>
                               )}
                               {searchMatches[note.id]?.length > 0 && (
                                 <div className="mt-1.5 space-y-1">

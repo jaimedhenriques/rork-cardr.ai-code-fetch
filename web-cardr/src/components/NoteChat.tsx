@@ -168,7 +168,7 @@ const NoteChat = ({ note }: NoteChatProps) => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Ask about this note</p>
-                    <p className="text-[10px] text-muted-foreground truncate max-w-[200px]">{note.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">{note.title}</p>
                   </div>
                 </div>
                 <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors">
@@ -200,7 +200,7 @@ const NoteChat = ({ note }: NoteChatProps) => {
 
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm ${
+                    <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed ${
                       msg.role === "user"
                         ? "bg-primary text-primary-foreground rounded-br-md"
                         : "bg-secondary text-foreground rounded-bl-md"
@@ -250,7 +250,7 @@ const NoteChat = ({ note }: NoteChatProps) => {
                     <button
                       key={action.label}
                       onClick={() => handleQuickAction(action.prompt)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-secondary/80 text-[10px] font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-secondary/80 text-[11px] font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors whitespace-nowrap shrink-0"
                     >
                       <action.icon size={10} />
                       {action.label}

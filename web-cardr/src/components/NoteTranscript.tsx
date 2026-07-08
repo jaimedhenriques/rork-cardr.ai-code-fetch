@@ -176,7 +176,7 @@ const NoteTranscript = ({
       {/* Speaker legend / renaming */}
       {speakerOrder.length > 0 && (
         <div className="card-elevated p-3">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.08em] mb-2">
             {t("noteDetail.speakers")}
           </p>
           <div className="space-y-2">
@@ -258,7 +258,7 @@ const NoteTranscript = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("noteDetail.searchTranscript")}
-          className="w-full h-9 pl-8 pr-8 rounded-xl bg-card border border-border text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-primary/30"
+          className="w-full h-10 pl-8 pr-8 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-primary/30"
         />
         {query && (
           <button onClick={() => setQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -267,7 +267,7 @@ const NoteTranscript = ({
         )}
       </div>
       {query.trim() && (
-        <p className="text-[10px] text-muted-foreground px-1 -mt-1">
+        <p className="text-xs text-muted-foreground px-1 -mt-1 tabular-nums">
           {visibleSegments.length > 0
             ? `${visibleSegments.length} ${t("noteDetail.matches")}`
             : t("noteDetail.noMatches")}
@@ -275,7 +275,7 @@ const NoteTranscript = ({
       )}
 
       {/* Conversation turns */}
-      <div className="card-elevated p-4 space-y-3">
+      <div className="card-elevated p-4 space-y-4">
         {visibleSegments.map((seg) => {
           const c = seg.speaker ? colorFor(seg.speaker) : SPEAKER_COLORS[0];
           const displayName = seg.speaker ? speakerNames[seg.speaker] || seg.speaker : null;
@@ -286,20 +286,20 @@ const NoteTranscript = ({
                 {seg.speaker && (
                   <>
                     <span className={`w-1.5 h-1.5 rounded-full ${c.dot} shrink-0`} />
-                    <span className={`text-[11px] font-bold ${c.text}`}>{displayName}</span>
+                    <span className={`text-[13px] font-semibold tracking-tight ${c.text}`}>{displayName}</span>
                   </>
                 )}
                 {seg.timeLabel && (
                   onSeek && seg.time !== null ? (
                     <button
                       onClick={() => onSeek(seg.time!)}
-                      className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-primary bg-secondary/60 hover:bg-primary/10 rounded-full px-1.5 py-0.5 transition-colors tabular-nums"
+                      className="flex items-center gap-1 text-timestamp text-[11px] font-medium text-muted-foreground hover:text-primary bg-secondary/60 hover:bg-primary/10 rounded-full px-2 py-0.5 transition-colors"
                     >
                       <Play size={7} className="fill-current" />
                       {seg.timeLabel}
                     </button>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground/60 tabular-nums">{seg.timeLabel}</span>
+                    <span className="text-timestamp text-[11px] text-muted-foreground/60">{seg.timeLabel}</span>
                   )
                 )}
                 {!isEditing && (
@@ -318,7 +318,7 @@ const NoteTranscript = ({
                     value={editDraft}
                     onChange={(e) => setEditDraft(e.target.value)}
                     rows={Math.min(6, Math.max(2, Math.ceil(editDraft.length / 60)))}
-                    className="w-full bg-secondary/50 rounded-lg text-xs text-foreground p-2.5 resize-none outline-none focus:ring-1 focus:ring-primary/30 leading-relaxed"
+                    className="w-full bg-secondary/50 rounded-lg text-reading text-foreground p-3 resize-none outline-none focus:ring-1 focus:ring-primary/30"
                   />
                   <div className="flex items-center justify-end gap-2 mt-1">
                     <button onClick={() => setEditingIdx(null)} className="text-[11px] font-semibold text-muted-foreground px-2 py-1 rounded-md hover:bg-secondary">
@@ -330,7 +330,7 @@ const NoteTranscript = ({
                   </div>
                 </div>
               ) : (
-                <p className={`text-xs text-foreground/75 leading-relaxed ${seg.speaker ? "pl-3.5" : ""}`}>
+                <p className={`text-reading text-foreground/90 ${seg.speaker ? "pl-3.5" : ""}`}>
                   {markMatches(seg.text, query.trim())}
                 </p>
               )}

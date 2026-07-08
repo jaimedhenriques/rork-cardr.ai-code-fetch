@@ -81,21 +81,21 @@ const renderMarkdownLite = (text: string) => {
     if (!trimmed) return <div key={i} className="h-2" />;
     if (/^#{1,3}\s/.test(trimmed)) {
       return (
-        <p key={i} className="text-[13px] font-bold text-foreground mt-2 mb-0.5">
+        <p key={i} className="text-[15px] font-display font-semibold tracking-tight text-foreground mt-3 mb-1">
           {bold(trimmed.replace(/^#{1,3}\s/, ""))}
         </p>
       );
     }
     if (/^[-*]\s/.test(trimmed)) {
       return (
-        <div key={i} className="flex items-start gap-2 ml-1">
-          <span className="w-1 h-1 rounded-full bg-primary mt-[7px] shrink-0" />
-          <p className="text-sm text-foreground/80 leading-relaxed">{bold(trimmed.replace(/^[-*]\s/, ""))}</p>
+        <div key={i} className="flex items-start gap-2.5 ml-1">
+          <span className="w-1 h-1 rounded-full bg-primary mt-[10px] shrink-0" />
+          <p className="text-reading text-foreground/85">{bold(trimmed.replace(/^[-*]\s/, ""))}</p>
         </div>
       );
     }
     return (
-      <p key={i} className="text-sm text-foreground/80 leading-relaxed">
+      <p key={i} className="text-reading text-foreground/85">
         {bold(trimmed)}
       </p>
     );
@@ -610,18 +610,18 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
           <input
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
-            className="text-xl font-display font-bold text-foreground bg-transparent border-b border-primary/40 outline-none w-full mb-1 pb-1"
+            className="text-2xl font-display font-bold tracking-tight text-foreground bg-transparent border-b border-primary/40 outline-none w-full mb-1 pb-1"
             autoFocus
           />
         ) : (
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-display font-bold text-foreground">{note.title || t("noteDetail.untitled")}</h1>
+            <h1 className="text-2xl font-display font-bold tracking-tight text-foreground">{note.title || t("noteDetail.untitled")}</h1>
             <button onClick={startEditing} className="shrink-0 opacity-50 hover:opacity-100 transition-opacity">
               <Pencil size={14} className="text-muted-foreground" />
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 tabular-nums">
           <span>{format(parseISO(note.created_at), "MMM d, yyyy · h:mm a")}</span>
           {note.duration_seconds > 0 && <span>· {formatDur(note.duration_seconds)}</span>}
         </div>
@@ -779,15 +779,15 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                     {note.audio_path ? (
                       <button
                         onClick={() => playerRef.current?.seekTo(Math.max(0, h.time - 10))}
-                        className="flex items-center gap-1 text-[10px] font-bold text-warning bg-warning/10 hover:bg-warning/20 rounded-full px-2 py-1 transition-colors tabular-nums shrink-0 mt-0.5"
+                        className="flex items-center gap-1 text-timestamp text-[11px] font-medium text-warning bg-warning/10 hover:bg-warning/20 rounded-full px-2 py-1 transition-colors shrink-0 mt-0.5"
                       >
                         <Play size={7} className="fill-current" />
                         {timeLabel}
                       </button>
                     ) : (
-                      <span className="text-[10px] font-bold text-warning bg-warning/10 rounded-full px-2 py-1 tabular-nums shrink-0 mt-0.5">{timeLabel}</span>
+                      <span className="text-timestamp text-[11px] font-medium text-warning bg-warning/10 rounded-full px-2 py-1 shrink-0 mt-0.5">{timeLabel}</span>
                     )}
-                    <p className="text-sm text-foreground/80 leading-relaxed">
+                    <p className="text-reading text-foreground/85">
                       {h.snippet?.trim() ? `…${h.snippet.trim()}` : t("noteDetail.flaggedMoment")}
                     </p>
                   </div>
@@ -810,13 +810,13 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                 <textarea
                   value={editSummary}
                   onChange={(e) => setEditSummary(e.target.value)}
-                  className="w-full min-h-[100px] bg-secondary/50 rounded-lg text-sm text-foreground p-3 resize-none outline-none focus:ring-1 focus:ring-primary/30 leading-relaxed"
+                  className="w-full min-h-[100px] bg-secondary/50 rounded-lg text-reading text-foreground p-3 resize-none outline-none focus:ring-1 focus:ring-primary/30"
                   autoFocus
                 />
                 <SectionEditButtons onSave={saveSectionEdit} onCancel={() => setEditingSection(null)} />
               </>
             ) : (
-              <p className="text-sm text-foreground/80 leading-relaxed">{note.summary}</p>
+              <p className="text-reading text-foreground/85">{note.summary}</p>
             )}
           </motion.div>
         )}
@@ -860,7 +860,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                       {iconMap[metric.icon] || <BarChart3 size={18} className="text-primary" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-lg font-bold text-foreground leading-tight">{metric.value}</p>
+                      <p className="text-xl font-display font-bold text-foreground leading-tight tabular-nums">{metric.value}</p>
                       <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{metric.label}</p>
                     </div>
                   </div>
@@ -893,7 +893,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                     return (
                       <div key={speaker} className="flex items-center gap-1.5">
                         <div className={`w-2 h-2 rounded-full ${dotColors[i % dotColors.length]}`} />
-                        <span className="text-[10px] text-muted-foreground">{speaker} · {Math.round((ratio as number) * 100)}%</span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums">{speaker} · {Math.round((ratio as number) * 100)}%</span>
                       </div>
                     );
                   })}
@@ -948,7 +948,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
               <h3 className="text-sm font-semibold text-foreground">{t("noteDetail.actionItems")}</h3>
               {editingSection !== "actions" && (
                 <>
-                  <span className="text-[10px] text-muted-foreground ml-auto">
+                  <span className="text-[11px] font-medium text-muted-foreground ml-auto tabular-nums">
                     {note.action_items.filter(a => a.done).length}/{note.action_items.length} {t("noteDetail.done")}
                   </span>
                   <EditButton section="actions" />
@@ -1009,7 +1009,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                       </button>
                       <div className="min-w-0 flex-1">
                         <button onClick={() => toggleActionItem(i)} className="w-full text-left">
-                          <p className={`text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.task}</p>
+                          <p className={`text-reading ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.task}</p>
                         </button>
                         {(item.owner || item.deadline) && (
                           <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -1085,7 +1085,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                 {note.follow_ups.map((f, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                    <p className="text-sm text-foreground/80">{f.description}{f.with && <span className="text-primary font-medium"> — {f.with}</span>}</p>
+                    <p className="text-reading text-foreground/85">{f.description}{f.with && <span className="text-primary font-medium"> — {f.with}</span>}</p>
                   </div>
                 ))}
               </div>
@@ -1123,7 +1123,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
             ) : (
               <ul className="space-y-1.5">
                 {note.decisions.map((d, i) => (
-                  <li key={i} className="text-sm text-foreground/80 flex items-start gap-2">
+                  <li key={i} className="text-reading text-foreground/85 flex items-start gap-2">
                     <span className="text-accent mt-0.5">✓</span> {d}
                   </li>
                 ))}
@@ -1143,7 +1143,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
               {note.insights.map((insight, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span className="text-primary text-xs mt-0.5">💡</span>
-                  <p className="text-sm text-foreground/80 leading-relaxed">{insight}</p>
+                  <p className="text-reading text-foreground/85">{insight}</p>
                 </div>
               ))}
             </div>
@@ -1221,8 +1221,8 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
             <div className="space-y-1.5">
               {note.open_questions.map((q, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <span className="text-accent text-xs mt-0.5">?</span>
-                  <p className="text-sm text-foreground/80">{q}</p>
+                  <span className="text-accent text-xs mt-1">?</span>
+                  <p className="text-reading text-foreground/85">{q}</p>
                 </div>
               ))}
             </div>
@@ -1290,7 +1290,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                         <Target size={14} className="text-primary" />
                         <h3 className="text-sm font-semibold text-foreground">{label}</h3>
                       </div>
-                      <p className="text-sm text-foreground/80 leading-relaxed">{value}</p>
+                      <p className="text-reading text-foreground/85">{value}</p>
                     </motion.div>
                   );
                 }
@@ -1309,7 +1309,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                         {(value as string[]).map((item, i) => (
                           <div key={i} className="flex items-start gap-2.5">
                             <div className={`w-1.5 h-1.5 rounded-full ${cfg.bg.replace("/10", "")} mt-2 shrink-0`} />
-                            <p className="text-sm text-foreground/80 leading-relaxed">{item}</p>
+                            <p className="text-reading text-foreground/85">{item}</p>
                           </div>
                         ))}
                       </div>
@@ -1337,7 +1337,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                               {v.outcome?.toUpperCase() || "—"}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-foreground/90 leading-relaxed">{v.motion}</p>
+                              <p className="text-reading text-foreground/90">{v.motion}</p>
                               {v.voteCount && <p className="text-[10px] text-muted-foreground mt-0.5">{v.voteCount}</p>}
                             </div>
                           </div>
@@ -1366,7 +1366,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                             {entry.items && Array.isArray(entry.items) && (
                               <div className="space-y-1 pl-3 border-l-2 border-border">
                                 {entry.items.map((item: string, j: number) => (
-                                  <p key={j} className="text-sm text-foreground/80">{item}</p>
+                                  <p key={j} className="text-reading text-foreground/85">{item}</p>
                                 ))}
                               </div>
                             )}
@@ -1400,7 +1400,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
             <textarea
               value={editBody}
               onChange={(e) => setEditBody(e.target.value)}
-              className="w-full min-h-[160px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 resize-none outline-none leading-relaxed"
+              className="w-full min-h-[160px] bg-transparent text-reading text-foreground placeholder:text-muted-foreground/40 resize-none outline-none"
               placeholder={t("noteDetail.writeNotes")}
             />
             <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/60">
@@ -1425,7 +1425,7 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
                 <Pencil size={10} /> {t("noteDetail.edit")}
               </button>
             </div>
-            <p className="text-sm text-foreground/80 whitespace-pre-wrap">{note.manual_notes}</p>
+            <p className="text-reading text-foreground/85 whitespace-pre-wrap">{note.manual_notes}</p>
           </div>
         ) : !note.transcript && !editing ? (
           <button onClick={startEditing} className="w-full card-elevated p-4 text-left hover:border-primary/30 transition-colors">

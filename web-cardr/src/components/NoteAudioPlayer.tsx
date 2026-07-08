@@ -96,7 +96,7 @@ const NoteAudioPlayer = forwardRef<AudioPlayerHandle, NoteAudioPlayerProps>(
           <h3 className="text-sm font-semibold text-foreground">{label}</h3>
           <button
             onClick={cycleSpeed}
-            className="ml-auto text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors tabular-nums"
+            className="ml-auto text-timestamp text-[11px] font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full hover:bg-primary/20 transition-colors"
           >
             {SPEEDS[speedIdx]}×
           </button>
@@ -140,15 +140,15 @@ const NoteAudioPlayer = forwardRef<AudioPlayerHandle, NoteAudioPlayerProps>(
           }}
         />
         <div className="flex items-center justify-between mt-1">
-          <span className="text-[10px] text-muted-foreground tabular-nums">{fmt(current)}</span>
-          <span className="text-[10px] text-muted-foreground tabular-nums">{fmt(effectiveDuration)}</span>
+          <span className="text-timestamp text-[11px] text-muted-foreground">{fmt(current)}</span>
+          <span className="text-timestamp text-[11px] text-muted-foreground">{fmt(effectiveDuration)}</span>
         </div>
 
         {/* Controls */}
         <div className="flex items-center justify-center gap-5 mt-1.5">
           <button onClick={() => skip(-15)} className="relative w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <RotateCcw size={20} />
-            <span className="absolute text-[7px] font-bold mt-0.5">15</span>
+            <span className="absolute text-[8px] font-bold mt-0.5 tabular-nums">15</span>
           </button>
           <button
             onClick={togglePlay}
@@ -165,7 +165,7 @@ const NoteAudioPlayer = forwardRef<AudioPlayerHandle, NoteAudioPlayerProps>(
           </button>
           <button onClick={() => skip(15)} className="relative w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <RotateCw size={20} />
-            <span className="absolute text-[7px] font-bold mt-0.5">15</span>
+            <span className="absolute text-[8px] font-bold mt-0.5 tabular-nums">15</span>
           </button>
         </div>
       </div>

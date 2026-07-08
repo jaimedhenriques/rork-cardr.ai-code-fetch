@@ -330,7 +330,7 @@ const NoteRecord = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t("noteRecord.meetingTitle")}
-            className="flex-1 text-lg font-display font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40"
+            className="flex-1 text-xl font-display font-bold tracking-tight text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/40"
           />
         </div>
 
@@ -519,9 +519,9 @@ const NoteRecord = () => {
         {/* Live transcript preview */}
         <div className="flex-1 bg-card rounded-2xl border border-border p-4 mb-4 overflow-y-auto min-h-[120px]">
           {recorder.liveText ? (
-            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{recorder.liveText}</p>
+            <p className="text-reading text-foreground/90 whitespace-pre-wrap">{recorder.liveText}</p>
           ) : (
-            <p className="text-sm text-muted-foreground/50 italic">
+            <p className="text-reading text-muted-foreground/50 italic">
               {recorder.recording
                 ? recorder.isSpeechSupported
                   ? t("noteRecord.listening")
@@ -548,7 +548,7 @@ const NoteRecord = () => {
             onChange={(e) => setManualNotes(e.target.value)}
             placeholder={t("noteRecord.writeNotes")}
             rows={3}
-            className="w-full rounded-xl bg-card border border-border p-3 text-sm text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+            className="w-full rounded-xl bg-card border border-border p-3 text-reading text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
         </div>
 
