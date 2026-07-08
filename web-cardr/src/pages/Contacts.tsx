@@ -1119,7 +1119,7 @@ const PipelineView = ({ stages, setStages, contacts, moveContact, getContactsFor
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-display font-bold text-foreground">{t("pipeline.title")}</h2>
-          <p className="text-xs text-muted-foreground">{contacts.length} {t("pipeline.leads")} {stages.length} {t("pipeline.stages")}</p>
+          <p className="text-xs text-muted-foreground">{contacts.length} {t("pipeline.leads")} · {stages.length} {t("pipeline.stages")}</p>
         </div>
         <button onClick={() => setShowSettings(!showSettings)} className="w-9 h-9 rounded-xl bg-card border border-border/60 flex items-center justify-center">
           <Settings2 size={16} className="text-muted-foreground" />
@@ -1512,8 +1512,13 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
     if (bulkMode && onToggleCheck) {
       onToggleCheck(contact.id);
     } else {
-      setSelectedContact(isSelected ? null : contact);
+      navigate(`/contact/${contact.id}`);
     }
+  };
+
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedContact(isSelected ? null : contact);
   };
 
   return (
@@ -1635,7 +1640,14 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
             )}
           </div>
         )}
-        <ChevronRight size={13} className={`text-muted-foreground/30 shrink-0 transition-transform ${isSelected ? "rotate-90" : ""}`} />
+        <button
+          onClick={toggleExpand}
+          className="w-8 h-8 -mr-1.5 rounded-full flex items-center justify-center shrink-0 hover:bg-muted/60 transition-colors"
+          title={isSelected ? t("action.close") : t("contacts.quickView")}
+          aria-expanded={isSelected}
+        >
+          <ChevronRight size={13} className={`text-muted-foreground/50 transition-transform ${isSelected ? "rotate-90" : ""}`} />
+        </button>
       </div>
 
       {isSelected && (

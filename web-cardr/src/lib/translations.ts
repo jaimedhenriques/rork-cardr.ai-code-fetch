@@ -163,6 +163,19 @@ export const EN_STRINGS: Record<string, string> = {
   "contacts.byRole": "By Role",
   "contacts.pipeline": "Leads",
   "contacts.activity": "Activity",
+  "contacts.loadingStages": "Loading stage filters",
+  "contacts.stageFilterEmpty": "No lead stages yet — open the Leads tab to create them",
+  "contacts.contactSingular": "contact",
+  "contacts.contactPlural": "contacts",
+  "contacts.notSelected": "not selected",
+  "contacts.filterByStage": "Filter by stage",
+  "contacts.allStages": "All stages",
+  "contacts.unstaged": "Unstaged",
+  "contacts.stageEmpty": "No contacts in this stage",
+  "contacts.oneVisible": "1 contact visible",
+  "contacts.nVisible": "{n} contacts visible",
+  "contacts.changeStage": "Change stage",
+  "contacts.quickView": "Quick view",
 
   // AI Chat
   "ai.title": "Cardr AI",
@@ -343,8 +356,8 @@ export const EN_STRINGS: Record<string, string> = {
 
   // Leads page
   "pipeline.title": "Leads",
-  "pipeline.leads": "leads across",
-  "pipeline.stages": "lead stages",
+  "pipeline.leads": "leads",
+  "pipeline.stages": "stages",
   "pipeline.manageStages": "Manage Lead Stages",
   "pipeline.signInRequired": "Sign in to manage leads",
   "pipeline.stageAdded": "Lead stage added",
@@ -1019,6 +1032,7 @@ export const EN_STRINGS: Record<string, string> = {
   "scan.howToStep2": "We extract the info",
   "scan.howToStep3": "Contact saved & enriched",
   "scan.gotIt": "Got It",
+  "scan.dontShowAgain": "Don't show this again",
 };
 
 /** Supported app languages */

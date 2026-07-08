@@ -120,11 +120,14 @@ export const useSubscription = () => {
       return;
     }
     setLoading(true);
-    const [subRes, usageRes] = await Promise.all([
+    const [subRes, usageRes, contactsRes, enrichedRes, notesRes] = await Promise.all([
       supabase.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle(),
       supabase.from("usage_tracking").select("*").eq("user_id", user.id)
         .eq("period_start", new Date().toISOString().slice(0, 7) + "-01")
         .maybeSingle(),
+      supabase.from("contacts").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("contacts").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("enriched", true),
+      supabase.from("meeting_notes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     ]);
 
     if (subRes.data) {
@@ -136,14 +139,18 @@ export const useSubscription = () => {
       });
     }
 
-    if (usageRes.data) {
-      setUsage({
-        enrichmentsUsed: usageRes.data.enrichments_used,
-        notesCreated: usageRes.data.notes_created,
-        transcriptionMinutesUsed: usageRes.data.transcription_minutes_used,
-        contactsCount: usageRes.data.contacts_count,
-      });
-    }
+    // Live table counts are the source of truth for contacts/enrichments/notes so
+    // the usage panel always matches what the dashboard shows. usage_tracking is
+    // kept as a floor for metered fields (it counts actions, not surviving rows).
+    const liveContacts = contactsRes.count ?? 0;
+    const liveEnriched = enrichedRes.count ?? 0;
+    const liveNotes = notesRes.count ?? 0;
+    setUsage({
+      enrichmentsUsed: Math.max(Number(usageRes.data?.enrichments_used ?? 0), liveEnriched),
+      notesCreated: Math.max(Number(usageRes.data?.notes_created ?? 0), liveNotes),
+      transcriptionMinutesUsed: Number(usageRes.data?.transcription_minutes_used ?? 0),
+      contactsCount: liveContacts,
+    });
 
     setLoading(false);
   }, [user]);

@@ -110,15 +110,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }),
     }).catch(() => undefined);
 
-    // --- Seed demo data only once ----------------------------------------------
-    const existing = await fetch(
-      `${supabaseUrl}/rest/v1/contacts?user_id=eq.${userId}&select=id&limit=1`,
-      { headers: svc },
-    );
-    const existingRows = existing.ok ? await existing.json().catch(() => []) : [];
-    if (!Array.isArray(existingRows) || existingRows.length === 0) {
-      await seedDemoData(supabaseUrl, svc, userId);
-    }
+    // --- Seed demo data (idempotent per table) ----------------------------------
+    await seedDemoData(supabaseUrl, svc, userId);
 
     return jsonResponse({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   } catch (err) {
@@ -138,6 +131,45 @@ async function seedDemoData(
       headers: { ...svc, Prefer: "return=minimal" },
       body: JSON.stringify(rows),
     }).catch(() => undefined);
+
+  // Insert and return the created rows (for cross-table links).
+  const insertReturning = async (
+    table: string,
+    rows: unknown,
+  ): Promise<Record<string, unknown>[]> => {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
+      method: "POST",
+      headers: { ...svc, Prefer: "return=representation" },
+      body: JSON.stringify(rows),
+    }).catch(() => undefined);
+    if (!resp?.ok) return [];
+    const body = await resp.json().catch(() => []);
+    return Array.isArray(body) ? body : [];
+  };
+
+  // Each table is seeded only if it has no rows for the demo user, so a
+  // partially-failed earlier run can never create duplicates.
+  const isEmpty = async (table: string): Promise<boolean> => {
+    const resp = await fetch(
+      `${supabaseUrl}/rest/v1/${table}?user_id=eq.${userId}&select=id&limit=1`,
+      { headers: svc },
+    ).catch(() => undefined);
+    if (!resp?.ok) return false; // if we can't check, don't risk duplicating
+    const rows = await resp.json().catch(() => []);
+    return Array.isArray(rows) && rows.length === 0;
+  };
+
+  const fetchRows = async (
+    table: string,
+    query: string,
+  ): Promise<Record<string, unknown>[]> => {
+    const resp = await fetch(`${supabaseUrl}/rest/v1/${table}?${query}`, {
+      headers: svc,
+    }).catch(() => undefined);
+    if (!resp?.ok) return [];
+    const body = await resp.json().catch(() => []);
+    return Array.isArray(body) ? body : [];
+  };
 
   const today = new Date();
   const iso = (daysFromNow: number) => {
@@ -166,7 +198,30 @@ async function seedDemoData(
     ...row,
   });
 
-  await insert("contacts", [
+  // --- Pipeline stages (before contacts so leads can be staged) ---------------
+  let stages = await fetchRows(
+    "pipeline_stages",
+    `user_id=eq.${userId}&select=id,name&order=sort_order`,
+  );
+  if (stages.length === 0) {
+    stages = await insertReturning("pipeline_stages", [
+      { user_id: userId, name: "New", color: "#6366f1", sort_order: 0 },
+      { user_id: userId, name: "Contacted", color: "#f59e0b", sort_order: 1 },
+      { user_id: userId, name: "Qualified", color: "#3b82f6", sort_order: 2 },
+      { user_id: userId, name: "Proposal", color: "#8b5cf6", sort_order: 3 },
+      { user_id: userId, name: "Negotiation", color: "#ec4899", sort_order: 4 },
+      { user_id: userId, name: "Won", color: "#10b981", sort_order: 5 },
+      { user_id: userId, name: "Lost", color: "#ef4444", sort_order: 6 },
+    ]);
+  }
+  const stageId = (name: string): string | null => {
+    const match = stages.find((s) => s.name === name);
+    return typeof match?.id === "string" ? match.id : null;
+  };
+
+  let contacts: Record<string, unknown>[] = [];
+  if (await isEmpty("contacts")) {
+    contacts = await insertReturning("contacts", [
     contact({
       name: "Maya Chen",
       title: "VP of Sales",
@@ -181,6 +236,7 @@ async function seedDemoData(
       next_action_date: iso(3),
       notes: "Met at SaaStr booth. Interested in team plan for her 12-person sales org.",
       enriched: true,
+      stage_id: stageId("Proposal"),
     }),
     contact({
       name: "Diego Alvarez",
@@ -195,6 +251,7 @@ async function seedDemoData(
       next_action_date: iso(1),
       notes: "Wants to compare against Granola for internal meeting notes.",
       enriched: true,
+      stage_id: stageId("Qualified"),
     }),
     contact({
       name: "Priya Raman",
@@ -207,6 +264,7 @@ async function seedDemoData(
       lead_source: "QR code exchange",
       conversation_status: "warm",
       notes: "Asked for enterprise pricing and SSO details.",
+      stage_id: stageId("Contacted"),
     }),
     contact({
       name: "Tom Okafor",
@@ -218,20 +276,46 @@ async function seedDemoData(
       lead_source: "Referral",
       conversation_status: "new",
       notes: "Referred by Maya Chen. Evaluating CRM sync options.",
+      stage_id: stageId("New"),
     }),
-  ]);
+    ]);
+  } else {
+    contacts = await fetchRows("contacts", `user_id=eq.${userId}&select=id,name`);
+  }
 
-  await insert("events", {
-    user_id: userId,
-    title: "SaaStr Annual 2026",
-    description: "Flagship SaaS conference — booth #214, focus on team-plan leads.",
-    location: "San Francisco, CA",
-    start_date: iso(-2),
-    end_date: iso(-1),
-    event_type: "conference",
-    status: "completed",
-  });
+  // --- Event + contact links ---------------------------------------------------
+  if (await isEmpty("events")) {
+    const events = await insertReturning("events", {
+      user_id: userId,
+      title: "SaaStr Annual 2026",
+      description: "Flagship SaaS conference — booth #214, focus on team-plan leads.",
+      location: "San Francisco, CA",
+      start_date: iso(-2),
+      end_date: iso(-1),
+      event_type: "conference",
+      status: "completed",
+    });
+    const eventId = typeof events[0]?.id === "string" ? events[0].id : null;
+    if (eventId) {
+      const linked = contacts
+        .filter((c) => c.name === "Maya Chen" || c.name === "Diego Alvarez")
+        .map((c) => ({ user_id: userId, event_id: eventId, contact_id: c.id }));
+      if (linked.length > 0) await insert("event_contacts", linked);
+    }
+  }
 
+  if (await isEmpty("usage_tracking")) {
+    await insert("usage_tracking", {
+      user_id: userId,
+      period_start: `${new Date().toISOString().slice(0, 7)}-01`,
+      contacts_count: 4,
+      enrichments_used: 2,
+      notes_created: 1,
+      transcription_minutes_used: 26,
+    });
+  }
+
+  if (!(await isEmpty("meeting_notes"))) return;
   await insert("meeting_notes", {
     user_id: userId,
     title: "Discovery call — Northwind Labs pilot",
