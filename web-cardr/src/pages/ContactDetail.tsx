@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Mail, Phone, Globe, MapPin, Building2, Linkedin, Calendar, Sparkles, Plus, MessageSquare, ChevronRight, Loader2, Wand2, Pencil, Check, X, GitBranch, Share2, Target, Mic, FileText, DollarSign, CalendarDays, Briefcase, Download, MoreHorizontal, Tag, Trash2, CalendarCheck } from "lucide-react";
@@ -71,8 +71,63 @@ const ContactDetail = () => {
   const [showTagInput, setShowTagInput] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [contactTags, setContactTags] = useState<{ id: string; tag_id: string; name: string; color: string }[]>([]);
+  const [followUpBannerDismissed, setFollowUpBannerDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(`cardr_fub_${id}`) === "1"; } catch { return false; }
+  });
 
   const contact = contacts.find((c) => c.id === id);
+
+  // Freshly-met contact (scanned in the last 24h) → nudge a personalized follow-up.
+  const isFreshScan = useMemo(() => {
+    if (!contact?.scannedAt) return false;
+    const ts = new Date(contact.scannedAt).getTime();
+    return !isNaN(ts) && Date.now() - ts < 24 * 60 * 60 * 1000;
+  }, [contact?.scannedAt]);
+
+  const dismissFollowUpBanner = () => {
+    setFollowUpBannerDismissed(true);
+    try { sessionStorage.setItem(`cardr_fub_${id}`, "1"); } catch { /* ignore */ }
+  };
+
+  // Unified timeline: manual/auto activities + linked meeting notes + the
+  // original scan, interleaved chronologically. This is the notes ↔ contacts
+  // ↔ events graph made visible on every contact.
+  type TimelineEntry = {
+    key: string;
+    icon: string;
+    title: string;
+    description?: string | null;
+    date: string;
+    noteId?: string;
+  };
+  const timeline = useMemo<TimelineEntry[]>(() => {
+    const entries: TimelineEntry[] = activities.map((a) => ({
+      key: `a-${a.id}`,
+      icon: ACTIVITY_ICONS[a.type] || "\u{1F4CC}",
+      title: a.title,
+      description: a.description,
+      date: a.created_at,
+    }));
+    for (const n of linkedNotes) {
+      entries.push({
+        key: `n-${n.id}`,
+        icon: "\u{1F3A4}",
+        title: n.title || t("contactDetail.untitled"),
+        description: n.summary || null,
+        date: n.created_at,
+        noteId: n.id,
+      });
+    }
+    if (contact?.scannedAt) {
+      entries.push({
+        key: "scan-origin",
+        icon: "\u{1F4C7}",
+        title: t("contactDetail.cardScanned"),
+        date: contact.scannedAt,
+      });
+    }
+    return entries.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
+  }, [activities, linkedNotes, contact?.scannedAt, t]);
 
   const fetchActivities = useCallback(async () => {
     if (!user || !id) { setLoading(false); return; }
@@ -441,6 +496,29 @@ const ContactDetail = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Fresh-scan nudge: draft a personalized follow-up while the meeting is fresh */}
+      {isFreshScan && !followUpBannerDismissed && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-4 mb-4 border border-primary/25 bg-primary/5">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+              <Wand2 size={14} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">{t("contactDetail.freshScanTitle")}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("contactDetail.freshScanDesc")}</p>
+              <div className="flex items-center gap-2 mt-2.5">
+                <button onClick={() => setShowOutreachDialog(true)} className="btn-primary px-3 py-1.5 text-xs rounded-lg inline-flex items-center gap-1.5">
+                  <Sparkles size={12} /> {t("contactDetail.draftFollowUp")}
+                </button>
+                <button onClick={dismissFollowUpBanner} className="text-xs font-medium text-muted-foreground px-2 py-1.5 hover:text-foreground transition-colors">
+                  {t("contactDetail.dismiss")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Pipeline Status Dropdown */}
       {stages.length > 0 && (
@@ -812,25 +890,38 @@ const ContactDetail = () => {
           <div className="flex justify-center py-8">
             <Loader2 size={16} className="text-primary animate-spin" />
           </div>
-        ) : activities.length === 0 ? (
+        ) : timeline.length === 0 ? (
           <div className="text-center py-8">
             <MessageSquare size={24} className="mx-auto text-muted-foreground/30 mb-2" />
             <p className="text-xs text-muted-foreground">{t("contactDetail.noActivity")}</p>
           </div>
         ) : (
           <div className="space-y-0">
-            {activities.map((a, i) => (
-              <div key={a.id} className="flex gap-3">
+            {timeline.map((entry, i) => (
+              <div key={entry.key} className="flex gap-3">
                 <div className="flex flex-col items-center">
                   <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs shrink-0">
-                    {ACTIVITY_ICONS[a.type] || "📌"}
+                    {entry.icon}
                   </div>
-                  {i < activities.length - 1 && <div className="w-px flex-1 bg-border/60 my-1" />}
+                  {i < timeline.length - 1 && <div className="w-px flex-1 bg-border/60 my-1" />}
                 </div>
                 <div className="pb-4 flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{a.title}</p>
-                  {a.description && <p className="text-xs text-muted-foreground mt-0.5">{a.description}</p>}
-                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">{format(parseISO(a.created_at), "MMM d, h:mm a")}</p>
+                  {entry.noteId ? (
+                    <button onClick={() => navigate(`/notes/${entry.noteId}`)} className="text-left w-full group">
+                      <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors flex items-center gap-1">
+                        {entry.title}
+                        <ChevronRight size={12} className="text-muted-foreground/40" />
+                      </p>
+                      {entry.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{entry.description}</p>}
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">{format(parseISO(entry.date), "MMM d, h:mm a")}</p>
+                    </button>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-foreground">{entry.title}</p>
+                      {entry.description && <p className="text-xs text-muted-foreground mt-0.5">{entry.description}</p>}
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">{format(parseISO(entry.date), "MMM d, h:mm a")}</p>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

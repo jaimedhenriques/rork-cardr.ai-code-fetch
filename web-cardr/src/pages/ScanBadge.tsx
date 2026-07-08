@@ -520,6 +520,39 @@ const ScanBadge = () => {
     return null;
   }, [activeEvent, autoAssignToEvent, folders, addFolder]);
 
+  /**
+   * Post-scan networking log: auto-set a follow-up reminder (+2 days) and
+   * record where/when you met (active event or a plain scan entry) on the
+   * contact's timeline. Fire-and-forget — never blocks the save flow.
+   */
+  const logMeetContext = useCallback((contactId: string, opts?: { skipFollowUp?: boolean }) => {
+    try {
+      if (!opts?.skipFollowUp) {
+        const due = new Date();
+        due.setDate(due.getDate() + 2);
+        void updateContact(contactId, { followUpDate: due.toISOString() } as Partial<Contact>);
+      }
+      if (user) {
+        void supabase.from("contact_activities").insert({
+          user_id: user.id,
+          contact_id: contactId,
+          type: "meeting",
+          title: activeEvent?.title ? `${t("scan.metAt")} ${activeEvent.title}` : t("scan.metViaScan"),
+          description: null,
+          metadata: {
+            source: "scan",
+            event_id: activeEventId || null,
+            met_at: new Date().toISOString(),
+          },
+        }).then(({ error }) => {
+          if (error) console.warn("met-log insert failed:", error.message);
+        });
+      }
+    } catch (e) {
+      console.warn("logMeetContext failed:", e);
+    }
+  }, [user, activeEvent, activeEventId, updateContact, t]);
+
   // Auto-save and navigate to the new contact
   const autoSaveAndNavigate = useCallback(async (contact: Partial<Contact>) => {
     if (!contact.name) return;
@@ -550,6 +583,8 @@ const ScanBadge = () => {
     const created = await addContact(newContact);
     const finalId = (created && (created as Contact).id) || newContact.id;
     if (finalId) addToSession(finalId);
+    // Networking edge: auto follow-up reminder + "met here" timeline entry.
+    if (finalId) logMeetContext(finalId);
     // Persist scan artifact (image + raw text + structured) for debugging/auditing.
     if (user && finalId && lastScanRef.current) {
       void persistScanArtifact({
@@ -609,7 +644,7 @@ const ScanBadge = () => {
       contactName: contact.name || "Contact",
       folderId: folderIdForContact ?? null,
     });
-  }, [addContact, canAddContact, navigate, activeEventId, activeEvent, linkContactToActiveEvent, t, folders.length, addToSession, autoAssignToEvent, eventList.length, user, resolveActiveEventFolder]);
+  }, [addContact, canAddContact, navigate, activeEventId, activeEvent, linkContactToActiveEvent, t, folders.length, addToSession, autoAssignToEvent, eventList.length, user, resolveActiveEventFolder, logMeetContext]);
 
   // Merge scanned fields into an existing contact (fill empties only)
   const mergeIntoExisting = useCallback((existing: Contact, scanned: Partial<Contact>) => {
@@ -627,6 +662,8 @@ const ScanBadge = () => {
       folderId: existing.folderId || (selectedFolder || undefined),
     };
     updateContact(existing.id, merged);
+    // Re-met an existing contact — log the encounter, keep their follow-up as-is.
+    logMeetContext(existing.id, { skipFollowUp: true });
     if (user && lastScanRef.current) {
       void persistScanArtifact({
         userId: user.id,
@@ -644,7 +681,7 @@ const ScanBadge = () => {
     }
     toast.success(`Updated ${existing.name}`, { icon: "🔗" });
     setTimeout(() => navigate(`/contact/${existing.id}`), 600);
-  }, [updateContact, navigate, selectedFolder, user]);
+  }, [updateContact, navigate, selectedFolder, user, logMeetContext]);
 
   const processImage = async (imageSrc: string) => {
     setScanning(true);
@@ -784,6 +821,7 @@ const ScanBadge = () => {
     const created = await addContact(newContact);
     const finalId = (created && (created as Contact).id) || newContact.id;
     if (finalId) addToSession(finalId);
+    if (finalId) logMeetContext(finalId);
     if (activeEventId && finalId) {
       await linkContactToActiveEvent(finalId);
       toast.success(`${manualData.name} saved`, {

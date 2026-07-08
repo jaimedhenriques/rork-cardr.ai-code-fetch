@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, Reorder } from "framer-motion";
-import { ArrowLeft, Copy, Check, Lightbulb, MessageSquare, CheckCircle2, ArrowRight, Trash2, Loader2, Share2, Users, Sparkles, RefreshCw, Pencil, Save, X, Plus, GripVertical, Brain, HelpCircle, UserCircle, Calendar, Link2, FileDown, BarChart3, Smile, Meh, Frown, Zap, MessageCircleQuestion, AlertTriangle, Quote, Shield, DollarSign, Trophy, Construction, ThumbsUp, Eye, Target, Lightbulb as LightbulbIcon, Flame, Vote, Landmark, ShieldAlert, Building2, Wallet, Gavel, Flag, Play } from "lucide-react";
+import { ArrowLeft, Copy, Check, Lightbulb, MessageSquare, CheckCircle2, ArrowRight, Trash2, Loader2, Share2, Users, Sparkles, RefreshCw, Pencil, Save, X, Plus, GripVertical, Brain, HelpCircle, UserCircle, Calendar, Link2, FileDown, BarChart3, Smile, Meh, Frown, Zap, MessageCircleQuestion, AlertTriangle, Quote, Shield, DollarSign, Trophy, Construction, ThumbsUp, Eye, Target, Lightbulb as LightbulbIcon, Flame, Vote, Landmark, ShieldAlert, Building2, Wallet, Gavel, Flag, Play, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useApp } from "@/context/AppContext";
+import { useApp, Contact } from "@/context/AppContext";
 import { NOTE_TEMPLATES } from "@/lib/note-templates";
 import { useCustomTemplates, buildCustomTemplatePayload } from "@/hooks/useCustomTemplates";
 import TemplateEditorDialog from "@/components/TemplateEditorDialog";
@@ -305,6 +305,64 @@ const NoteDetail = () => {
     const updated = [...note.action_items];
     updated[index] = { ...updated[index], done: !updated[index].done };
     await persistNote({ action_items: updated });
+  };
+
+  /**
+   * Resolves an action item owner name to a CRM contact — linked meeting
+   * attendees (mentioned_people with a contactId) win, then an exact name
+   * match, then a unique first-name match.
+   */
+  const assigneeFor = useCallback((owner?: string): Contact | null => {
+    if (!owner || !note) return null;
+    const o = owner.trim().toLowerCase();
+    if (!o || ["me", "you", "self", "team", "everyone", "all"].includes(o)) return null;
+    const oFirst = o.split(/\s+/)[0];
+    const linked = (note.mentioned_people || []).find((p: any) => {
+      if (!p?.contactId || !p?.name) return false;
+      const n = String(p.name).trim().toLowerCase();
+      return n === o || n.split(/\s+/)[0] === oFirst;
+    }) as any;
+    if (linked?.contactId) {
+      const c = contacts.find((ct) => ct.id === linked.contactId);
+      if (c) return c;
+    }
+    const exact = contacts.find((c) => c.name.trim().toLowerCase() === o);
+    if (exact) return exact;
+    const firstMatches = contacts.filter((c) => c.name.trim().toLowerCase().split(/\s+/)[0] === oFirst);
+    return firstMatches.length === 1 ? firstMatches[0] : null;
+  }, [note, contacts]);
+
+  /** One-tap: set a follow-up reminder on the assignee and log it to their timeline. */
+  const assignActionFollowUp = async (item: { task: string; deadline?: string }, contact: Contact) => {
+    if (!user || !note) {
+      toast.error(t("noteDetail.signInToRemind"));
+      return;
+    }
+    let due = new Date();
+    const parsed = item.deadline ? new Date(item.deadline) : null;
+    if (parsed && !isNaN(parsed.getTime()) && parsed.getTime() > Date.now()) {
+      due = parsed;
+    } else {
+      due.setDate(due.getDate() + 2);
+    }
+    const { error } = await supabase
+      .from("contacts")
+      .update({ follow_up_date: due.toISOString(), follow_up_sent_at: null } as any)
+      .eq("id", contact.id)
+      .eq("user_id", user.id);
+    if (error) {
+      toast.error(t("noteDetail.remindFailed"));
+      return;
+    }
+    await supabase.from("contact_activities").insert({
+      user_id: user.id,
+      contact_id: contact.id,
+      type: "follow_up",
+      title: `${t("noteDetail.actionItemActivity")}: ${item.task}`,
+      description: `${t("noteDetail.fromMeeting")} \u201C${note.title || "Untitled"}\u201D`,
+      metadata: { note_id: note.id, source: "action_item" },
+    });
+    toast.success(`${t("noteDetail.reminderSet")} ${contact.name} · ${format(due, "MMM d")}`);
   };
 
   const startEditing = () => {
@@ -936,25 +994,52 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
               </>
             ) : (
               <div className="space-y-2.5">
-                {note.action_items.map((item, i) => (
-                  <button key={i} onClick={() => toggleActionItem(i)} className="w-full flex items-start gap-3 text-left">
-                    <div className={`w-5 h-5 rounded-md border-2 mt-0.5 shrink-0 flex items-center justify-center transition-colors ${
-                      item.done ? "bg-primary border-primary" : "border-primary/40"
-                    }`}>
-                      {item.done && <Check size={12} className="text-primary-foreground" />}
+                {note.action_items.map((item, i) => {
+                  const assignee = assigneeFor(item.owner);
+                  return (
+                    <div key={i} className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleActionItem(i)}
+                        aria-label={item.done ? "Mark not done" : "Mark done"}
+                        className={`w-5 h-5 rounded-md border-2 mt-0.5 shrink-0 flex items-center justify-center transition-colors ${
+                          item.done ? "bg-primary border-primary" : "border-primary/40"
+                        }`}
+                      >
+                        {item.done && <Check size={12} className="text-primary-foreground" />}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <button onClick={() => toggleActionItem(i)} className="w-full text-left">
+                          <p className={`text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.task}</p>
+                        </button>
+                        {(item.owner || item.deadline) && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {item.owner && !assignee && <span className="font-medium">{item.owner}</span>}
+                            {item.owner && !assignee && item.deadline && " · "}
+                            {item.deadline && <span>by {item.deadline}</span>}
+                          </p>
+                        )}
+                        {assignee && (
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <button
+                              onClick={() => navigate(`/contact/${assignee.id}`)}
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5 hover:bg-primary/20 transition-colors"
+                            >
+                              <UserCircle size={10} /> {assignee.name}
+                            </button>
+                            {!item.done && (
+                              <button
+                                onClick={() => assignActionFollowUp(item, assignee)}
+                                className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground border border-border/60 rounded-full px-2 py-0.5 hover:text-primary hover:border-primary/40 transition-colors"
+                              >
+                                <Bell size={10} /> {t("noteDetail.remind")}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className={`text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.task}</p>
-                      {(item.owner || item.deadline) && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {item.owner && <span className="font-medium">{item.owner}</span>}
-                          {item.owner && item.deadline && " · "}
-                          {item.deadline && <span>by {item.deadline}</span>}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </motion.div>
