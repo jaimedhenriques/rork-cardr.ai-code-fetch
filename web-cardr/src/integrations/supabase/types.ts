@@ -1588,6 +1588,7 @@ export type Database = {
         Row: {
           action_items: Json | null
           analytics: Json | null
+          audio_path: string | null
           calendar_event_id: string | null
           category: string | null
           created_at: string
@@ -1595,6 +1596,7 @@ export type Database = {
           duration_seconds: number | null
           folder_id: string | null
           follow_ups: Json | null
+          highlights: Json
           id: string
           enhanced_notes: string | null
           insights: Json | null
@@ -1603,6 +1605,7 @@ export type Database = {
           mentioned_people: Json | null
           open_questions: Json | null
           share_token: string | null
+          speaker_names: Json
           summary: string | null
           title: string
           transcript: string | null
@@ -1612,6 +1615,7 @@ export type Database = {
         Insert: {
           action_items?: Json | null
           analytics?: Json | null
+          audio_path?: string | null
           calendar_event_id?: string | null
           category?: string | null
           created_at?: string
@@ -1619,6 +1623,7 @@ export type Database = {
           duration_seconds?: number | null
           folder_id?: string | null
           follow_ups?: Json | null
+          highlights?: Json
           id?: string
           enhanced_notes?: string | null
           insights?: Json | null
@@ -1627,6 +1632,7 @@ export type Database = {
           mentioned_people?: Json | null
           open_questions?: Json | null
           share_token?: string | null
+          speaker_names?: Json
           summary?: string | null
           title?: string
           transcript?: string | null
@@ -1636,6 +1642,7 @@ export type Database = {
         Update: {
           action_items?: Json | null
           analytics?: Json | null
+          audio_path?: string | null
           calendar_event_id?: string | null
           category?: string | null
           created_at?: string
@@ -1643,6 +1650,7 @@ export type Database = {
           duration_seconds?: number | null
           folder_id?: string | null
           follow_ups?: Json | null
+          highlights?: Json
           id?: string
           enhanced_notes?: string | null
           insights?: Json | null
@@ -1651,6 +1659,7 @@ export type Database = {
           mentioned_people?: Json | null
           open_questions?: Json | null
           share_token?: string | null
+          speaker_names?: Json
           summary?: string | null
           title?: string
           transcript?: string | null

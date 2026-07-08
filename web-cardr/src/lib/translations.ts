@@ -1005,6 +1005,13 @@ export const EN_STRINGS: Record<string, string> = {
   "noteDetail.linkedTo": "Linked to",
   "noteDetail.unlink": "Unlink",
   "noteDetail.unlinked": "Unlinked",
+  "noteDetail.audio": "Meeting Audio",
+  "noteDetail.highlights": "Highlights",
+  "noteDetail.flaggedMoment": "Flagged moment",
+  "noteDetail.searchTranscript": "Search transcript…",
+  "noteDetail.matches": "matches",
+  "noteDetail.noMatches": "No matches found",
+  "noteRecord.highlightSaved": "Moment flagged",
 
   // How To modal (ScanBadge)
   "scan.howToTitle": "Works with any badge",

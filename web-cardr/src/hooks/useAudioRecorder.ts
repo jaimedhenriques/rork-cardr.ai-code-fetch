@@ -4,6 +4,13 @@ interface StopResult {
   audioBlob: Blob | null;
   transcript: string;
   duration: number;
+  highlights: RecordingHighlight[];
+}
+
+/** A moment the user flagged while recording (Otter-style highlight). */
+export interface RecordingHighlight {
+  time: number; // seconds from recording start
+  snippet: string; // last words heard around that moment
 }
 
 /**
@@ -22,6 +29,7 @@ export const useAudioRecorder = (lang: string = "en-US") => {
   const [paused, setPaused] = useState(false);
   const [duration, setDuration] = useState(0);
   const [liveText, setLiveText] = useState("");
+  const [highlightCount, setHighlightCount] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -32,6 +40,7 @@ export const useAudioRecorder = (lang: string = "en-US") => {
   const resolveStopRef = useRef<((value: StopResult) => void) | null>(null);
   const durationRef = useRef(0);
   const startedAtRef = useRef(0);
+  const highlightsRef = useRef<RecordingHighlight[]>([]);
   const lastFinalAtRef = useRef(0);
   const speakerIdxRef = useRef(1);
   // Streams + Web Audio graph we must tear down on stop.
@@ -117,6 +126,7 @@ export const useAudioRecorder = (lang: string = "en-US") => {
           audioBlob: blob,
           transcript: fullTranscriptRef.current.trim(),
           duration: durationRef.current,
+          highlights: highlightsRef.current,
         });
         resolveStopRef.current = null;
       }
@@ -181,6 +191,8 @@ export const useAudioRecorder = (lang: string = "en-US") => {
     recordingRef.current = true;
     setDuration(0);
     durationRef.current = 0;
+    highlightsRef.current = [];
+    setHighlightCount(0);
     startedAtRef.current = Date.now();
     lastFinalAtRef.current = 0;
     speakerIdxRef.current = 1;
@@ -189,6 +201,19 @@ export const useAudioRecorder = (lang: string = "en-US") => {
       setDuration((d) => d + 1);
     }, 1000);
   }, [isSupported, isSpeechSupported]);
+
+  /** Flag the current moment as a highlight, capturing the last words heard. */
+  const markHighlight = useCallback(() => {
+    if (!recordingRef.current) return;
+    const words = fullTranscriptRef.current
+      .replace(/\[\d{1,2}:\d{2}\]\s*/g, "")
+      .replace(/Speaker\s+\d+:\s*/g, "")
+      .trim()
+      .split(/\s+/);
+    const snippet = words.slice(-18).join(" ");
+    highlightsRef.current.push({ time: durationRef.current, snippet });
+    setHighlightCount(highlightsRef.current.length);
+  }, []);
 
   const pause = useCallback(() => {
     if (!recordingRef.current) return;
@@ -232,10 +257,11 @@ export const useAudioRecorder = (lang: string = "en-US") => {
           audioBlob: null,
           transcript: fullTranscriptRef.current.trim(),
           duration: durationRef.current,
+          highlights: highlightsRef.current,
         });
       }
     });
   }, []);
 
-  return { recording, paused, duration, liveText, isSupported, isSpeechSupported, isSystemAudioSupported, start, stop, pause, resume };
+  return { recording, paused, duration, liveText, highlightCount, isSupported, isSpeechSupported, isSystemAudioSupported, start, stop, pause, resume, markHighlight };
 };

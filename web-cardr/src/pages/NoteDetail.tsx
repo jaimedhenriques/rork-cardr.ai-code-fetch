@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, Reorder } from "framer-motion";
-import { ArrowLeft, Copy, Check, Lightbulb, MessageSquare, CheckCircle2, ArrowRight, Trash2, Loader2, Share2, Users, Sparkles, RefreshCw, Pencil, Save, X, Plus, GripVertical, Brain, HelpCircle, UserCircle, Calendar, Link2, FileDown, BarChart3, Smile, Meh, Frown, Zap, MessageCircleQuestion, AlertTriangle, Quote, Shield, DollarSign, Trophy, Construction, ThumbsUp, Eye, Target, Lightbulb as LightbulbIcon, Flame, Vote, Landmark, ShieldAlert, Building2, Wallet, Gavel } from "lucide-react";
+import { ArrowLeft, Copy, Check, Lightbulb, MessageSquare, CheckCircle2, ArrowRight, Trash2, Loader2, Share2, Users, Sparkles, RefreshCw, Pencil, Save, X, Plus, GripVertical, Brain, HelpCircle, UserCircle, Calendar, Link2, FileDown, BarChart3, Smile, Meh, Frown, Zap, MessageCircleQuestion, AlertTriangle, Quote, Shield, DollarSign, Trophy, Construction, ThumbsUp, Eye, Target, Lightbulb as LightbulbIcon, Flame, Vote, Landmark, ShieldAlert, Building2, Wallet, Gavel, Flag, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useApp } from "@/context/AppContext";
@@ -17,6 +17,8 @@ import NoteContactLinker from "@/components/NoteContactLinker";
 import NoteEventLinker from "@/components/NoteEventLinker";
 import PageHeader from "@/components/PageHeader";
 import NoteChat from "@/components/NoteChat";
+import NoteTranscript from "@/components/NoteTranscript";
+import NoteAudioPlayer, { AudioPlayerHandle } from "@/components/NoteAudioPlayer";
 import NoteTagPicker from "@/components/NoteTagPicker";
 import NoteCategoryPicker from "@/components/NoteCategoryPicker";
 import NoteFolderPicker from "@/components/NoteFolderPicker";
@@ -34,6 +36,11 @@ interface MeetingAnalytics {
   topSpeaker?: string;
   keyMetrics?: { label: string; value: string; icon: string }[];
   templateFields?: Record<string, any>;
+}
+
+interface NoteHighlight {
+  time: number;
+  snippet?: string;
 }
 
 interface MeetingNote {
@@ -56,6 +63,9 @@ interface MeetingNote {
   folder_id: string | null;
   created_at: string;
   analytics: MeetingAnalytics | null;
+  audio_path: string | null;
+  speaker_names: Record<string, string>;
+  highlights: NoteHighlight[];
 }
 
 const GUEST_NOTES_KEY = "cardscanpro_guest_notes";
@@ -101,7 +111,7 @@ const NoteDetail = () => {
   const [note, setNote] = useState<MeetingNote | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [showTranscript, setShowTranscript] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
@@ -113,10 +123,7 @@ const NoteDetail = () => {
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const { templates: customTemplates, myTemplates, teamTemplates } = useCustomTemplates();
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
-  const [speakerNames, setSpeakerNames] = useState<Record<string, string>>({});
-  const [editingSpeaker, setEditingSpeaker] = useState<string | null>(null);
-  const [speakerDraft, setSpeakerDraft] = useState("");
-  const [speakerSearchQuery, setSpeakerSearchQuery] = useState("");
+  const playerRef = useRef<AudioPlayerHandle | null>(null);
 
   // Section editing states
   const [contactLinkerOpen, setContactLinkerOpen] = useState(false);
@@ -158,6 +165,9 @@ const NoteDetail = () => {
         folder_id: (data as any).folder_id || null,
         created_at: data.created_at,
         analytics: ((data as any).analytics as MeetingAnalytics) || null,
+        audio_path: (data as any).audio_path ?? null,
+        speaker_names: ((data as any).speaker_names as Record<string, string>) || {},
+        highlights: ((data as any).highlights as NoteHighlight[]) || [],
       });
     }
     setLoading(false);
@@ -683,6 +693,52 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
       )}
 
       <div className="space-y-4">
+        {/* Meeting audio playback (Otter-style) */}
+        {note.audio_path && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <NoteAudioPlayer
+              ref={playerRef}
+              audioPath={note.audio_path}
+              durationSeconds={note.duration_seconds}
+              label={t("noteDetail.audio")}
+            />
+          </motion.div>
+        )}
+
+        {/* Flagged highlights from the live recording */}
+        {Array.isArray(note.highlights) && note.highlights.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Flag size={14} className="text-warning" />
+              <h3 className="text-sm font-semibold text-foreground">{t("noteDetail.highlights")}</h3>
+              <span className="text-[10px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded-full ml-auto">{note.highlights.length}</span>
+            </div>
+            <div className="space-y-2.5">
+              {note.highlights.map((h, i) => {
+                const timeLabel = `${Math.floor(h.time / 60)}:${String(Math.floor(h.time % 60)).padStart(2, "0")}`;
+                return (
+                  <div key={i} className="flex items-start gap-2.5">
+                    {note.audio_path ? (
+                      <button
+                        onClick={() => playerRef.current?.seekTo(Math.max(0, h.time - 10))}
+                        className="flex items-center gap-1 text-[10px] font-bold text-warning bg-warning/10 hover:bg-warning/20 rounded-full px-2 py-1 transition-colors tabular-nums shrink-0 mt-0.5"
+                      >
+                        <Play size={7} className="fill-current" />
+                        {timeLabel}
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-warning bg-warning/10 rounded-full px-2 py-1 tabular-nums shrink-0 mt-0.5">{timeLabel}</span>
+                    )}
+                    <p className="text-sm text-foreground/80 leading-relaxed">
+                      {h.snippet?.trim() ? `…${h.snippet.trim()}` : t("noteDetail.flaggedMoment")}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* Summary — Editable */}
         {(note.summary || editingSection === "summary") && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }} className="card-elevated p-4">
@@ -1292,154 +1348,26 @@ ${note.manual_notes ? section("Notes", `<p>${note.manual_notes.replace(/\n/g, "<
           </button>
         ) : null}
 
-        {/* Transcript toggle */}
+        {/* Interactive transcript — synced with audio, searchable, editable */}
         {note.transcript && (
           <div>
             <button onClick={() => setShowTranscript(!showTranscript)} className="text-xs font-semibold text-primary">
               {showTranscript ? t("noteDetail.hideTranscript") : t("noteDetail.showTranscript")}
             </button>
-            {showTranscript && (() => {
-              // Extract unique speakers from transcript
-              const speakerSet = new Set<string>();
-              note.transcript!.split("\n").forEach(line => {
-                const m = line.match(/^(Speaker [A-Z]):/);
-                if (m) speakerSet.add(m[1]);
-              });
-              const speakers = Array.from(speakerSet);
-
-              const speakerColors = [
-                "text-primary", "text-accent", "text-[hsl(280,80%,65%)]",
-                "text-[hsl(340,70%,60%)]", "text-[hsl(160,60%,50%)]", "text-[hsl(30,80%,55%)]"
-              ];
-              const speakerBgColors = [
-                "bg-primary/10", "bg-accent/10", "bg-[hsl(280,80%,65%)]/10",
-                "bg-[hsl(340,70%,60%)]/10", "bg-[hsl(160,60%,50%)]/10", "bg-[hsl(30,80%,55%)]/10"
-              ];
-
-              const filteredSpeakerContacts = speakerSearchQuery
-                ? contacts.filter(c => c.name.toLowerCase().includes(speakerSearchQuery.toLowerCase())).slice(0, 5)
-                : [];
-
-              return (
-                <div className="mt-2 space-y-3">
-                  {/* Speaker Legend / Assignment */}
-                  {speakers.length > 0 && (
-                    <div className="card-elevated p-3">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("noteDetail.speakers")}</p>
-                      <div className="space-y-2">
-                        {speakers.map((spk, idx) => {
-                          const colorIdx = spk.charCodeAt(spk.length - 1) - 65;
-                          const color = speakerColors[colorIdx % speakerColors.length];
-                          const bg = speakerBgColors[colorIdx % speakerBgColors.length];
-                          const displayName = speakerNames[spk] || spk;
-                          const isEditing = editingSpeaker === spk;
-
-                          return (
-                            <div key={spk}>
-                              {isEditing ? (
-                                <div className="space-y-1.5">
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-6 h-6 rounded-full ${bg} flex items-center justify-center shrink-0`}>
-                                      <span className={`text-[10px] font-bold ${color}`}>{spk.slice(-1)}</span>
-                                    </div>
-                                    <input
-                                      autoFocus
-                                      value={speakerDraft}
-                                      onChange={(e) => { setSpeakerDraft(e.target.value); setSpeakerSearchQuery(e.target.value); }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" && speakerDraft.trim()) {
-                                          setSpeakerNames(prev => ({ ...prev, [spk]: speakerDraft.trim() }));
-                                          setEditingSpeaker(null);
-                                          setSpeakerSearchQuery("");
-                                        }
-                                        if (e.key === "Escape") { setEditingSpeaker(null); setSpeakerSearchQuery(""); }
-                                      }}
-                                      placeholder={t("noteDetail.typeName")}
-                                      className="flex-1 text-sm bg-secondary/50 rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-primary/30 text-foreground"
-                                    />
-                                    <button
-                                      onClick={() => { setEditingSpeaker(null); setSpeakerSearchQuery(""); }}
-                                      className="text-muted-foreground"
-                                    >
-                                      <X size={14} />
-                                    </button>
-                                  </div>
-                                  {filteredSpeakerContacts.length > 0 && (
-                                    <div className="ml-8 space-y-0.5">
-                                      {filteredSpeakerContacts.map(c => (
-                                        <button
-                                          key={c.id}
-                                          onClick={() => {
-                                            setSpeakerNames(prev => ({ ...prev, [spk]: c.name }));
-                                            setEditingSpeaker(null);
-                                            setSpeakerSearchQuery("");
-                                            // Also link as participant
-                                            if (user) {
-                                              supabase.from("meeting_participants").upsert({
-                                                meeting_note_id: id!,
-                                                user_id: user.id,
-                                                name: c.name,
-                                                contact_id: c.id,
-                                                speaker_label: spk,
-                                              }, { onConflict: "meeting_note_id,speaker_label" }).then(() => {});
-                                            }
-                                            toast.success(`${spk} → ${c.name}`);
-                                          }}
-                                          className="w-full flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary/80 text-left"
-                                        >
-                                          <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary">{c.name.charAt(0)}</div>
-                                          <span className="text-xs text-foreground">{c.name}</span>
-                                          {c.company && <span className="text-[10px] text-muted-foreground">· {c.company}</span>}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => { setEditingSpeaker(spk); setSpeakerDraft(speakerNames[spk] || ""); setSpeakerSearchQuery(""); }}
-                                  className="flex items-center gap-2 w-full text-left group"
-                                >
-                                  <div className={`w-6 h-6 rounded-full ${bg} flex items-center justify-center shrink-0`}>
-                                    <span className={`text-[10px] font-bold ${color}`}>{spk.slice(-1)}</span>
-                                  </div>
-                                  <span className={`text-sm font-medium ${speakerNames[spk] ? "text-foreground" : "text-muted-foreground"}`}>
-                                    {displayName}
-                                  </span>
-                                  <Pencil size={10} className="text-muted-foreground/0 group-hover:text-muted-foreground transition-colors ml-auto" />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Transcript lines */}
-                  <div className="card-elevated p-4 space-y-2">
-                    {note.transcript!.split("\n").map((line, i) => {
-                      const speakerMatch = line.match(/^(Speaker [A-Z]):\s*(.*)/);
-                      if (speakerMatch) {
-                        const speakerLabel = speakerMatch[1];
-                        const speakerText = speakerMatch[2];
-                        const colorIdx = speakerLabel.charCodeAt(speakerLabel.length - 1) - 65;
-                        const color = speakerColors[colorIdx % speakerColors.length];
-                        const displayName = speakerNames[speakerLabel] || speakerLabel;
-                        return (
-                          <p key={i} className="text-xs leading-relaxed">
-                            <span className={`font-bold ${color}`}>{displayName}:</span>{" "}
-                            <span className="text-foreground/70">{speakerText}</span>
-                          </p>
-                        );
-                      }
-                      if (!line.trim()) return null;
-                      return <p key={i} className="text-xs text-foreground/60 leading-relaxed">{line}</p>;
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
+            {showTranscript && (
+              <NoteTranscript
+                transcript={note.transcript}
+                speakerNames={note.speaker_names || {}}
+                onRenameSpeaker={(label, name) =>
+                  persistNote({ speaker_names: { ...(note.speaker_names || {}), [label]: name } })
+                }
+                onTranscriptChange={(next) => persistNote({ transcript: next })}
+                onSeek={note.audio_path ? (s) => playerRef.current?.seekTo(s) : undefined}
+                noteId={note.id}
+                userId={user?.id}
+                contacts={contacts}
+              />
+            )}
           </div>
         )}
       </div>

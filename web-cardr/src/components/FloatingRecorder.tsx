@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Pause, Play, Square, Pencil } from "lucide-react";
+import { Pause, Play, Square, Pencil, Flag } from "lucide-react";
 
 interface FloatingRecorderStrings {
   listening: string;
@@ -20,6 +20,9 @@ interface FloatingRecorderProps {
   onNotesChange: (value: string) => void;
   onPauseToggle: () => void;
   onStop: () => void;
+  /** Flag the current moment as a highlight */
+  onHighlight?: () => void;
+  highlightCount?: number;
   strings: FloatingRecorderStrings;
 }
 
@@ -41,6 +44,8 @@ const FloatingRecorder = ({
   onNotesChange,
   onPauseToggle,
   onStop,
+  onHighlight,
+  highlightCount = 0,
   strings,
 }: FloatingRecorderProps) => {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
@@ -90,6 +95,19 @@ const FloatingRecorder = ({
 
       {/* Controls */}
       <div className="flex items-center gap-2 px-3 pb-3 shrink-0">
+        {onHighlight && (
+          <button
+            onClick={onHighlight}
+            className="relative w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center hover:bg-secondary transition-colors shrink-0"
+          >
+            <Flag size={15} className="text-warning" />
+            {highlightCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-warning text-[9px] font-bold text-warning-foreground flex items-center justify-center">
+                {highlightCount}
+              </span>
+            )}
+          </button>
+        )}
         <button
           onClick={onPauseToggle}
           className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center hover:bg-secondary transition-colors shrink-0"

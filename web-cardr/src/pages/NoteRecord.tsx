@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2, Plus, Users } from "lucide-react";
+import { Mic, Square, Loader2, Pencil, AlertCircle, Pause, Play, Globe, LayoutTemplate, Phone, Volume2, MonitorSpeaker, Headphones, PictureInPicture2, Plus, Users, Flag } from "lucide-react";
 import type { AudioSource } from "@/hooks/useAudioRecorder";
 import { useDocumentPip } from "@/hooks/useDocumentPip";
 import FloatingRecorder from "@/components/FloatingRecorder";
@@ -111,7 +111,27 @@ const NoteRecord = () => {
     try {
       // 1. Stop recording
       setProcessingStep(t("noteRecord.finishingRecording"));
-      const { audioBlob, transcript: webSpeechText, duration: finalDuration } = await recorder.stop();
+      const { audioBlob, transcript: webSpeechText, duration: finalDuration, highlights } = await recorder.stop();
+
+      // Upload the raw audio in the background so the note gets Otter-style
+      // playback. Runs in parallel with transcription + AI notes.
+      const audioUploadPromise: Promise<string | null> = (async () => {
+        if (!user || !audioBlob || audioBlob.size < 1000) return null;
+        try {
+          const path = `${user.id}/${crypto.randomUUID()}.webm`;
+          const { error: upErr } = await supabase.storage
+            .from("meeting-audio")
+            .upload(path, audioBlob, { contentType: audioBlob.type || "audio/webm" });
+          if (upErr) {
+            console.error("Audio upload failed:", upErr.message);
+            return null;
+          }
+          return path;
+        } catch (e) {
+          console.error("Audio upload failed:", e);
+          return null;
+        }
+      })();
 
       // 2. AI transcription (if we have audio)
       let finalTranscript = webSpeechText;
@@ -177,6 +197,7 @@ const NoteRecord = () => {
 
       // 4. Save note
       setProcessingStep(t("noteRecord.saving"));
+      const audioPath = await audioUploadPromise;
       const noteTitle = title || aiNotes?.keyTopics?.[0] || `Meeting ${new Date().toLocaleDateString()}`;
       const noteData: any = {
         title: noteTitle,
@@ -192,6 +213,8 @@ const NoteRecord = () => {
         open_questions: aiNotes?.openQuestions || [],
         manual_notes: manualNotes || null,
         enhanced_notes: typeof aiNotes?.enhancedNotes === "string" && aiNotes.enhancedNotes.trim() ? aiNotes.enhancedNotes : null,
+        highlights: highlights || [],
+        ...(audioPath ? { audio_path: audioPath } : {}),
         ...(calendarEventId ? { calendar_event_id: calendarEventId } : {}),
       };
 
@@ -544,6 +567,24 @@ const NoteRecord = () => {
             </motion.div>
           ) : recorder.recording ? (
             <div className="flex items-center gap-4">
+              {/* Highlight this moment */}
+              <motion.button
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                whileTap={{ scale: 0.88 }}
+                onClick={() => {
+                  recorder.markHighlight();
+                  toast.success(t("noteRecord.highlightSaved"), { duration: 1200 });
+                }}
+                className="relative w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center shadow-md hover:bg-secondary transition-colors"
+              >
+                <Flag size={18} className="text-warning" />
+                {recorder.highlightCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-warning text-[10px] font-bold text-warning-foreground flex items-center justify-center">
+                    {recorder.highlightCount}
+                  </span>
+                )}
+              </motion.button>
               {/* Pause / Resume */}
               <motion.button
                 initial={{ scale: 0.9 }}
@@ -602,6 +643,8 @@ const NoteRecord = () => {
           onNotesChange={setManualNotes}
           onPauseToggle={recorder.paused ? recorder.resume : recorder.pause}
           onStop={handleStop}
+          onHighlight={recorder.markHighlight}
+          highlightCount={recorder.highlightCount}
           strings={{
             listening: recorder.isSpeechSupported ? t("noteRecord.listening") : t("noteRecord.recordingAudio"),
             jotNotes: t("noteRecord.writeNotes"),
