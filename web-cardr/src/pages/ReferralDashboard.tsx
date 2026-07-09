@@ -27,9 +27,9 @@ const StatCard = ({ icon: Icon, label, value, accent = false }: {
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${accent ? "bg-primary/15" : "bg-secondary"}`}>
         <Icon size={14} className={accent ? "text-primary" : "text-muted-foreground"} />
       </div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
-    <p className={`text-2xl font-display font-bold ${accent ? "text-primary" : "text-foreground"}`}>{value}</p>
+    <p className={`text-2xl font-display font-bold tabular-nums ${accent ? "text-primary" : "text-foreground"}`}>{value}</p>
   </motion.div>
 );
 
@@ -108,7 +108,7 @@ const ReferralDashboard = () => {
         transition={{ delay: 0.05 }}
         className="card-elevated p-4 mb-4"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
           Your Referral Link
         </p>
         <div className="flex items-center gap-2 mb-3">
@@ -135,21 +135,21 @@ const ReferralDashboard = () => {
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors active:scale-95"
           >
             <Send size={12} className="text-[#25D366]" />
-            <span className="text-[10px] font-semibold text-[#25D366]">WhatsApp</span>
+            <span className="text-[11px] font-semibold text-[#25D366]">WhatsApp</span>
           </button>
           <button
             onClick={handleiMessage}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95"
           >
             <MessageSquare size={12} className="text-primary" />
-            <span className="text-[10px] font-semibold text-primary">iMessage</span>
+            <span className="text-[11px] font-semibold text-primary">iMessage</span>
           </button>
           <button
             onClick={handleEmail}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-accent/10 hover:bg-accent/20 transition-colors active:scale-95"
           >
             <Mail size={12} className="text-accent" />
-            <span className="text-[10px] font-semibold text-accent">Email</span>
+            <span className="text-[11px] font-semibold text-accent">Email</span>
           </button>
         </div>
       </motion.div>
@@ -180,22 +180,22 @@ const ReferralDashboard = () => {
               <Wallet size={18} className="text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Available Credits
               </p>
-              <p className="text-xl font-display font-bold text-foreground">
+              <p className="text-xl font-display font-bold text-foreground tabular-nums">
                 ${credits(stats?.available_credits_cents || 0)}
               </p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-muted-foreground">Applied to</p>
+            <p className="text-[11px] text-muted-foreground">Applied to</p>
             <p className="text-xs font-semibold text-foreground">Next invoice</p>
           </div>
         </div>
         {(stats?.available_credits_cents || 0) > 0 && (
           <div className="mt-3 px-3 py-2 rounded-xl bg-secondary">
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               Credits are automatically applied to your next subscription invoice. Earn enough and your subscription is free!
             </p>
           </div>
@@ -211,7 +211,7 @@ const ReferralDashboard = () => {
       >
         <div className="flex items-center gap-2 mb-3">
           <Clock size={14} className="text-muted-foreground" />
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Credit History
           </p>
         </div>
@@ -224,11 +224,11 @@ const ReferralDashboard = () => {
                   <div className="w-6 h-6 rounded-lg bg-success/15 flex items-center justify-center">
                     <Check size={10} className="text-success" />
                   </div>
-                  <span className="text-xs text-foreground">
+                  <span className="text-xs text-foreground tabular-nums">
                     {format(new Date(payout.applied_at), "MMM d, yyyy")}
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-foreground">
+                <span className="text-sm font-semibold text-foreground tabular-nums">
                   ${credits(payout.amount_cents)} applied
                 </span>
               </div>
@@ -237,7 +237,7 @@ const ReferralDashboard = () => {
         ) : (
           <div className="text-center py-6">
             <p className="text-xs text-muted-foreground">No credits applied yet</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-1">
+            <p className="text-[11px] text-muted-foreground/60 mt-1">
               Credits are auto-applied to your next invoice
             </p>
           </div>
@@ -251,7 +251,7 @@ const ReferralDashboard = () => {
         transition={{ delay: 0.25 }}
         className="card-elevated p-4"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           How It Works
         </p>
         <div className="space-y-3">
@@ -263,7 +263,7 @@ const ReferralDashboard = () => {
           ].map(({ step, text }) => (
             <div key={step} className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="text-[10px] font-bold text-primary">{step}</span>
+                <span className="text-[11px] font-bold text-primary">{step}</span>
               </div>
               <p className="text-xs text-foreground leading-relaxed">{text}</p>
             </div>
@@ -271,7 +271,7 @@ const ReferralDashboard = () => {
         </div>
       </motion.div>
 
-      <p className="text-center text-[10px] text-muted-foreground mt-4">
+      <p className="text-center text-[11px] text-muted-foreground mt-4">
         Credits applied automatically · No cash payouts · Lifetime referral tracking
       </p>
     </div>

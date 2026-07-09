@@ -260,7 +260,7 @@ const Pricing = () => {
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${billing === "annual" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
               >
                 {t("pricing.annual")}
-                <span className="absolute -top-2 -right-2 text-[9px] bg-success text-white px-1.5 py-0.5 rounded-full font-bold">
+                <span className="absolute -top-2 -right-2 text-[11px] bg-success text-white px-1.5 py-0.5 rounded-full font-bold">
                   {t("pricing.save20")}
                 </span>
               </button>
@@ -332,12 +332,12 @@ const Pricing = () => {
               </div>
 
               <div className="flex items-baseline gap-1.5 mb-1">
-                <span className="text-2xl font-display font-bold text-foreground">{price(plan)}</span>
+                <span className="text-2xl font-display font-bold text-foreground tabular-nums">{price(plan)}</span>
                 <span className="text-sm text-muted-foreground">{period(plan)}</span>
               </div>
 
               {billing === "annual" && plan.annualSavingsKey && (
-                <span className="text-[10px] font-semibold text-success">{t(plan.annualSavingsKey)}</span>
+                <span className="text-[11px] font-semibold text-success">{t(plan.annualSavingsKey)}</span>
               )}
 
               <div className="space-y-2 mb-4 mt-3">
@@ -406,7 +406,7 @@ const Pricing = () => {
         </div>
 
         <div className="flex items-baseline gap-1.5 mb-1">
-          <span className="text-2xl font-display font-bold text-foreground">
+          <span className="text-2xl font-display font-bold text-foreground tabular-nums">
             {billing === "monthly" ? "$15" : "$12"}
           </span>
           <span className="text-sm text-muted-foreground">
@@ -414,7 +414,7 @@ const Pricing = () => {
           </span>
         </div>
         {billing === "annual" && (
-          <span className="text-[10px] font-semibold text-success">{t("pricing.savePerUserYear")}</span>
+          <span className="text-[11px] font-semibold text-success">{t("pricing.savePerUserYear")}</span>
         )}
 
         <p className="text-xs text-muted-foreground mt-2 mb-3">

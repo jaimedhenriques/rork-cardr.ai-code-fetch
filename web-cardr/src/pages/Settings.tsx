@@ -147,7 +147,7 @@ const Settings = () => {
         {Icon && <Icon size={16} className="text-muted-foreground" />}
         <span className={`text-sm ${upcoming ? "text-muted-foreground" : "text-foreground"}`}>{label}</span>
         {upcoming && (
-          <span className="text-[9px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
+          <span className="text-[11px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
         )}
       </div>
       <div className="flex items-center gap-2">
@@ -303,7 +303,7 @@ const Settings = () => {
               onChange={handleAvatarUpload}
               disabled={uploadingAvatar}
             />
-            <p className="text-[10px] text-muted-foreground mt-2">{t("settings.tapToUpload")}</p>
+            <p className="text-[11px] text-muted-foreground mt-2">{t("settings.tapToUpload")}</p>
           </div>
 
           <div className="space-y-3">
@@ -391,7 +391,7 @@ const Settings = () => {
                 <div>
                   <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">{t("settings.messageBody")}</label>
                   <textarea value={editingTemplate.body} onChange={(e) => setEditingTemplate({ ...editingTemplate, body: e.target.value })} placeholder="Hi {{firstName}}, great meeting you at..." className="input-field min-h-[120px] resize-none" maxLength={1000} rows={5} />
-                  <p className="text-[10px] text-muted-foreground mt-1">{editingTemplate.body.length}/1000</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">{editingTemplate.body.length}/1000</p>
                 </div>
               </div>
               <button
@@ -533,14 +533,14 @@ const Settings = () => {
             <div className="flex items-center justify-between py-3.5 border-b border-border/40">
               <span className="text-sm text-muted-foreground">{t("settings.autoShareNotes")}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
+                <span className="text-[11px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
                 <span className="text-sm text-muted-foreground">{t("settings.off")}</span>
               </div>
             </div>
             <div className="flex items-center justify-between py-3.5">
               <span className="text-sm text-muted-foreground">{t("settings.defaultPermission")}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
+                <span className="text-[11px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
                 <span className="text-sm text-muted-foreground">{t("settings.viewer")}</span>
               </div>
             </div>
@@ -558,21 +558,21 @@ const Settings = () => {
             <div className="flex items-center justify-between py-3.5 border-b border-border/40">
               <span className="text-sm text-muted-foreground">{t("settings.autoJoin")}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
+                <span className="text-[11px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
                 <span className="text-sm text-muted-foreground">{t("settings.manual")}</span>
               </div>
             </div>
             <div className="flex items-center justify-between py-3.5 border-b border-border/40">
               <span className="text-sm text-muted-foreground">{t("settings.autoCapture")}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
+                <span className="text-[11px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
                 <span className="text-sm text-muted-foreground">{t("settings.off")}</span>
               </div>
             </div>
             <div className="flex items-center justify-between py-3.5">
               <span className="text-sm text-muted-foreground">{t("settings.emailHost")}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
+                <span className="text-[11px] font-bold text-muted-foreground bg-muted rounded px-1.5 py-0.5">UPCOMING</span>
                 <span className="text-sm text-muted-foreground">{t("settings.off")}</span>
               </div>
             </div>
@@ -635,7 +635,7 @@ const Settings = () => {
 
       {/* PREFERENCES Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.preferences")}</p>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.preferences")}</p>
         <div className="card-elevated overflow-hidden px-4 mb-5">
           <SettingsRow label={t("settings.appLanguage")} value={currentAppLang.label} onClick={() => setView("appLanguage")} icon={Globe2} />
           <SettingsRow label={t("settings.transcriptionLanguage")} value={currentTranscriptionLang.label} onClick={() => setView("transcriptionLanguage")} icon={Languages} />
@@ -648,7 +648,7 @@ const Settings = () => {
 
       {/* SETUP Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.setup")}</p>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.setup")}</p>
         <div className="card-elevated overflow-hidden px-4 mb-5">
           <SettingsRow label={t("settings.connectCalendars")} onClick={() => navigate("/calendar")} icon={BookOpen} upcoming />
           <SettingsRow label={t("settings.importContacts")} onClick={() => setShowImport(true)} icon={Upload} />
@@ -660,13 +660,13 @@ const Settings = () => {
 
       {/* DIAGNOSTICS Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}>
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 px-1">Diagnostics</p>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">Diagnostics</p>
         <PreprocessStatsCard />
       </motion.div>
 
       {/* SUPPORT Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.support")}</p>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.support")}</p>
         <div className="card-elevated overflow-hidden px-4 mb-5">
           <SettingsRow label={t("settings.faq")} onClick={() => {}} icon={HelpCircle} upcoming />
           <SettingsRow label={t("settings.sendFeedback")} onClick={() => {}} icon={Send} upcoming />
@@ -675,7 +675,7 @@ const Settings = () => {
 
       {/* PLAN & USAGE Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }}>
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.planUsage")}</p>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.planUsage")}</p>
         <div className="card-elevated overflow-hidden p-4 mb-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -684,7 +684,7 @@ const Settings = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">{t("settings.freePlan")}</p>
-                <p className="text-[10px] text-muted-foreground">{t("misc.upTo")} 100 {t("misc.contacts")}</p>
+                <p className="text-[11px] text-muted-foreground">{t("misc.upTo")} 100 {t("misc.contacts")}</p>
               </div>
             </div>
             {isIosNative() ? (
@@ -764,15 +764,15 @@ const Settings = () => {
             <>
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground">{t("settings.contactsUsed")}</span>
-                  <span className={`text-[10px] font-semibold ${contacts.length >= 80 ? "text-amber-400" : "text-foreground"}`}>{contacts.length}/100</span>
+                  <span className="text-[11px] text-muted-foreground">{t("settings.contactsUsed")}</span>
+                  <span className={`text-[11px] font-semibold tabular-nums ${contacts.length >= 80 ? "text-amber-400" : "text-foreground"}`}>{contacts.length}/100</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                   <div className={`h-full rounded-full transition-all ${contacts.length >= 80 ? "bg-amber-400" : "bg-primary"}`} style={{ width: `${Math.min((contacts.length / 100) * 100, 100)}%` }} />
                 </div>
               </div>
               {contacts.length >= 80 && (
-                <p className="text-[10px] text-amber-400 mt-1">{t("settings.upgradeMsg")}</p>
+                <p className="text-[11px] text-amber-400 mt-1">{t("settings.upgradeMsg")}</p>
               )}
             </>
           )}
@@ -792,23 +792,23 @@ const Settings = () => {
                   <Wallet size={16} className="text-primary" />
                 </div>
                 <div className="text-left">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("settings.availableCredits")}
                   </p>
-                  <p className="text-lg font-display font-bold text-foreground">
+                  <p className="text-lg font-display font-bold text-foreground tabular-nums">
                     ${((referralStats?.available_credits_cents || 0) / 100).toFixed(2)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground tabular-nums">
                   ${((referralStats?.total_credits_earned_cents || 0) / 100).toFixed(2)} {t("settings.earned")}
                 </span>
                 <ChevronRight size={14} className="text-muted-foreground/50" />
               </div>
             </button>
             {(referralStats?.available_credits_cents || 0) > 0 && (
-              <p className="text-[10px] text-muted-foreground mt-2.5 px-12">
+              <p className="text-[11px] text-muted-foreground mt-2.5 px-12">
                 {t("settings.autoApplied")}
               </p>
             )}
@@ -818,7 +818,7 @@ const Settings = () => {
 
       {/* ACCOUNT Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.account")}</p>
+        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.account")}</p>
         <div className="card-elevated overflow-hidden px-4">
           {isGuest ? (
             <button

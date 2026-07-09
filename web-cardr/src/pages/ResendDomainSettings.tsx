@@ -283,7 +283,7 @@ const ResendDomainSettings = () => {
             <h1 className="text-lg font-bold text-foreground">Resend sender domain</h1>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               Verify a domain you own with Resend so contact exports come from your brand
-              instead of <code className="text-[10px] bg-muted px-1 py-0.5 rounded">onboarding@resend.dev</code>.
+              instead of <code className="text-[11px] bg-muted px-1 py-0.5 rounded">onboarding@resend.dev</code>.
             </p>
           </div>
         </div>
@@ -308,7 +308,7 @@ const ResendDomainSettings = () => {
           <h2 className="text-sm font-semibold text-foreground">Add a sender domain</h2>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Use a subdomain you control, e.g. <code className="text-[10px] bg-muted px-1 py-0.5 rounded">send.cardr.ai</code>.
+          Use a subdomain you control, e.g. <code className="text-[11px] bg-muted px-1 py-0.5 rounded">send.cardr.ai</code>.
         </p>
         <div className="flex gap-2">
           <Input
@@ -367,7 +367,7 @@ const ResendDomainSettings = () => {
                       <p className="text-[11px] text-muted-foreground">Region: {d.region}</p>
                     )}
                   </div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.className}`}>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${badge.className}`}>
                     {badge.label}
                   </span>
                   <ChevronRight size={14} className="text-muted-foreground" />
@@ -414,13 +414,13 @@ const ResendDomainSettings = () => {
                   <div key={i} className="border border-border rounded-xl p-3 bg-background">
                     <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                       <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                        <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wide text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wide text-[11px]">
                           {r.type}
                         </span>
                         <span className="text-muted-foreground">{r.record}</span>
                       </div>
                       {recBadge && (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${recBadge.className}`}>
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${recBadge.className}`}>
                           {recBadge.label}
                         </span>
                       )}
@@ -463,10 +463,10 @@ const ResendDomainSettings = () => {
           <h2 className="text-sm font-semibold text-foreground">Configure the From address</h2>
         </div>
         <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-          Set the <code className="text-[10px] bg-muted px-1 py-0.5 rounded">RESEND_FROM</code> secret to the
+          Set the <code className="text-[11px] bg-muted px-1 py-0.5 rounded">RESEND_FROM</code> secret to the
           address exports should come from. Format:
           <br />
-          <code className="text-[10px] bg-muted px-1 py-0.5 rounded mt-1 inline-block">
+          <code className="text-[11px] bg-muted px-1 py-0.5 rounded mt-1 inline-block">
             Cardr Exports &lt;exports@send.yourdomain.com&gt;
           </code>
         </p>
@@ -474,7 +474,7 @@ const ResendDomainSettings = () => {
         <div className="rounded-xl border border-border p-3 mb-3 bg-background">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
                 Currently sending as
               </p>
               <p className="text-sm font-mono text-foreground truncate mt-0.5">
@@ -482,11 +482,11 @@ const ResendDomainSettings = () => {
               </p>
             </div>
             {fromConfigured ? (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
                 Configured
               </span>
             ) : (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-600 border-amber-500/30">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-600 border-amber-500/30">
                 Default
               </span>
             )}
@@ -544,7 +544,7 @@ const ResendDomainSettings = () => {
             <li>Copy the value above.</li>
             <li>Open <strong>Cloud → Secrets</strong> in Lovable.</li>
             <li>
-              Set <code className="text-[10px] bg-background px-1 py-0.5 rounded border border-border">RESEND_FROM</code>{" "}
+              Set <code className="text-[11px] bg-background px-1 py-0.5 rounded border border-border">RESEND_FROM</code>{" "}
               to the value you copied.
             </li>
             <li>Come back here and click <strong>Refresh</strong> to confirm, then send a test email.</li>
@@ -563,7 +563,7 @@ const ResendDomainSettings = () => {
 
 const DnsRow = ({ label, value, mono, onCopy }: { label: string; value: string; mono?: boolean; onCopy: () => void }) => (
   <div className="flex items-start gap-2 py-1">
-    <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0 w-20 mt-0.5">
+    <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold shrink-0 w-20 mt-0.5">
       {label}
     </span>
     <code className={`text-[11px] flex-1 break-all ${mono ? "font-mono" : ""} text-foreground`}>{value}</code>

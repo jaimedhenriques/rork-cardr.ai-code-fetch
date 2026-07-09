@@ -325,7 +325,7 @@ const Export = () => {
             key={tabKey}
             onClick={() => setTab(tabKey)}
             className={cn(
-              "flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all capitalize",
+              "flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all capitalize tabular-nums",
               tab === tabKey
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "bg-secondary/60 text-muted-foreground hover:bg-secondary"
@@ -345,7 +345,7 @@ const Export = () => {
         </div>
 
         {/* Folder filter */}
-        <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">{t("export.folderEvent")}</label>
+        <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">{t("export.folderEvent")}</label>
         <select value={selectedFolder} onChange={(e) => setSelectedFolder(e.target.value)} className="input-field text-xs mb-3">
           <option value="all">{t("export.allFolders")}</option>
           {folders.map((f) => (
@@ -354,7 +354,7 @@ const Export = () => {
         </select>
 
         {/* Date preset chips */}
-        <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">{t("export.timeRange")}</label>
+        <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">{t("export.timeRange")}</label>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {datePresets.map(({ key, label }) => (
             <button
@@ -435,7 +435,7 @@ const Export = () => {
         {tab === "contacts" ? (
           <>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-foreground">{filteredContacts.length} {t("export.contacts")}</p>
+              <p className="text-xs font-semibold text-foreground tabular-nums">{filteredContacts.length} {t("export.contacts")}</p>
               <button onClick={toggleAllContacts} className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
                 {allContactsSelected ? <CheckSquare size={13} /> : <Square size={13} />}
                 {allContactsSelected ? t("export.deselectAll") : t("export.selectAll")}
@@ -462,7 +462,7 @@ const Export = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-foreground truncate">{c.name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">
+                    <p className="text-[11px] text-muted-foreground truncate tabular-nums">
                       {c.title}{c.company ? ` at ${c.company}` : ""} · {format(parseISO(c.scannedAt), "MMM d")}
                     </p>
                   </div>
@@ -473,7 +473,7 @@ const Export = () => {
         ) : (
           <>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-foreground">{filteredNotes.length} {t("export.notesLabel")}</p>
+              <p className="text-xs font-semibold text-foreground tabular-nums">{filteredNotes.length} {t("export.notesLabel")}</p>
               <button onClick={toggleAllNotes} className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
                 {allNotesSelected ? <CheckSquare size={13} /> : <Square size={13} />}
                 {allNotesSelected ? t("export.deselectAll") : t("export.selectAll")}
@@ -501,7 +501,7 @@ const Export = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-foreground truncate">{n.title || t("notes.untitledMeeting")}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">
+                    <p className="text-[11px] text-muted-foreground truncate tabular-nums">
                       {format(parseISO(n.created_at), "MMM d, yyyy")}
                       {n.key_topics && n.key_topics.length > 0 ? ` · ${n.key_topics.slice(0, 2).join(", ")}` : ""}
                     </p>
@@ -516,7 +516,7 @@ const Export = () => {
       {/* Export Actions */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         {totalSelected > 0 && (
-          <p className="text-[11px] text-primary font-semibold text-center mb-3">
+          <p className="text-[11px] text-primary font-semibold text-center mb-3 tabular-nums">
             {selectedContactIds.size > 0 && `${selectedContactIds.size} ${t("export.contacts")}`}
             {selectedContactIds.size > 0 && selectedNoteIds.size > 0 && " + "}
             {selectedNoteIds.size > 0 && `${selectedNoteIds.size} ${t("export.notesLabel")}`}

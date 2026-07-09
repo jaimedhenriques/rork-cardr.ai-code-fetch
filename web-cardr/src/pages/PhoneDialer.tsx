@@ -212,10 +212,10 @@ const PhoneDialer = () => {
                         </div>
                       </div>
                       <div className="shrink-0 text-right mr-1">
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground tabular-nums">
                           {formatDistanceToNow(parseISO(call.created_at), { addSuffix: true })}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/60">
+                        <p className="text-[11px] text-muted-foreground/60 tabular-nums">
                           {formatDuration(call.duration_seconds)}
                         </p>
                       </div>
@@ -290,7 +290,7 @@ const PhoneDialer = () => {
         {tab === "keypad" && (
           <motion.div key="keypad" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-4 pt-8 flex flex-col items-center">
             <div className="h-16 flex items-center justify-center mb-6 w-full">
-              <p className="text-3xl font-light text-foreground tracking-widest text-center">
+              <p className="text-3xl font-light text-foreground tracking-widest text-center tabular-nums">
                 {dialNumber || <span className="text-muted-foreground/30">|</span>}
               </p>
             </div>
@@ -302,7 +302,7 @@ const PhoneDialer = () => {
                   className="w-full aspect-square rounded-full bg-muted/60 hover:bg-muted flex flex-col items-center justify-center transition-colors active:scale-95"
                 >
                   <span className="text-2xl font-medium text-foreground">{digit}</span>
-                  {letters && <span className="text-[9px] tracking-[0.2em] text-muted-foreground mt-0.5">{letters}</span>}
+                  {letters && <span className="text-[11px] tracking-[0.2em] text-muted-foreground mt-0.5">{letters}</span>}
                 </button>
               ))}
             </div>
