@@ -176,13 +176,13 @@ struct NoteDetailView: View {
                         .foregroundStyle(Theme.primary)
                 }
                 Text(draft.title)
-                    .font(.title2.weight(.bold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(Theme.ink)
                 HStack(spacing: 6) {
                     Text(draft.fullDateLabel)
                     if let dur = draft.durationLabel { Text("· \(dur)") }
                 }
-                .font(.caption)
+                .font(.footnote.monospacedDigit())
                 .foregroundStyle(Theme.inkSecondary)
             }
         }
@@ -296,15 +296,14 @@ struct NoteDetailView: View {
                     get: { draft.summary ?? "" },
                     set: { draft.summary = $0 }
                 ), axis: .vertical)
-                    .font(.subheadline)
+                    .font(.reading)
                     .foregroundStyle(Theme.ink)
                     .lineLimit(3...12)
             }
         } else if let summary = draft.summary, !summary.isEmpty {
             sectionCard("Summary", icon: "lightbulb.fill", tint: Theme.primary) {
                 Text(summary)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.ink.opacity(0.85))
+                    .readingStyle()
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -349,13 +348,15 @@ struct NoteDetailView: View {
                                         .background(Theme.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 9))
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(metric.value)
-                                            .font(.headline)
+                                            .font(.system(size: 20, weight: .bold).monospacedDigit())
                                             .foregroundStyle(Theme.ink)
                                             .lineLimit(1)
+                                            .minimumScaleFactor(0.7)
                                         Text(metric.label.uppercased())
-                                            .font(.system(size: 9, weight: .semibold))
+                                            .font(.system(size: 11, weight: .semibold))
                                             .foregroundStyle(Theme.inkSecondary)
                                             .lineLimit(1)
+                                            .minimumScaleFactor(0.8)
                                     }
                                     Spacer(minLength: 0)
                                 }
@@ -393,8 +394,7 @@ struct NoteDetailView: View {
                                             .frame(width: 5, height: 5)
                                             .padding(.top, 6)
                                         Text(item)
-                                            .font(.subheadline)
-                                            .foregroundStyle(Theme.ink.opacity(0.85))
+                                            .readingStyle()
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                     }
                                 }
@@ -422,7 +422,7 @@ struct NoteDetailView: View {
         return CardSurface(padding: 14) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("TALK TIME")
-                    .font(.system(size: 10, weight: .bold)).tracking(0.8)
+                    .font(.microLabel).tracking(0.8)
                     .foregroundStyle(Theme.inkSecondary)
                 GeometryReader { geo in
                     HStack(spacing: 0) {
@@ -493,9 +493,10 @@ struct NoteDetailView: View {
                 Image(systemName: action.isDone ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 18))
                     .foregroundStyle(action.isDone ? Theme.primary : Theme.inkSecondary)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(action.task)
-                        .font(.subheadline)
+                        .font(.reading)
+                        .lineSpacing(3)
                         .foregroundStyle(action.isDone ? Theme.inkSecondary : Theme.ink)
                         .strikethrough(action.isDone)
                         .multilineTextAlignment(.leading)
@@ -507,16 +508,16 @@ struct NoteDetailView: View {
                             if action.owner?.isEmpty == false, action.deadline?.isEmpty == false { Text("·") }
                             if let deadline = action.deadline, !deadline.isEmpty { Text("by \(deadline)") }
                         }
-                        .font(.caption2)
+                        .font(.caption.monospacedDigit())
                         .foregroundStyle(Theme.inkSecondary)
                     }
                 }
                 Spacer(minLength: 0)
                 if let priority = action.priority, !priority.isEmpty {
                     Text(priority.uppercased())
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(priorityColor(priority))
-                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(priorityColor(priority).opacity(0.12), in: Capsule())
                 }
             }
@@ -528,7 +529,7 @@ struct NoteDetailView: View {
         VStack(spacing: 6) {
             HStack(spacing: 8) {
                 TextField("Task", text: actionBinding(index, \.task))
-                    .font(.subheadline)
+                    .font(.reading)
                     .foregroundStyle(Theme.ink)
                 Button {
                     draft.actionItems?.remove(at: index)
@@ -561,7 +562,7 @@ struct NoteDetailView: View {
                         if isEditing {
                             HStack(spacing: 8) {
                                 TextField("Follow-up", text: followUpBinding(index, \.description))
-                                    .font(.subheadline)
+                                    .font(.reading)
                                 TextField("With", text: followUpBinding(index, \.with))
                                     .font(.caption)
                                     .frame(maxWidth: 90)
@@ -572,12 +573,12 @@ struct NoteDetailView: View {
                             }
                         } else {
                             HStack(alignment: .top, spacing: 8) {
-                                Circle().fill(Theme.warning).frame(width: 6, height: 6).padding(.top, 6)
+                                Circle().fill(Theme.warning).frame(width: 6, height: 6).padding(.top, 7)
                                 Text(followUp.description)
-                                    .font(.subheadline)
+                                    .font(.reading)
                                     .foregroundStyle(Theme.ink.opacity(0.85))
                                 + Text(followUp.with.map { " — \($0)" } ?? "")
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(.readingSemibold)
                                     .foregroundStyle(Theme.warning)
                             }
                         }
@@ -631,13 +632,13 @@ struct NoteDetailView: View {
                     ForEach(people) { person in
                         VStack(alignment: .leading, spacing: 2) {
                             HStack(spacing: 6) {
-                                Text(person.name).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+                                Text(person.name).font(.readingSemibold).foregroundStyle(Theme.ink)
                                 if let role = person.role, !role.isEmpty {
-                                    Text("— \(role)").font(.caption).foregroundStyle(Theme.inkSecondary)
+                                    Text("— \(role)").font(.footnote).foregroundStyle(Theme.inkSecondary)
                                 }
                             }
                             if let context = person.context, !context.isEmpty {
-                                Text(context).font(.caption).foregroundStyle(Theme.inkSecondary)
+                                Text(context).font(.footnote).foregroundStyle(Theme.inkSecondary)
                             }
                         }
                     }
@@ -714,7 +715,7 @@ struct NoteDetailView: View {
                     Spacer(minLength: 0)
                     if let trailing {
                         Text(trailing)
-                            .font(.caption2.weight(.bold))
+                            .font(.caption2.weight(.bold).monospacedDigit())
                             .foregroundStyle(tint)
                             .padding(.horizontal, 7).padding(.vertical, 2)
                             .background(tint.opacity(0.12), in: Capsule())
@@ -735,17 +736,17 @@ struct NoteDetailView: View {
         sectionCard("Transcript", icon: "waveform", tint: Theme.inkSecondary,
                     trailing: speakers.count > 1 ? "\(speakers.count) speakers" : nil) {
             if segments.contains(where: { $0.speaker != nil }) {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
                     if speakers.count > 1 {
                         speakerLegend(speakers)
                     }
                     ForEach(segments) { segment in
-                        VStack(alignment: .leading, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 4) {
                             if let speaker = segment.speaker {
                                 if editingSpeaker == speaker {
                                     HStack(spacing: 6) {
                                         TextField("Speaker name", text: $speakerDraft)
-                                            .font(.caption2.weight(.bold))
+                                            .font(.speakerLabel)
                                             .foregroundStyle(segment.tint)
                                             .textFieldStyle(.plain)
                                             .onSubmit { commitSpeakerRename(speaker) }
@@ -768,23 +769,22 @@ struct NoteDetailView: View {
                                         speakerDraft = speakerNames[speaker] ?? ""
                                     } label: {
                                         Text(speakerNames[speaker] ?? speaker)
-                                            .font(.caption2.weight(.bold))
+                                            .font(.speakerLabel)
                                             .foregroundStyle(segment.tint)
                                     }
                                     .buttonStyle(.plain)
                                 }
                             }
                             Text(segment.text)
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.ink.opacity(0.85))
+                                .readingStyle()
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
                         }
                     }
                 }
             } else {
                 Text(transcript)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.inkSecondary)
+                    .readingStyle()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
@@ -799,7 +799,7 @@ struct NoteDetailView: View {
                     Circle().fill(segment.tint).frame(width: 7, height: 7)
                     Text(speakerNames[speaker] ?? speaker)
                 }
-                .font(.caption2.weight(.medium))
+                .font(.caption.weight(.medium))
                 .foregroundStyle(Theme.inkSecondary)
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Theme.surfaceMuted, in: Capsule())
@@ -819,20 +819,18 @@ struct NoteDetailView: View {
     private func readSection(_ title: String, icon: String, body: String) -> some View {
         sectionCard(title, icon: icon, tint: Theme.inkSecondary) {
             Text(body)
-                .font(.subheadline)
-                .foregroundStyle(Theme.inkSecondary)
+                .readingStyle()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private func bulletList(_ items: [String], tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top, spacing: 8) {
-                    Circle().fill(tint).frame(width: 6, height: 6).padding(.top, 6)
+                    Circle().fill(tint).frame(width: 6, height: 6).padding(.top, 7)
                     Text(item)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink.opacity(0.85))
+                        .readingStyle()
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
@@ -845,7 +843,7 @@ struct NoteDetailView: View {
                 ForEach(binding.indices, id: \.self) { index in
                     HStack(spacing: 8) {
                         TextField(placeholder, text: binding[index])
-                            .font(.subheadline)
+                            .font(.reading)
                             .foregroundStyle(Theme.ink)
                         Button { binding.wrappedValue.remove(at: index) } label: {
                             Image(systemName: "minus.circle.fill").foregroundStyle(Theme.destructive.opacity(0.7))

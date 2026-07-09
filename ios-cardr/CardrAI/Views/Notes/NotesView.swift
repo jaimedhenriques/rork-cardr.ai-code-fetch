@@ -95,7 +95,7 @@ struct NotesView: View {
                         .foregroundStyle(Theme.ink)
                     if pendingActions.count > 0 {
                         Text("\(pendingActions.count) pending action\(pendingActions.count == 1 ? "" : "s")")
-                            .font(.footnote)
+                            .font(.footnote.monospacedDigit())
                             .foregroundStyle(Theme.primary)
                     }
                 }
@@ -194,7 +194,7 @@ struct NotesView: View {
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
                                 Text(event.formattedDate)
-                                    .font(.caption2)
+                                    .font(.caption.monospacedDigit())
                                     .foregroundStyle(Theme.inkSecondary)
                             }
                             Spacer()
@@ -240,7 +240,7 @@ struct NotesView: View {
                         .font(.system(size: 14, weight: .semibold))
                     if filters.activeCount > 0 {
                         Text("\(filters.activeCount)")
-                            .font(.caption.weight(.bold))
+                            .font(.caption.weight(.bold).monospacedDigit())
                     }
                 }
                 .foregroundStyle(filters.activeCount > 0 ? .white : Theme.ink)
@@ -318,7 +318,7 @@ struct NotesView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Theme.ink)
                             Text(event.formattedDate)
-                                .font(.caption)
+                                .font(.caption.monospacedDigit())
                                 .foregroundStyle(Theme.inkSecondary)
                             if let location = event.location, !location.isEmpty {
                                 Text(location)
@@ -370,11 +370,11 @@ struct NotesView: View {
                                     .foregroundStyle(Theme.primary.opacity(0.5))
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(item.task)
-                                        .font(.subheadline)
+                                        .font(.reading)
                                         .foregroundStyle(Theme.ink)
                                         .multilineTextAlignment(.leading)
                                     Text("from \(item.noteTitle)")
-                                        .font(.caption2)
+                                        .font(.caption)
                                         .foregroundStyle(Theme.inkSecondary)
                                 }
                                 Spacer(minLength: 0)
@@ -643,7 +643,7 @@ private struct NoteCard: View {
                             Text("· \(note.openActionCount) actions").foregroundStyle(Theme.primary)
                         }
                     }
-                    .font(.caption2)
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(Theme.inkSecondary)
 
                     if let category = note.category, !category.isEmpty {
@@ -674,7 +674,7 @@ private struct NoteCard: View {
                     if matches.isEmpty {
                         if let summary = note.summary, !summary.isEmpty {
                             Text(summary)
-                                .font(.caption)
+                                .font(.footnote)
                                 .foregroundStyle(Theme.inkSecondary)
                                 .lineLimit(2)
                         }
@@ -682,12 +682,12 @@ private struct NoteCard: View {
                         ForEach(matches) { match in
                             HStack(alignment: .top, spacing: 6) {
                                 Text(match.field.uppercased())
-                                    .font(.system(size: 8, weight: .bold))
+                                    .font(.system(size: 10, weight: .bold))
                                     .foregroundStyle(Theme.primary)
                                     .padding(.horizontal, 5).padding(.vertical, 2)
                                     .background(Theme.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
                                 Text(match.snippet)
-                                    .font(.caption)
+                                    .font(.footnote)
                                     .foregroundStyle(Theme.inkSecondary)
                                     .lineLimit(2)
                             }

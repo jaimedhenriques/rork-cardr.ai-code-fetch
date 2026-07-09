@@ -201,8 +201,9 @@ struct NoteComposerView: View {
         CardSurface {
             VStack(spacing: 16) {
                 Text(timeString(recorder.duration))
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .font(.system(size: 52, weight: .light, design: .rounded))
                     .monospacedDigit()
+                    .tracking(-0.5)
                     .foregroundStyle(recorder.isRecording ? Theme.ink : Theme.inkSecondary)
                     .contentTransition(.numericText())
 
@@ -274,8 +275,7 @@ struct NoteComposerView: View {
                             .clipShape(.capsule)
                     }
                     Text(recorder.transcript.isEmpty ? "Start speaking…" : recorder.transcript)
-                        .font(.system(size: 15))
-                        .foregroundStyle(recorder.transcript.isEmpty ? Theme.inkSecondary : Theme.ink)
+                        .readingStyle(recorder.transcript.isEmpty ? Theme.inkSecondary : Theme.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .animation(.easeOut(duration: 0.2), value: recorder.transcript)
                 }
@@ -334,7 +334,8 @@ struct NoteComposerView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.inkSecondary)
                 TextField("Write your meeting notes…", text: $manualNotes, axis: .vertical)
-                    .font(.system(size: 14))
+                    .font(.reading)
+                    .lineSpacing(4)
                     .foregroundStyle(Theme.ink)
                     .lineLimit(4...10)
                     .disabled(isProcessing)

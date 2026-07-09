@@ -53,6 +53,30 @@ enum Theme {
     }
 }
 
+// MARK: - Typography tokens (mirrors the web `.text-reading` / `.text-timestamp`)
+
+extension Font {
+    /// Granola/Otter-class reading size — for anything users actually read:
+    /// transcripts, summaries, polished notes, action items. Never below 15pt.
+    static let reading = Font.system(size: 15)
+    static let readingSemibold = Font.system(size: 15, weight: .semibold)
+    /// Speaker labels in transcripts — bigger and clearer than caption text.
+    static let speakerLabel = Font.system(size: 13, weight: .semibold)
+    /// Uppercase micro-labels (section eyebrows, tiny badges). Floor is 11pt —
+    /// nothing readable sits below that.
+    static let microLabel = Font.system(size: 11, weight: .bold)
+}
+
+extension View {
+    /// App-wide reading style: 15pt with generous line height, matching the
+    /// web notes typography pass.
+    func readingStyle(_ color: Color = Theme.ink.opacity(0.85)) -> some View {
+        self.font(.reading)
+            .lineSpacing(5)
+            .foregroundStyle(color)
+    }
+}
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

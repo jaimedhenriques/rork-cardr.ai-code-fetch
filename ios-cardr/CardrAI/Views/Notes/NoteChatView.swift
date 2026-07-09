@@ -78,13 +78,13 @@ struct NoteChatView: View {
             }
             .padding(.bottom, 2)
             Text("TRY ASKING")
-                .font(.system(size: 10, weight: .bold)).tracking(0.8)
+                .font(.microLabel).tracking(0.8)
                 .foregroundStyle(Theme.inkSecondary)
             ForEach(suggestions, id: \.self) { suggestion in
                 Button { send(suggestion) } label: {
                     HStack {
                         Text(suggestion)
-                            .font(.subheadline)
+                            .font(.reading)
                             .foregroundStyle(Theme.ink)
                             .multilineTextAlignment(.leading)
                         Spacer(minLength: 0)
@@ -107,7 +107,8 @@ struct NoteChatView: View {
         HStack {
             if message.role == .user { Spacer(minLength: 40) }
             Text(message.content)
-                .font(.subheadline)
+                .font(.reading)
+                .lineSpacing(5)
                 .foregroundStyle(message.role == .user ? .white : Theme.ink)
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(
@@ -141,7 +142,7 @@ struct NoteChatView: View {
     private var inputBar: some View {
         HStack(spacing: 10) {
             TextField("Ask about this meeting…", text: $input, axis: .vertical)
-                .font(.subheadline)
+                .font(.reading)
                 .lineLimit(1...4)
                 .focused($inputFocused)
                 .padding(.horizontal, 14).padding(.vertical, 10)
