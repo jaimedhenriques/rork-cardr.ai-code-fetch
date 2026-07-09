@@ -139,7 +139,7 @@ const Pipeline = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-display font-bold text-foreground">{t("pipeline.title")}</h1>
-          <p className="text-xs text-muted-foreground">{contacts.length} {t("pipeline.leads")} · {stages.length} {t("pipeline.stages")}</p>
+          <p className="text-xs text-muted-foreground tabular-nums">{contacts.length} {t("pipeline.leads")} · {stages.length} {t("pipeline.stages")}</p>
         </div>
       </motion.div>
 
@@ -162,9 +162,9 @@ const Pipeline = () => {
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
-                    <span className="text-[10px] font-semibold text-foreground truncate">{stage.name}</span>
+                    <span className="text-[11px] font-semibold text-foreground truncate">{stage.name}</span>
                   </div>
-                  <p className="text-base font-bold text-foreground leading-none mb-1.5">{count}</p>
+                  <p className="text-base font-bold text-foreground leading-none mb-1.5 tabular-nums">{count}</p>
                   <div className="h-1 rounded-full bg-muted overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: stage.color }} />
                   </div>
@@ -185,7 +185,7 @@ const Pipeline = () => {
                 <div key={stage.id} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
                   <span className="text-sm text-foreground flex-1">{stage.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{getContactsForStage(stage.id).length}</span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{getContactsForStage(stage.id).length}</span>
                   <button onClick={() => deleteStage(stage.id)} className="text-destructive"><X size={14} /></button>
                 </div>
               ))}
@@ -213,7 +213,7 @@ const Pipeline = () => {
             <button onClick={() => setExpandedStage(expandedStage === "unstaged" ? null : "unstaged")} className="w-full flex items-center gap-3 p-3 card-elevated">
               <div className="w-3 h-3 rounded-full bg-muted shrink-0" />
               <span className="text-sm font-semibold text-foreground flex-1 text-left">{t("pipeline.unassigned")}</span>
-              <span className="text-xs text-muted-foreground mr-1">{unstaged.length}</span>
+              <span className="text-xs text-muted-foreground mr-1 tabular-nums">{unstaged.length}</span>
               <ChevronDown size={14} className={`text-muted-foreground transition-transform ${expandedStage === "unstaged" ? "rotate-180" : ""}`} />
             </button>
             <AnimatePresence>
@@ -237,7 +237,7 @@ const Pipeline = () => {
               <button onClick={() => setExpandedStage(expandedStage === stage.id ? null : stage.id)} className="w-full flex items-center gap-3 p-3 card-elevated">
                 <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
                 <span className="text-sm font-semibold text-foreground flex-1 text-left">{stage.name}</span>
-                <span className="text-xs text-muted-foreground mr-1">{stageContacts.length}</span>
+                <span className="text-xs text-muted-foreground mr-1 tabular-nums">{stageContacts.length}</span>
                 <ChevronDown size={14} className={`text-muted-foreground transition-transform ${expandedStage === stage.id ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
@@ -250,7 +250,7 @@ const Pipeline = () => {
                             <Plus size={16} style={{ color: stage.color }} />
                           </div>
                           <p className="text-xs text-muted-foreground font-medium">{t("pipeline.noContacts")}</p>
-                          <p className="text-[10px] text-muted-foreground/60 mt-1">Move contacts here from other stages</p>
+                          <p className="text-[11px] text-muted-foreground/60 mt-1">Move contacts here from other stages</p>
                         </div>
                       ) : (
                         stageContacts.map((contact) => (
@@ -281,19 +281,19 @@ const ContactCard = ({ contact, stages, onMove, currentStageId }: {
   return (
     <div className="card-elevated p-3 relative">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 avatar-circle text-[10px] shrink-0">
+        <div className="w-8 h-8 avatar-circle text-[11px] shrink-0">
           {contact.name.split(" ").map((n: string) => n[0]).join("")}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{contact.name}</p>
-          <p className="text-[10px] text-muted-foreground truncate">{contact.title} · {contact.company}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{contact.title} · {contact.company}</p>
         </div>
         <button onClick={() => setShowMove(!showMove)} className="text-xs font-semibold text-primary">{t("pipeline.move")}</button>
       </div>
       {contact.follow_up_date && (
         <div className="flex items-center gap-1 mt-1.5">
           <Calendar size={10} className="text-warning" />
-          <span className="text-[10px] text-warning font-medium">Follow-up: {format(parseISO(contact.follow_up_date), "MMM d")}</span>
+          <span className="text-[11px] text-warning font-medium tabular-nums">Follow-up: {format(parseISO(contact.follow_up_date), "MMM d")}</span>
         </div>
       )}
       <AnimatePresence>
@@ -301,7 +301,7 @@ const ContactCard = ({ contact, stages, onMove, currentStageId }: {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mt-2 pt-2 border-t border-border/60">
             <div className="flex flex-wrap gap-1.5">
               {stages.filter((s) => s.id !== currentStageId).map((s) => (
-                <button key={s.id} onClick={() => { onMove(contact.id, s.id); setShowMove(false); }} className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-border/60 hover:bg-secondary transition-colors" style={{ borderColor: s.color + "40", color: s.color }}>
+                <button key={s.id} onClick={() => { onMove(contact.id, s.id); setShowMove(false); }} className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-border/60 hover:bg-secondary transition-colors" style={{ borderColor: s.color + "40", color: s.color }}>
                   {s.name}
                 </button>
               ))}

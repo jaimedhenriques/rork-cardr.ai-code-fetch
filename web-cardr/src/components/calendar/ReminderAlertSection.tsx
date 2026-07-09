@@ -43,7 +43,7 @@ const ReminderAlertSection = ({ reminderMinutes, reminderType, reminderEmail, on
 
       {/* When to remind */}
       <div>
-        <label className="text-[10px] text-muted-foreground mb-1.5 block uppercase tracking-wider font-semibold">Remind me</label>
+        <label className="text-[11px] text-muted-foreground mb-1.5 block uppercase tracking-wider font-semibold">Remind me</label>
         <div className="flex flex-wrap gap-1.5">
           {REMINDER_PRESETS.map((preset) => (
             <button
@@ -86,14 +86,14 @@ const ReminderAlertSection = ({ reminderMinutes, reminderType, reminderEmail, on
               className="h-8 text-xs w-24"
               min={1}
             />
-            <span className="text-[10px] text-muted-foreground">minutes before</span>
+            <span className="text-[11px] text-muted-foreground">minutes before</span>
           </div>
         )}
       </div>
 
       {/* How to alert */}
       <div>
-        <label className="text-[10px] text-muted-foreground mb-1.5 block uppercase tracking-wider font-semibold">Alert type</label>
+        <label className="text-[11px] text-muted-foreground mb-1.5 block uppercase tracking-wider font-semibold">Alert type</label>
         <div className="grid grid-cols-3 gap-1.5">
           {ALERT_TYPES.map((type) => {
             const Icon = type.icon;
@@ -110,7 +110,7 @@ const ReminderAlertSection = ({ reminderMinutes, reminderType, reminderEmail, on
                 }`}
               >
                 <Icon size={14} className={selected ? "text-primary" : ""} />
-                <span className="text-[10px] font-semibold">{type.label}</span>
+                <span className="text-[11px] font-semibold">{type.label}</span>
               </button>
             );
           })}
@@ -120,7 +120,7 @@ const ReminderAlertSection = ({ reminderMinutes, reminderType, reminderEmail, on
       {/* Email field if email or both selected */}
       {(reminderType === "email" || reminderType === "both") && (
         <div>
-          <label className="text-[10px] text-muted-foreground mb-1 block">Reminder email address</label>
+          <label className="text-[11px] text-muted-foreground mb-1 block">Reminder email address</label>
           <Input
             type="email"
             placeholder="your@email.com"

@@ -389,15 +389,15 @@ const EventDetail = () => {
       {/* Event header */}
       <div className="bg-card border border-border rounded-2xl p-5 mb-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wide">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold uppercase tracking-wide">
             {event.event_type}
           </span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground tabular-nums">
             {format(new Date(event.start_date), "MMM d, yyyy")}
             {event.end_date ? ` – ${format(new Date(event.end_date), "MMM d, yyyy")}` : ""}
           </span>
           {isActive && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-semibold">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[11px] font-semibold">
               <Star size={10} className="fill-current" /> Active
             </span>
           )}
@@ -414,17 +414,17 @@ const EventDetail = () => {
 
         <div className="grid grid-cols-2 gap-3 mt-4">
           <div className="bg-muted/40 rounded-xl px-3 py-2.5">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold flex items-center gap-1">
+            <div className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold flex items-center gap-1">
               <Users size={11} /> Contacts
             </div>
-            <div className="text-lg font-bold text-foreground mt-0.5">{totalCount}</div>
+            <div className="text-lg font-bold text-foreground mt-0.5 tabular-nums">{totalCount}</div>
           </div>
           <button
             onClick={() => ensureFolder.mutate()}
             disabled={ensureFolder.isPending}
             className="bg-muted/40 hover:bg-muted rounded-xl px-3 py-2.5 text-left transition-colors"
           >
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold flex items-center gap-1">
+            <div className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold flex items-center gap-1">
               <FolderIcon size={11} /> Card holder
             </div>
             <div className="text-sm font-semibold text-foreground mt-0.5 truncate">
@@ -571,7 +571,7 @@ const EventDetail = () => {
                 value={exportEmail}
                 onChange={(e) => setExportEmail(e.target.value)}
               />
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 Separate multiple recipients with commas. Each is sent its own copy via Resend.
               </p>
               <Button
@@ -588,7 +588,7 @@ const EventDetail = () => {
                     <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide">
                       Send status
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[11px] text-muted-foreground">
                       {sendStatuses.filter((s) => s.status === "sent").length} sent ·{" "}
                       {sendStatuses.filter((s) => s.status === "failed").length} failed ·{" "}
                       {sendStatuses.filter((s) => s.status === "pending" || s.status === "sending").length} pending
@@ -623,22 +623,22 @@ const EventDetail = () => {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground truncate">{s.email}</p>
                           {s.status === "sent" && (
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-[11px] text-muted-foreground truncate">
                               Delivered to Resend
                               {s.deliveryMode ? ` · ${s.deliveryMode}` : ""}
                               {s.messageId ? ` · id ${s.messageId.slice(0, 8)}…` : ""}
                             </p>
                           )}
                           {s.status === "failed" && (
-                            <p className="text-[10px] text-destructive break-words">
+                            <p className="text-[11px] text-destructive break-words">
                               {s.error || "Send failed"}
                             </p>
                           )}
                           {s.status === "sending" && (
-                            <p className="text-[10px] text-muted-foreground">Sending…</p>
+                            <p className="text-[11px] text-muted-foreground">Sending…</p>
                           )}
                           {s.status === "pending" && (
-                            <p className="text-[10px] text-muted-foreground">Queued</p>
+                            <p className="text-[11px] text-muted-foreground">Queued</p>
                           )}
                         </div>
                       </li>

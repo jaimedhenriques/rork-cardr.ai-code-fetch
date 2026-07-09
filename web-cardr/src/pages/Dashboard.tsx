@@ -167,7 +167,7 @@ const Dashboard = () => {
                       <div key={field}>
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-[11px] text-muted-foreground font-medium">{label}</span>
-                          <span className={`text-[10px] font-semibold ${isFull ? "text-red-400" : isNear ? "text-amber-400" : "text-muted-foreground"}`}>
+                          <span className={`text-[11px] font-semibold tabular-nums ${isFull ? "text-red-400" : isNear ? "text-amber-400" : "text-muted-foreground"}`}>
                             {used}/{limit}{unit ? ` ${unit}` : ""}
                           </span>
                         </div>
@@ -196,7 +196,7 @@ const Dashboard = () => {
                     <span>{t("dashboard.approachingLimits")} — Manage your plan at cardr.ai</span>
                   </div>
                 )}
-                <p className="text-[9px] text-muted-foreground mt-2 text-center">{t("dashboard.lifetimeCaps")}</p>
+                <p className="text-[11px] text-muted-foreground mt-2 text-center">{t("dashboard.lifetimeCaps")}</p>
               </motion.div>
             );
           }
@@ -249,7 +249,7 @@ const Dashboard = () => {
                       } : undefined}
                     >
                       <action.icon size={20} className={i === 0 ? "text-primary-foreground" : "text-primary"} />
-                      <span className={`text-[10px] font-semibold ${i === 0 ? "text-primary-foreground" : "text-foreground"}`}>
+                      <span className={`text-[11px] font-semibold ${i === 0 ? "text-primary-foreground" : "text-foreground"}`}>
                         {NAV_LABEL_KEYS[action.id] ? t(NAV_LABEL_KEYS[action.id]) : action.label}
                       </span>
                     </button>
@@ -272,7 +272,7 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-foreground">{t("dashboard.meetingNotes")}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("dashboard.meetingNotesDesc")}</p>
+                    <p className="text-[11px] text-muted-foreground">{t("dashboard.meetingNotesDesc")}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -281,21 +281,21 @@ const Dashboard = () => {
                     className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95"
                   >
                     <Mic size={16} className="text-primary" />
-                    <span className="text-[10px] font-semibold text-primary">{t("dashboard.record")}</span>
+                    <span className="text-[11px] font-semibold text-primary">{t("dashboard.record")}</span>
                   </button>
                   <button
                     onClick={() => navigate("/notes/new")}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors active:scale-95"
                   >
                     <PenLine size={16} className="text-foreground" />
-                    <span className="text-[10px] font-semibold text-foreground">{t("dashboard.write")}</span>
+                    <span className="text-[11px] font-semibold text-foreground">{t("dashboard.write")}</span>
                   </button>
                   <button
                     onClick={() => navigate("/notes")}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors active:scale-95"
                   >
                     <FileText size={16} className="text-foreground" />
-                    <span className="text-[10px] font-semibold text-foreground">{t("dashboard.allNotes")}</span>
+                    <span className="text-[11px] font-semibold text-foreground">{t("dashboard.allNotes")}</span>
                   </button>
                 </div>
               </motion.div>
@@ -307,7 +307,7 @@ const Dashboard = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles size={14} className="text-primary" />
                   <p className="text-xs font-semibold text-foreground">{t("dashboard.aiAssistant")}</p>
-                  <button onClick={() => navigate("/ai")} className="ml-auto text-[10px] font-semibold text-primary flex items-center gap-0.5">
+                  <button onClick={() => navigate("/ai")} className="ml-auto text-[11px] font-semibold text-primary flex items-center gap-0.5">
                     {t("dashboard.fullChat")} <ArrowRight size={10} />
                   </button>
                 </div>
@@ -330,7 +330,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-foreground">{t("dashboard.tryDemoScan")}</p>
-                  <p className="text-[10px] text-muted-foreground">{t("dashboard.demoScanDesc")}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("dashboard.demoScanDesc")}</p>
                 </div>
                 <ArrowRight size={12} className="text-muted-foreground" />
               </motion.button>
@@ -380,7 +380,7 @@ const Dashboard = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <p className="text-headline text-foreground truncate">{contact.name}</p>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${engagement.bgColor} ${engagement.color}`}>
+                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${engagement.bgColor} ${engagement.color}`}>
                               {engagement.tier}
                             </span>
                           </div>

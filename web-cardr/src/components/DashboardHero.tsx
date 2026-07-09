@@ -199,7 +199,7 @@ const DashboardHero = ({ contactsCount, enrichedCount }: { contactsCount: number
               className="group rounded-xl py-2.5 px-1 flex flex-col items-center gap-1 bg-secondary/50 hover:bg-secondary transition-colors active:scale-95"
             >
               <Icon size={15} className={tint ?? "text-foreground/75 group-hover:text-foreground transition-colors"} strokeWidth={2.1} />
-              <span className="text-[10.5px] font-medium text-foreground/70 truncate w-full text-center tracking-tight">
+              <span className="text-[11px] font-medium text-foreground/70 truncate w-full text-center tracking-tight">
                 {label}
               </span>
             </button>

@@ -26,7 +26,7 @@ const CalendarEventCard = ({ event, contacts = [], onEdit, onDelete }: CalendarE
         </div>
         <div className="flex items-center gap-1">
           {event.bot_enabled && (
-            <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
               <Bot size={10} /> AI
             </span>
           )}
@@ -40,7 +40,7 @@ const CalendarEventCard = ({ event, contacts = [], onEdit, onDelete }: CalendarE
           )}
         </div>
       </div>
-      <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground flex-wrap">
+      <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap tabular-nums">
         <span className="flex items-center gap-1">
           <Clock size={10} />
           {event.all_day ? "All day" : format(new Date(event.start_time), "h:mm a")}
@@ -57,7 +57,7 @@ const CalendarEventCard = ({ event, contacts = [], onEdit, onDelete }: CalendarE
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
           <Users size={10} className="text-muted-foreground" />
           {linkedContacts.map((c) => (
-            <span key={c.id} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+            <span key={c.id} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
               {c.name}
             </span>
           ))}

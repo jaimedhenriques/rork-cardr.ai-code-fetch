@@ -298,9 +298,9 @@ const Events = () => {
                   <h2 className="text-base font-bold text-foreground">{selectedEventData.title}</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">{selectedEventData.description}</p>
                 </div>
-                <Badge variant="secondary" className="text-[10px] capitalize">{selectedEventData.event_type}</Badge>
+                <Badge variant="secondary" className="text-[11px] capitalize">{selectedEventData.event_type}</Badge>
               </div>
-              <div className="flex gap-3 mt-2 text-[10px] text-muted-foreground">
+              <div className="flex gap-3 mt-2 text-[11px] text-muted-foreground tabular-nums">
                 {selectedEventData.start_date && (
                   <span className="flex items-center gap-1"><Calendar size={10} />{format(new Date(selectedEventData.start_date), "MMM d, yyyy")}</span>
                 )}
@@ -337,7 +337,7 @@ const Events = () => {
                 <div key={ec.id} className="flex items-center justify-between py-2 px-3 rounded-xl bg-secondary/50 mb-1.5">
                   <div>
                     <p className="text-sm font-medium text-foreground">{ec.contacts?.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{ec.contacts?.title} at {ec.contacts?.company}</p>
+                    <p className="text-[11px] text-muted-foreground">{ec.contacts?.title} at {ec.contacts?.company}</p>
                   </div>
                   <button onClick={() => removeContact.mutate(ec.id)} className="p-1.5 rounded-lg hover:bg-destructive/10">
                     <Trash2 size={12} className="text-destructive" />
@@ -355,7 +355,7 @@ const Events = () => {
                         className="w-full flex items-center justify-between py-2 px-3 rounded-xl hover:bg-secondary/50 text-left transition-colors">
                         <div>
                           <p className="text-sm text-foreground">{c.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{c.company}</p>
+                          <p className="text-[11px] text-muted-foreground">{c.company}</p>
                         </div>
                         <Plus size={12} className="text-primary" />
                       </button>
@@ -420,9 +420,9 @@ const EventCard = ({ event, onClick, showSummary }: { event: any; onClick: () =>
   <button onClick={onClick} className="w-full rounded-xl bg-card border border-border/60 p-4 text-left hover:border-primary/30 transition-colors">
     <div className="flex items-start justify-between">
       <h3 className="text-sm font-semibold text-foreground">{event.title}</h3>
-      <Badge variant="secondary" className="text-[10px] capitalize">{event.event_type}</Badge>
+      <Badge variant="secondary" className="text-[11px] capitalize">{event.event_type}</Badge>
     </div>
-    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground tabular-nums">
       <span className="flex items-center gap-1">
         <Calendar size={10} />
         {format(new Date(event.start_date), "MMM d, yyyy")}

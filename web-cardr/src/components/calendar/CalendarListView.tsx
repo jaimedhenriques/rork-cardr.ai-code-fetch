@@ -34,13 +34,13 @@ const CalendarListView = ({ events, timeRange, currentDate }: CalendarListViewPr
         return (
           <div key={dateKey}>
             <div className="flex items-center gap-2 mb-2">
-              <div className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+              <div className={`text-xs font-semibold px-2 py-0.5 rounded-md tabular-nums ${
                 today ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}>
                 {today ? "Today" : format(date, "EEE, MMM d")}
               </div>
               {today && (
-                <span className="text-[10px] text-muted-foreground">{format(date, "EEEE")}</span>
+                <span className="text-[11px] text-muted-foreground">{format(date, "EEEE")}</span>
               )}
             </div>
             <div className="space-y-2">

@@ -312,7 +312,7 @@ const Notes = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 rounded px-1.5 py-0.5">{t("notes.live")}</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 rounded px-1.5 py-0.5">{t("notes.live")}</span>
               <p className="text-sm font-semibold text-foreground truncate">{recording.noteTitle || t("notes.recordingInProgress")}</p>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -342,13 +342,13 @@ const Notes = () => {
                       <p className="text-sm font-semibold text-foreground truncate">{event.title}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <Clock size={10} className="text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground">{format(start, "h:mm a")}</span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums">{format(start, "h:mm a")}</span>
                         {isImminent && (
-                          <span className="text-[10px] font-semibold text-primary ml-1">
+                          <span className="text-[11px] font-semibold text-primary ml-1 tabular-nums">
                             {minsUntil <= 0 ? t("notes.now") : `in ${minsUntil}m`}
                           </span>
                         )}
-                        {event.location && <span className="text-[10px] text-muted-foreground truncate">· {event.location}</span>}
+                        {event.location && <span className="text-[11px] text-muted-foreground truncate">· {event.location}</span>}
                       </div>
                     </div>
                     <button
@@ -469,9 +469,9 @@ const Notes = () => {
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm ${item.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.task}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    {item.owner && <span className="text-[10px] font-medium text-primary bg-primary/10 rounded-full px-2 py-0.5">{item.owner}</span>}
-                    {item.deadline && <span className="text-[10px] text-muted-foreground">by {item.deadline}</span>}
-                    <span className="text-[10px] text-muted-foreground/50">from {item.noteTitle || "Meeting"}</span>
+                    {item.owner && <span className="text-[11px] font-medium text-primary bg-primary/10 rounded-full px-2 py-0.5">{item.owner}</span>}
+                    {item.deadline && <span className="text-[11px] text-muted-foreground tabular-nums">by {item.deadline}</span>}
+                    <span className="text-[11px] text-muted-foreground/50">from {item.noteTitle || "Meeting"}</span>
                   </div>
                 </div>
               </div>
@@ -497,17 +497,17 @@ const Notes = () => {
                       {format(start, "h:mm a")}{end ? ` - ${format(end, "h:mm a")}` : ""}
                     </p>
                     {event.location && (
-                      <p className="text-[10px] text-muted-foreground/70 mt-0.5">{event.location}</p>
+                      <p className="text-[11px] text-muted-foreground/70 mt-0.5">{event.location}</p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
                       {event.meeting_url && (
-                        <a href={event.meeting_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary font-semibold bg-primary/10 rounded-full px-2.5 py-1">
+                        <a href={event.meeting_url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary font-semibold bg-primary/10 rounded-full px-2.5 py-1">
                           Join Meeting
                         </a>
                       )}
                       <button
                         onClick={() => startRecordingFromEvent(event)}
-                        className="flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 rounded-full px-2.5 py-1"
+                        className="flex items-center gap-1 text-[11px] text-primary font-semibold bg-primary/10 rounded-full px-2.5 py-1"
                       >
                         <Mic size={10} /> {t("notes.record")}
                       </button>
@@ -578,15 +578,15 @@ const Notes = () => {
                               <div className="flex flex-wrap items-center gap-1 mt-1.5">
                                 {note.folder_id && (() => {
                                   const f = foldersList.find(x => x.id === note.folder_id);
-                                  return f ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-primary/10 text-primary">{f.emoji} {f.name}</span> : null;
+                                  return f ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-primary/10 text-primary">{f.emoji} {f.name}</span> : null;
                                 })()}
                                 {note.category && (
-                                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-foreground">{note.category}</span>
+                                  <span className="px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-secondary text-foreground">{note.category}</span>
                                 )}
                                 {(noteTagMap[note.id] || []).slice(0, 3).map(tid => {
                                   const tg = tagsList.find(x => x.id === tid);
                                   if (!tg) return null;
-                                  return <span key={tid} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium" style={{ backgroundColor: `${tg.color}22`, color: tg.color }}><span className="w-1 h-1 rounded-full" style={{ backgroundColor: tg.color }} />{tg.name}</span>;
+                                  return <span key={tid} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium" style={{ backgroundColor: `${tg.color}22`, color: tg.color }}><span className="w-1 h-1 rounded-full" style={{ backgroundColor: tg.color }} />{tg.name}</span>;
                                 })}
                               </div>
                               {note.summary && !searchMatches[note.id] && (
@@ -596,7 +596,7 @@ const Notes = () => {
                                 <div className="mt-1.5 space-y-1">
                                   {searchMatches[note.id].map((m, i) => (
                                     <div key={i} className="flex items-start gap-1.5">
-                                      <span className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 rounded px-1.5 py-0.5 shrink-0 mt-0.5">{m.field}</span>
+                                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary bg-primary/10 rounded px-1.5 py-0.5 shrink-0 mt-0.5">{m.field}</span>
                                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{m.snippet}</p>
                                     </div>
                                   ))}

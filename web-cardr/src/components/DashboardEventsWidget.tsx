@@ -139,34 +139,34 @@ const DashboardEventsWidget = () => {
                     <p className="text-sm font-semibold text-foreground truncate">{ev.title}</p>
                   </button>
                   {isLive && (
-                    <Badge className="text-[9px] py-0 h-4 px-1.5 bg-green-500/15 text-green-600 border-green-500/30 hover:bg-green-500/15">
+                    <Badge className="text-[11px] py-0 h-5 px-1.5 bg-green-500/15 text-green-600 border-green-500/30 hover:bg-green-500/15">
                       LIVE
                     </Badge>
                   )}
                   {isUpcoming && !isLive && (
-                    <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5">Soon</Badge>
+                    <Badge variant="outline" className="text-[11px] py-0 h-5 px-1.5">Soon</Badge>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 text-[10.5px] text-muted-foreground mb-1">
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-1 tabular-nums">
                   <CalendarDays size={10} />
                   <span>{format(start, "MMM d")}{ev.end_date ? ` – ${format(end, "MMM d")}` : ""}</span>
                 </div>
                 {ev.location && (
-                  <div className="flex items-center gap-1 text-[10.5px] text-muted-foreground mb-2 truncate">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-2 truncate">
                     <MapPin size={10} className="shrink-0" />
                     <span className="truncate">{ev.location}</span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/60">
-                  <div className="flex items-center gap-1 text-[11px] text-foreground font-medium">
+                  <div className="flex items-center gap-1 text-[11px] text-foreground font-medium tabular-nums">
                     <Users size={11} className="text-primary" />
                     {count} {count === 1 ? "contact" : "contacts"}
                   </div>
                   <button
                     onClick={() => setActiveEventId(isActive ? null : ev.id)}
-                    className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
+                    className={`flex items-center gap-1 text-[11px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
                       isActive
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"

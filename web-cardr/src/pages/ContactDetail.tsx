@@ -460,13 +460,13 @@ const ContactDetail = () => {
         {contact.enriched && (
           <div className="flex items-center justify-center gap-1 mt-1">
             <Sparkles size={10} className="text-success" />
-            <span className="text-[10px] text-success font-semibold">{t("contactDetail.enriched")}</span>
+            <span className="text-[11px] text-success font-semibold">{t("contactDetail.enriched")}</span>
           </div>
         )}
         {(() => {
           const engagement = getEngagementScore(contact);
           return (
-            <div className={`inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full text-[10px] font-bold ${engagement.bgColor} ${engagement.color}`}>
+            <div className={`inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full text-[11px] font-bold ${engagement.bgColor} ${engagement.color}`}>
               <span>{engagement.tier}</span>
               <span>·</span>
               <span>{engagement.label}</span>
@@ -680,16 +680,16 @@ const ContactDetail = () => {
               <Building2 size={13} className="text-foreground" />
             </div>
             <h3 className="text-sm font-semibold text-foreground">Company Intelligence</h3>
-            <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full ml-auto">AI Enriched</span>
+            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full ml-auto">AI Enriched</span>
           </div>
           <div className="grid grid-cols-1 gap-2">
             {contact.companyDescription && (
               <div className="rounded-xl border-l-[3px] border-l-primary bg-card p-3">
                 <div className="flex items-center gap-1.5 mb-1">
                   <FileText size={11} className="text-primary" />
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Description</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Description</span>
                 </div>
-                <p className="text-[12px] text-foreground leading-relaxed">{contact.companyDescription}</p>
+                <p className="text-[13px] text-foreground leading-relaxed">{contact.companyDescription}</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
@@ -697,36 +697,36 @@ const ContactDetail = () => {
                 <div className="rounded-xl border-l-[3px] border-l-[hsl(var(--accent))] bg-card p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Briefcase size={11} className="text-muted-foreground" />
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Type</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Type</span>
                   </div>
-                  <p className="text-[12px] font-medium text-foreground">{contact.companyType}</p>
+                  <p className="text-[13px] font-medium text-foreground">{contact.companyType}</p>
                 </div>
               )}
               {contact.foundingYear && (
                 <div className="rounded-xl border-l-[3px] border-l-warning bg-card p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <CalendarDays size={11} className="text-warning" />
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Founded</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Founded</span>
                   </div>
-                  <p className="text-[12px] font-medium text-foreground">{contact.foundingYear}</p>
+                  <p className="text-[13px] font-medium text-foreground">{contact.foundingYear}</p>
                 </div>
               )}
               {contact.annualRevenue && (
                 <div className="rounded-xl border-l-[3px] border-l-success bg-card p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <DollarSign size={11} className="text-success" />
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Revenue</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Revenue</span>
                   </div>
-                  <p className="text-[12px] font-medium text-foreground">{contact.annualRevenue}</p>
+                  <p className="text-[13px] font-medium text-foreground">{contact.annualRevenue}</p>
                 </div>
               )}
               {contact.companyEmail && (
                 <div className="rounded-xl border-l-[3px] border-l-primary bg-card p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <Mail size={11} className="text-primary" />
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Company Email</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Company Email</span>
                   </div>
-                  <a href={`mailto:${contact.companyEmail}`} className="text-[12px] font-medium text-primary truncate block">{contact.companyEmail}</a>
+                  <a href={`mailto:${contact.companyEmail}`} className="text-[13px] font-medium text-primary truncate block">{contact.companyEmail}</a>
                 </div>
               )}
             </div>
@@ -734,18 +734,18 @@ const ContactDetail = () => {
               <div className="rounded-xl border-l-[3px] border-l-[hsl(210,80%,55%)] bg-card p-3">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Linkedin size={11} className="text-[hsl(210,80%,55%)]" />
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Company LinkedIn</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Company LinkedIn</span>
                 </div>
-                <a href={contact.companyLinkedin.startsWith("http") ? contact.companyLinkedin : `https://${contact.companyLinkedin}`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-medium text-[hsl(210,80%,55%)] truncate block">{contact.companyLinkedin.replace(/https?:\/\/(www\.)?/, '')}</a>
+                <a href={contact.companyLinkedin.startsWith("http") ? contact.companyLinkedin : `https://${contact.companyLinkedin}`} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[hsl(210,80%,55%)] truncate block">{contact.companyLinkedin.replace(/https?:\/\/(www\.)?/, '')}</a>
               </div>
             )}
             {contact.companyAddress && (
               <div className="rounded-xl border-l-[3px] border-l-warning bg-card p-3">
                 <div className="flex items-center gap-1.5 mb-1">
                   <MapPin size={11} className="text-warning" />
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Company Address</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Company Address</span>
                 </div>
-                <p className="text-[12px] text-foreground">{contact.companyAddress}</p>
+                <p className="text-[13px] text-foreground">{contact.companyAddress}</p>
               </div>
             )}
           </div>
@@ -797,7 +797,7 @@ const ContactDetail = () => {
           <Calendar size={14} className="text-warning" />
           <h3 className="text-sm font-semibold text-foreground">{t("contactDetail.followUpReminder")}</h3>
           {nextActionDate && followUpDate === nextActionDate && (
-            <span className="text-[9px] font-semibold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md">{t("contactDetail.autoFromAction")}</span>
+            <span className="text-[11px] font-semibold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md">{t("contactDetail.autoFromAction")}</span>
           )}
         </div>
         <input type="date" value={followUpDate} onChange={(e) => handleFollowUpChange(e.target.value)} className="input-field text-sm" />
@@ -827,7 +827,7 @@ const ContactDetail = () => {
           <div className="flex items-center gap-2 mb-3">
             <Mic size={14} className="text-primary" />
             <h3 className="text-sm font-semibold text-foreground">{t("contactDetail.meetingNotes")}</h3>
-            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full ml-auto">{linkedNotes.length}</span>
+            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full ml-auto tabular-nums">{linkedNotes.length}</span>
           </div>
           <div className="space-y-2">
             {linkedNotes.map((note) => (
@@ -842,9 +842,9 @@ const ContactDetail = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{note.title || t("contactDetail.untitled")}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">{format(parseISO(note.created_at), "MMM d, h:mm a")}</span>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">{format(parseISO(note.created_at), "MMM d, h:mm a")}</span>
                     {note.duration_seconds > 0 && (
-                      <span className="text-[10px] text-muted-foreground">· {Math.floor(note.duration_seconds / 60)} min</span>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">· {Math.floor(note.duration_seconds / 60)} min</span>
                     )}
                   </div>
                   {note.summary && (
@@ -913,13 +913,13 @@ const ContactDetail = () => {
                         <ChevronRight size={12} className="text-muted-foreground/40" />
                       </p>
                       {entry.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{entry.description}</p>}
-                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">{format(parseISO(entry.date), "MMM d, h:mm a")}</p>
+                      <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">{format(parseISO(entry.date), "MMM d, h:mm a")}</p>
                     </button>
                   ) : (
                     <>
                       <p className="text-sm font-medium text-foreground">{entry.title}</p>
                       {entry.description && <p className="text-xs text-muted-foreground mt-0.5">{entry.description}</p>}
-                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">{format(parseISO(entry.date), "MMM d, h:mm a")}</p>
+                      <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">{format(parseISO(entry.date), "MMM d, h:mm a")}</p>
                     </>
                   )}
                 </div>

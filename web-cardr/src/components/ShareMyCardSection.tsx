@@ -136,7 +136,7 @@ const ShareMyCardSection = () => {
           <h2 id="share-card-heading" className="text-xs font-semibold text-foreground">
             {t("shareCard.title") || "Share your card"}
           </h2>
-          <p className="text-[10px] text-muted-foreground truncate">
+          <p className="text-[11px] text-muted-foreground truncate">
             {ready
               ? t("shareCard.subtitle") || "Send via message, email, or one tap"
               : t("shareCard.notReady") || "Set up your card to start sharing"}
@@ -144,7 +144,7 @@ const ShareMyCardSection = () => {
         </div>
         <button
           onClick={() => navigate("/card")}
-          className="text-[10px] font-semibold text-primary flex items-center gap-0.5"
+          className="text-[11px] font-semibold text-primary flex items-center gap-0.5"
         >
           {t("shareCard.preview") || "Preview"}
           <ArrowRight size={10} />
@@ -174,7 +174,7 @@ const ShareMyCardSection = () => {
             className="rounded-xl py-2.5 px-1 flex flex-col items-center gap-1 bg-secondary hover:bg-secondary/80 transition-colors active:scale-95"
           >
             <Icon size={15} className={accent ?? "text-foreground"} />
-            <span className="text-[10px] font-medium text-foreground truncate w-full text-center">
+            <span className="text-[11px] font-medium text-foreground truncate w-full text-center">
               {label}
             </span>
           </button>
@@ -184,7 +184,7 @@ const ShareMyCardSection = () => {
       {/* Tertiary: QR / more options live on /card */}
       <button
         onClick={() => navigate("/card")}
-        className="mt-2 w-full flex items-center justify-center gap-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5"
+        className="mt-2 w-full flex items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors py-1.5"
       >
         <QrCode size={11} />
         {t("shareCard.moreOptions") || "QR code, Wallet, NameDrop & more"}

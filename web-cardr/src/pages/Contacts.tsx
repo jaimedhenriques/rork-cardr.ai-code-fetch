@@ -741,7 +741,7 @@ const Contacts = () => {
                       <span>{t("contacts.allStages") || "All"}</span>
                       <span
                         aria-hidden="true"
-                        className={`ml-0.5 px-1.5 h-5 min-w-[20px] inline-flex items-center justify-center rounded-full text-[10px] font-semibold ${
+                        className={`ml-0.5 px-1.5 h-5 min-w-[20px] inline-flex items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${
                           stageFilter === "all"
                             ? "bg-primary-foreground/20 text-primary-foreground"
                             : "bg-muted text-muted-foreground"
@@ -784,7 +784,7 @@ const Contacts = () => {
                           <span>{t("contacts.unstaged") || "Unstaged"}</span>
                           <span
                             aria-hidden="true"
-                            className={`ml-0.5 px-1.5 h-5 min-w-[20px] inline-flex items-center justify-center rounded-full text-[10px] font-semibold ${
+                            className={`ml-0.5 px-1.5 h-5 min-w-[20px] inline-flex items-center justify-center rounded-full text-[11px] font-semibold tabular-nums ${
                               active ? "bg-foreground/10 text-foreground" : "bg-muted text-muted-foreground"
                             }`}
                           >
@@ -826,7 +826,7 @@ const Contacts = () => {
                           <span>{s.name}</span>
                           <span
                             aria-hidden="true"
-                            className="ml-0.5 px-1.5 h-5 min-w-[20px] inline-flex items-center justify-center rounded-full text-[10px] font-semibold"
+                            className="ml-0.5 px-1.5 h-5 min-w-[20px] inline-flex items-center justify-center rounded-full text-[11px] font-semibold tabular-nums"
                             style={{
                               backgroundColor: active ? `${s.color}33` : "hsl(var(--muted))",
                               color: active ? s.color : "hsl(var(--muted-foreground))",
@@ -906,7 +906,7 @@ const Contacts = () => {
                   className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${activeFolder === folder.id ? "bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
                 >
                   <span>{folder.emoji} {folder.name}</span>
-                  {folder.eventId && <span className="text-[10px] opacity-70">📅</span>}
+                  {folder.eventId && <span className="text-[11px] opacity-70">📅</span>}
                 </button>
               ))}
             </div>
@@ -933,7 +933,7 @@ const Contacts = () => {
                         className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
                       >
                         <span className="truncate max-w-[140px]">{ev.title}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? "bg-primary-foreground/20" : "bg-background/60"}`}>{count}</span>
+                        <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${active ? "bg-primary-foreground/20" : "bg-background/60"}`}>{count}</span>
                       </button>
                     );
                   })}
@@ -999,7 +999,7 @@ const Contacts = () => {
                   <div key={groupName}>
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{groupName}</h3>
-                      <span className="text-[10px] text-muted-foreground bg-secondary rounded-full px-2 py-0.5">{groupContacts.length}</span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground bg-secondary rounded-full px-2 py-0.5">{groupContacts.length}</span>
                     </div>
                     <div className="space-y-2">
                       {groupContacts.map((contact) => (
@@ -1133,7 +1133,7 @@ const PipelineView = ({ stages, setStages, contacts, moveContact, getContactsFor
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">{t("pipeline.manageStages")}</h3>
                 {stages.length > 1 && (
-                  <span className="text-[10px] text-muted-foreground">{t("pipeline.dragToReorder")}</span>
+                  <span className="text-[11px] text-muted-foreground">{t("pipeline.dragToReorder")}</span>
                 )}
               </div>
               <SortableStagesList
@@ -1243,12 +1243,12 @@ const PipelineDndBoard = ({ stages, unstaged, getContactsForStage, moveContact, 
         {activeContact ? (
           <div className="card-elevated p-3 shadow-2xl rotate-2 opacity-95">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 avatar-circle text-[10px] shrink-0">
+              <div className="w-8 h-8 avatar-circle text-[11px] shrink-0">
                 {activeContact.name.split(" ").map((n: string) => n[0]).join("")}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{activeContact.name}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{activeContact.title} · {activeContact.company}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{activeContact.title} · {activeContact.company}</p>
               </div>
             </div>
           </div>
@@ -1327,7 +1327,7 @@ const SortableStageRow = ({ stage, count, onDelete }: { stage: any; count: numbe
       </button>
       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
       <span className="text-sm text-foreground flex-1">{stage.name}</span>
-      <span className="text-[10px] text-muted-foreground">{count}</span>
+      <span className="text-[11px] text-muted-foreground tabular-nums">{count}</span>
       <button onClick={() => onDelete(stage.id)} className="text-destructive p-0.5"><X size={14} /></button>
     </div>
   );
@@ -1342,18 +1342,18 @@ const DraggablePipelineContactCard = ({ contact }: { contact: any }) => {
         <button {...listeners} {...attributes} className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1 -ml-1" aria-label={t("pipeline.drag")}>
           <GripVertical size={16} />
         </button>
-        <div className="w-8 h-8 avatar-circle text-[10px] shrink-0">
+        <div className="w-8 h-8 avatar-circle text-[11px] shrink-0">
           {contact.name.split(" ").map((n: string) => n[0]).join("")}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{contact.name}</p>
-          <p className="text-[10px] text-muted-foreground truncate">{contact.title} · {contact.company}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{contact.title} · {contact.company}</p>
         </div>
       </div>
       {contact.follow_up_date && (
         <div className="flex items-center gap-1 mt-1.5 pl-7">
           <Calendar size={10} className="text-warning" />
-          <span className="text-[10px] text-warning font-medium">{t("contacts.followUp")} {format(parseISO(contact.follow_up_date), "MMM d")}</span>
+          <span className="text-[11px] text-warning font-medium tabular-nums">{t("contacts.followUp")} {format(parseISO(contact.follow_up_date), "MMM d")}</span>
         </div>
       )}
     </div>
@@ -1418,9 +1418,9 @@ const ActivityView = ({ user, contacts, stages }: { user: any; contacts: any[]; 
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-[11px] font-bold text-emerald-400">{distribution.A}</span><span className="text-[10px] text-muted-foreground">{t("dashboard.hot")}</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-[11px] font-bold text-amber-400">{distribution.B}</span><span className="text-[10px] text-muted-foreground">{t("dashboard.warm")}</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-zinc-400" /><span className="text-[11px] font-bold text-zinc-400">{distribution.C}</span><span className="text-[10px] text-muted-foreground">{t("dashboard.cold")}</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-[11px] font-bold text-emerald-400 tabular-nums">{distribution.A}</span><span className="text-[11px] text-muted-foreground">{t("dashboard.hot")}</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-[11px] font-bold text-amber-400 tabular-nums">{distribution.B}</span><span className="text-[11px] text-muted-foreground">{t("dashboard.warm")}</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-zinc-400" /><span className="text-[11px] font-bold text-zinc-400 tabular-nums">{distribution.C}</span><span className="text-[11px] text-muted-foreground">{t("dashboard.cold")}</span></div>
           </div>
         </div>
       )}
@@ -1434,10 +1434,10 @@ const ActivityView = ({ user, contacts, stages }: { user: any; contacts: any[]; 
               const eng = getEngagementScore(c, lastActivityMap[c.id]);
               return (
                 <button key={c.id} onClick={() => navigate(`/contact/${c.id}`)} className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-secondary/40 transition-colors text-left">
-                  <div className="w-7 h-7 avatar-circle text-[9px] shrink-0">{c.name.split(" ").map((n: string) => n[0]).join("")}</div>
+                  <div className="w-7 h-7 avatar-circle text-[11px] shrink-0">{c.name.split(" ").map((n: string) => n[0]).join("")}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-foreground truncate">{c.name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{c.company}{eng.daysSinceActivity !== null ? ` · ${eng.daysSinceActivity}d ${t("contacts.inactive")}` : ""}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{c.company}{eng.daysSinceActivity !== null ? ` · ${eng.daysSinceActivity}d ${t("contacts.inactive")}` : ""}</p>
                   </div>
                   <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
                 </button>
@@ -1459,21 +1459,21 @@ const ActivityView = ({ user, contacts, stages }: { user: any; contacts: any[]; 
             const contact = contacts.find((c: any) => c.id === activity.contact_id);
             return (
               <div key={activity.id} className="card-elevated p-3 flex items-start gap-3">
-                <div className="w-8 h-8 avatar-circle text-[10px] shrink-0 mt-0.5">
+                <div className="w-8 h-8 avatar-circle text-[11px] shrink-0 mt-0.5">
                   {contact ? contact.name.split(" ").map((n: string) => n[0]).join("") : "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-sm font-semibold text-foreground">{activity.title}</p>
                     {contact && (
-                      <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${getEngagementScore(contact, lastActivityMap[contact.id]).bgColor} ${getEngagementScore(contact, lastActivityMap[contact.id]).color}`}>
+                      <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${getEngagementScore(contact, lastActivityMap[contact.id]).bgColor} ${getEngagementScore(contact, lastActivityMap[contact.id]).color}`}>
                         {getEngagementScore(contact, lastActivityMap[contact.id]).tier}
                       </span>
                     )}
                   </div>
-                  {contact && <p className="text-[10px] text-muted-foreground">{contact.name}{contact.company ? ` · ${contact.company}` : ""}</p>}
+                  {contact && <p className="text-[11px] text-muted-foreground">{contact.name}{contact.company ? ` · ${contact.company}` : ""}</p>}
                   {activity.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{activity.description}</p>}
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">{format(parseISO(activity.created_at), "MMM d, h:mm a")}</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-1 tabular-nums">{format(parseISO(activity.created_at), "MMM d, h:mm a")}</p>
                 </div>
               </div>
             );
@@ -1543,7 +1543,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-sm font-semibold text-foreground truncate">{contact.name}</p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${engagement.bgColor} ${engagement.color}`}>
+            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md shrink-0 ${engagement.bgColor} ${engagement.color}`}>
               {engagement.tier}
             </span>
           </div>
@@ -1557,7 +1557,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
             <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
               {currentStage ? (
                 <button
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 border hover:opacity-80 transition-opacity"
+                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border hover:opacity-80 transition-opacity"
                   style={{
                     backgroundColor: currentStage.color + "1A",
                     color: currentStage.color,
@@ -1568,7 +1568,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
                   {currentStage.name}
                 </button>
               ) : (
-                <button className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 border border-dashed border-border/60 text-muted-foreground/70 hover:text-foreground hover:border-border transition-colors">
+                <button className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 border border-dashed border-border/60 text-muted-foreground/70 hover:text-foreground hover:border-border transition-colors">
                   {t("pipeline.unassigned")}
                 </button>
               )}
@@ -1578,7 +1578,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
               className="w-48 p-1.5"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
+              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1.5">
                 {t("contacts.status") || "Stage"}
               </div>
               <button
@@ -1612,7 +1612,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
           </Popover>
         )}
         {isAutoEnriching && !contact.enriched && (
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-primary shrink-0">
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-primary shrink-0">
             <Loader2 size={11} className="animate-spin" />
             <span className="hidden sm:inline">{t("contacts.enriching")}</span>
           </span>
@@ -1654,7 +1654,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mt-3 pt-3 border-t border-border/60 space-y-2">
           {stages.length > 0 && (
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("contacts.status")}</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{t("contacts.status")}</span>
               <select value={contact.stageId || ""} onChange={(e) => updateContact(contact.id, { stageId: e.target.value || undefined })} className="text-xs bg-secondary rounded-lg px-2 py-1 border border-border/60 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30">
                 <option value="">{t("pipeline.unassigned")}</option>
                 {stages.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
@@ -1674,7 +1674,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
             <div className="mt-2 pt-2 border-t border-border/60 space-y-1.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Sparkles size={10} className="text-success" />
-                <span className="text-[10px] font-semibold text-success uppercase tracking-wider">{t("contacts.enriched")}</span>
+                <span className="text-[11px] font-semibold text-success uppercase tracking-wider">{t("contacts.enriched")}</span>
               </div>
               {contact.website && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Globe size={12} className="text-primary" /> {contact.website}</div>}
               {contact.location && <div className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin size={12} className="text-primary" /> {contact.location}</div>}
@@ -1688,7 +1688,7 @@ const ContactRow = ({ contact, selectedContact, setSelectedContact, enriching, h
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <StickyNote size={10} className="text-primary" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("contacts.notes")}</span>
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{t("contacts.notes")}</span>
               </div>
               <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                 <VoiceRecorder onTranscript={(text) => handleVoiceNote(contact.id, text)} mode="memo" />

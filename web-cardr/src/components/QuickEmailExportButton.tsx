@@ -119,7 +119,7 @@ export default function QuickEmailExportButton({
         {variant === "tile" ? (
           <>
             <Mail size={20} className="text-primary" />
-            <span className="text-[10px] font-semibold text-foreground">
+            <span className="text-[11px] font-semibold text-foreground">
               {label ?? "Email CSV"}
             </span>
           </>
@@ -165,7 +165,7 @@ export default function QuickEmailExportButton({
               </div>
 
               {/* Scope */}
-              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">
                 What to include
               </label>
               <div className="grid grid-cols-2 gap-2 mb-4">
@@ -179,7 +179,7 @@ export default function QuickEmailExportButton({
                   )}
                 >
                   <p className="font-semibold">All contacts</p>
-                  <p className="text-[10px] opacity-70 mt-0.5">
+                  <p className="text-[11px] opacity-70 mt-0.5 tabular-nums">
                     {contacts.length} total
                   </p>
                 </button>
@@ -195,7 +195,7 @@ export default function QuickEmailExportButton({
                   )}
                 >
                   <p className="font-semibold">Current filter</p>
-                  <p className="text-[10px] opacity-70 mt-0.5">
+                  <p className="text-[11px] opacity-70 mt-0.5 tabular-nums">
                     {hasFilteredScope
                       ? `${filteredContacts!.length} contacts`
                       : "Same as all"}
@@ -204,7 +204,7 @@ export default function QuickEmailExportButton({
               </div>
 
               {/* Recipient */}
-              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">
                 Send to
               </label>
               <input
@@ -215,7 +215,7 @@ export default function QuickEmailExportButton({
                 className="input-field text-xs mb-1 w-full"
                 disabled={sending}
               />
-              <p className="text-[10px] text-muted-foreground mb-4">
+              <p className="text-[11px] text-muted-foreground mb-4">
                 Defaults to your account email — change to send anywhere.
               </p>
 

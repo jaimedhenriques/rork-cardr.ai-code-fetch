@@ -391,7 +391,7 @@ const Calendar = () => {
                 {linkedContactIds.map((cid) => {
                   const c = appContacts.find((x) => x.id === cid);
                   return c ? (
-                    <span key={cid} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                    <span key={cid} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                       {c.name}
                       <button onClick={() => toggleContact(cid)} className="hover:text-destructive">
                         <X size={10} />
@@ -423,21 +423,21 @@ const Calendar = () => {
                         selected ? "bg-primary/10 text-primary" : "hover:bg-secondary text-foreground"
                       }`}
                     >
-                      <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-[11px] font-bold text-muted-foreground shrink-0">
                         {c.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="font-medium">{c.name}</span>
                         {c.company && <span className="text-muted-foreground ml-1">· {c.company}</span>}
                       </div>
-                      {selected && <span className="text-[9px] text-primary font-semibold">{t("calendar.linked")}</span>}
+                      {selected && <span className="text-[11px] text-primary font-semibold">{t("calendar.linked")}</span>}
                     </button>
                   );
                 })}
               </div>
             )}
             {appContacts.length === 0 && (
-              <p className="text-[10px] text-muted-foreground">{t("calendar.noContactsYet")}</p>
+              <p className="text-[11px] text-muted-foreground">{t("calendar.noContactsYet")}</p>
             )}
           </div>
 
@@ -450,7 +450,7 @@ const Calendar = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-foreground">{t("calendar.botJoins")}</p>
-                <p className="text-[10px] text-muted-foreground">{t("calendar.botDesc")}</p>
+                <p className="text-[11px] text-muted-foreground">{t("calendar.botDesc")}</p>
               </div>
               <Switch checked={form.bot_enabled} onCheckedChange={v => setForm(f => ({ ...f, bot_enabled: v }))} />
             </div>
@@ -503,7 +503,7 @@ const Calendar = () => {
                 <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: cal.color }} />
                 <div className="flex-1 text-left">
                   <p className="text-sm font-medium text-foreground">{cal.name}</p>
-                  {cal.primary && <span className="text-[9px] text-primary font-semibold">{t("calendar.primary")}</span>}
+                  {cal.primary && <span className="text-[11px] text-primary font-semibold">{t("calendar.primary")}</span>}
                 </div>
                 {isSelected && <Check size={14} className="text-primary" />}
               </button>
@@ -548,7 +548,7 @@ const Calendar = () => {
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all ${
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wider transition-all ${
                   timeRange === range
                     ? "bg-background shadow-sm text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -575,7 +575,7 @@ const Calendar = () => {
         {!isToday(currentDate) && (
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="mb-3 text-[10px] font-semibold text-primary hover:underline"
+            className="mb-3 text-[11px] font-semibold text-primary hover:underline"
           >
             ← {t("calendar.today")}
           </button>
@@ -654,7 +654,7 @@ const Calendar = () => {
                 <div>
                   <span className="text-sm text-foreground">Google Calendar</span>
                   {gcal.connected && (
-                    <p className="text-[9px] text-primary font-semibold">
+                    <p className="text-[11px] text-primary font-semibold">
                       {gcal.syncedCalendars.length} {t("calendar.calendarsSynced")}
                     </p>
                   )}
@@ -696,7 +696,7 @@ const Calendar = () => {
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: sc.color }} />
                     <span className="truncate">{sc.calendar_name}</span>
                     {sc.last_synced_at && (
-                      <span className="text-[9px] text-muted-foreground/60 ml-auto">
+                      <span className="text-[11px] text-muted-foreground/60 ml-auto tabular-nums">
                         {format(new Date(sc.last_synced_at), "MMM d, h:mm a")}
                       </span>
                     )}
@@ -721,7 +721,7 @@ const Calendar = () => {
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground mt-3">
+          <p className="text-[11px] text-muted-foreground mt-3">
             {t("calendar.syncDesc")}
           </p>
         </div>

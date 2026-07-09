@@ -84,10 +84,10 @@ const EventsDashboard = () => {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wide">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold uppercase tracking-wide">
                 {e.event_type}
               </span>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground tabular-nums">
                 {format(new Date(e.start_date), "MMM d, yyyy")}
               </span>
             </div>
@@ -103,7 +103,7 @@ const EventsDashboard = () => {
         <div className="mt-3 flex items-center justify-between pt-3 border-t border-border/60">
           <div className="flex items-center gap-1.5 text-xs text-foreground">
             <Users size={13} className="text-primary" />
-            <span className="font-semibold">{count}</span>
+            <span className="font-semibold tabular-nums">{count}</span>
             <span className="text-muted-foreground">contact{count === 1 ? "" : "s"}</span>
           </div>
           <span className="text-[11px] text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
@@ -126,7 +126,7 @@ const EventsDashboard = () => {
           <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl">
             <Star size={16} className="text-emerald-600 fill-emerald-600 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Active event</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Active event</p>
               <Link to={`/app/events/${active.id}`} className="text-sm font-semibold text-foreground truncate hover:underline block">
                 {active.title}
               </Link>
@@ -145,22 +145,22 @@ const EventsDashboard = () => {
       {/* Stats summary */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="bg-card border border-border rounded-2xl p-3">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide font-semibold mb-1">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] uppercase tracking-wide font-semibold mb-1">
             <Calendar size={11} /> Total
           </div>
-          <div className="text-xl font-bold text-foreground">{events.length}</div>
+          <div className="text-xl font-bold text-foreground tabular-nums">{events.length}</div>
         </div>
         <div className="bg-card border border-border rounded-2xl p-3">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide font-semibold mb-1">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] uppercase tracking-wide font-semibold mb-1">
             <Sparkles size={11} /> Upcoming
           </div>
-          <div className="text-xl font-bold text-foreground">{upcoming.length}</div>
+          <div className="text-xl font-bold text-foreground tabular-nums">{upcoming.length}</div>
         </div>
         <div className="bg-card border border-border rounded-2xl p-3">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] uppercase tracking-wide font-semibold mb-1">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] uppercase tracking-wide font-semibold mb-1">
             <Users size={11} /> Contacts
           </div>
-          <div className="text-xl font-bold text-foreground">{totalContacts}</div>
+          <div className="text-xl font-bold text-foreground tabular-nums">{totalContacts}</div>
         </div>
       </div>
 
@@ -188,7 +188,7 @@ const EventsDashboard = () => {
         <div className="space-y-6">
           {upcoming.length > 0 && (
             <section>
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 tabular-nums">
                 Upcoming · {upcoming.length}
               </h3>
               <div className="space-y-2.5">{upcoming.map(renderCard)}</div>
@@ -196,7 +196,7 @@ const EventsDashboard = () => {
           )}
           {past.length > 0 && (
             <section>
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 tabular-nums">
                 Past · {past.length}
               </h3>
               <div className="space-y-2.5">{past.map(renderCard)}</div>

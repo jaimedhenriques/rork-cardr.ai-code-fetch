@@ -48,7 +48,7 @@ export default {
       // Apple-style refined type scale (iOS HIG inspired)
       fontSize: {
         // [size, { lineHeight, letterSpacing }]
-        "2xs": ["10px", { lineHeight: "14px", letterSpacing: "0.01em" }],
+        "2xs": ["11px", { lineHeight: "15px", letterSpacing: "0.01em" }],
         xs: ["11px", { lineHeight: "15px", letterSpacing: "0.005em" }],
         sm: ["13px", { lineHeight: "18px", letterSpacing: "-0.003em" }],
         base: ["15px", { lineHeight: "22px", letterSpacing: "-0.011em" }],

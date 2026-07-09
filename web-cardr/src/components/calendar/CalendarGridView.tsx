@@ -14,7 +14,7 @@ const CalendarGridView = ({ days, currentMonth, selectedDate, onSelectDate, even
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-          <div key={d} className="text-center text-[10px] font-bold text-muted-foreground uppercase">{d}</div>
+          <div key={d} className="text-center text-[11px] font-bold text-muted-foreground uppercase">{d}</div>
         ))}
       </div>
 
@@ -31,7 +31,7 @@ const CalendarGridView = ({ days, currentMonth, selectedDate, onSelectDate, even
             <button
               key={day.toISOString()}
               onClick={() => onSelectDate(day)}
-              className={`relative aspect-square rounded-xl text-xs font-medium flex flex-col items-center justify-center transition-all ${
+              className={`relative aspect-square rounded-xl text-xs font-medium tabular-nums flex flex-col items-center justify-center transition-all ${
                 !inMonth ? "text-muted-foreground/30" :
                 selected ? "bg-primary text-primary-foreground shadow-md" :
                 today ? "bg-primary/10 text-primary ring-1 ring-primary/30" :
