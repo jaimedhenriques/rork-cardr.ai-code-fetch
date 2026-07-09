@@ -278,7 +278,7 @@ struct ContactDetailView: View {
                         Spacer()
                         let tier = Engagement.tier(for: contact)
                         Text(tier.rawValue)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(tier.color)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(tier.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
@@ -370,6 +370,7 @@ struct ContactDetailView: View {
                                     if let date = activity.createdDate {
                                         Text(date.formatted(date: .abbreviated, time: .shortened))
                                             .font(.caption2)
+                                            .monospacedDigit()
                                             .foregroundStyle(Theme.inkSecondary.opacity(0.6))
                                     }
                                 }

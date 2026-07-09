@@ -82,7 +82,7 @@ struct CalendarView: View {
         HStack(spacing: 4) {
             ForEach(weekdaySymbols, id: \.self) { symbol in
                 Text(symbol)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.inkSecondary)
                     .frame(maxWidth: .infinity)
             }
@@ -111,6 +111,7 @@ struct CalendarView: View {
             VStack(spacing: 3) {
                 Text("\(calendar.component(.day, from: day))")
                     .font(.system(size: 14, weight: isSelected ? .bold : .medium))
+                    .monospacedDigit()
                 Circle()
                     .fill(count > 0 ? (isSelected ? Color.white : Theme.primary) : .clear)
                     .frame(width: 5, height: 5)
@@ -156,6 +157,7 @@ struct CalendarView: View {
             if count > 0 {
                 Text("\(count) event\(count == 1 ? "" : "s")")
                     .font(.system(size: 12, weight: .medium))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.inkSecondary)
             }
         }
@@ -274,6 +276,7 @@ private struct CalendarEventRow: View {
                         if count > 0 {
                             Label("\(count)", systemImage: "person.2.fill")
                                 .font(.system(size: 11, weight: .medium))
+                                .monospacedDigit()
                                 .foregroundStyle(Theme.primary)
                         }
                     }

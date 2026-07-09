@@ -104,6 +104,7 @@ struct ActivityView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(value)
                     .font(.system(size: 22, weight: .bold))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.ink)
                     .contentTransition(.numericText())
                 Text(label)
@@ -155,6 +156,7 @@ struct ActivityView: View {
                     .foregroundStyle(Theme.inkSecondary)
                 Text(item.date.formatted(.relative(presentation: .named)))
                     .font(.system(size: 11))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.inkSecondary.opacity(0.7))
             }
             .padding(.bottom, isLast ? 0 : 18)

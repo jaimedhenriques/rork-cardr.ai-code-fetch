@@ -194,7 +194,7 @@ struct AnalyticsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(label.uppercased())
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .tracking(0.8)
                         .foregroundStyle(Theme.inkSecondary)
                     Spacer(minLength: 0)
@@ -204,9 +204,12 @@ struct AnalyticsView: View {
                 }
                 Text(value)
                     .font(.system(size: 24, weight: .bold))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.ink)
+                    .contentTransition(.numericText())
                 Text(caption)
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.inkSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -224,6 +227,7 @@ struct AnalyticsView: View {
                         HStack(spacing: 12) {
                             Text("\(index + 1)")
                                 .font(.system(size: 12, weight: .bold))
+                                .monospacedDigit()
                                 .foregroundStyle(Theme.inkSecondary)
                                 .frame(width: 16, alignment: .trailing)
                             VStack(alignment: .leading, spacing: 3) {
@@ -232,13 +236,15 @@ struct AnalyticsView: View {
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
                                 Text("\(speaker.meetings) meeting\(speaker.meetings == 1 ? "" : "s") · avg \(speaker.avgRatio)% talk time")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
+                                    .monospacedDigit()
                                     .foregroundStyle(Theme.inkSecondary)
                             }
                             Spacer(minLength: 0)
                             if speaker.topCount > 0 {
                                 Text("🎤 \(speaker.topCount)x")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(.system(size: 11, weight: .bold))
+                                    .monospacedDigit()
                                     .foregroundStyle(Theme.primary)
                                     .padding(.horizontal, 7)
                                     .padding(.vertical, 3)

@@ -84,7 +84,7 @@ struct EventDetailView: View {
                     Spacer(minLength: 8)
                     if let type = event.eventType, !type.isEmpty {
                         Text(type.capitalized)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.primary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
@@ -111,6 +111,7 @@ struct EventDetailView: View {
                     }
                 }
                 .font(.system(size: 12))
+                .monospacedDigit()
                 .foregroundStyle(Theme.inkSecondary)
             }
         }
@@ -121,6 +122,7 @@ struct EventDetailView: View {
             HStack {
                 Label("Event Passes (\(files.count))", systemImage: "doc.text")
                     .font(.system(size: 11, weight: .bold))
+                    .monospacedDigit()
                     .textCase(.uppercase)
                     .tracking(1.2)
                     .foregroundStyle(Theme.primary)
@@ -200,6 +202,7 @@ struct EventDetailView: View {
                 if !file.formattedSize.isEmpty {
                     Text(file.formattedSize)
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.inkSecondary)
                 }
             }

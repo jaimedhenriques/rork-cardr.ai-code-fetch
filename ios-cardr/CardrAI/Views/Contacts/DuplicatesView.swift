@@ -63,7 +63,7 @@ struct DuplicatesView: View {
                         Spacer(minLength: 0)
                         if index == 0 {
                             Text("Keep")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Theme.success)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)

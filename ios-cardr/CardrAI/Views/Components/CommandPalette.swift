@@ -144,7 +144,7 @@ struct CommandPaletteView: View {
                     ForEach(groups, id: \.self) { group in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(group.uppercased())
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .tracking(1.4)
                                 .foregroundStyle(Theme.inkSecondary.opacity(0.7))
                                 .padding(.horizontal, 16)

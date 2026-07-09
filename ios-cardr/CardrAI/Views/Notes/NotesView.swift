@@ -682,7 +682,7 @@ private struct NoteCard: View {
                         ForEach(matches) { match in
                             HStack(alignment: .top, spacing: 6) {
                                 Text(match.field.uppercased())
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(.system(size: 11, weight: .bold))
                                     .foregroundStyle(Theme.primary)
                                     .padding(.horizontal, 5).padding(.vertical, 2)
                                     .background(Theme.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))

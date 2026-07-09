@@ -211,7 +211,8 @@ struct ApiKeysView: View {
                     .foregroundStyle(Theme.inkSecondary)
                 if let used = key.lastUsedAt {
                     Text("Last used \(formatted(used))")
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.inkSecondary.opacity(0.8))
                 }
             }
@@ -246,7 +247,7 @@ struct ApiKeysView: View {
             .foregroundStyle(Theme.inkSecondary)
 
             Text(configSnippet(model.mcpURL))
-                .font(.system(size: 10.5, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
@@ -260,7 +261,7 @@ struct ApiKeysView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 6)], alignment: .leading, spacing: 6) {
                 ForEach(availableTools, id: \.self) { tool in
                     Text(tool)
-                        .font(.system(size: 10.5, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.accent)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 5)

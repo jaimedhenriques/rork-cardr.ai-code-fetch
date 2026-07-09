@@ -146,7 +146,7 @@ private struct EventCard: View {
                     Spacer(minLength: 8)
                     if let type = event.eventType, !type.isEmpty {
                         Text(type.capitalized)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.primary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
@@ -157,6 +157,7 @@ private struct EventCard: View {
                 HStack(spacing: 12) {
                     Label(event.formattedDate, systemImage: "calendar")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.inkSecondary)
                     if let location = event.location, !location.isEmpty {
                         Label(location, systemImage: "mappin.and.ellipse")
@@ -168,6 +169,7 @@ private struct EventCard: View {
                 if count > 0 {
                     Label("\(count) contact\(count == 1 ? "" : "s")", systemImage: "person.2.fill")
                         .font(.system(size: 11, weight: .medium))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.primary)
                 }
             }

@@ -64,7 +64,7 @@ struct AdminView: View {
                         .foregroundStyle(Theme.inkSecondary)
                         .lineLimit(1)
                     Text("Owner")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.primary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)

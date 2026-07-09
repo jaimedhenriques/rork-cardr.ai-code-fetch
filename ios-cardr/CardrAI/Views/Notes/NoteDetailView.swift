@@ -515,7 +515,7 @@ struct NoteDetailView: View {
                 Spacer(minLength: 0)
                 if let priority = action.priority, !priority.isEmpty {
                     Text(priority.uppercased())
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(priorityColor(priority))
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(priorityColor(priority).opacity(0.12), in: Capsule())

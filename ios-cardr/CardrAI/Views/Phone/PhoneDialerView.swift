@@ -136,7 +136,7 @@ struct PhoneDialerView: View {
                         .lineLimit(1)
                     HStack(spacing: 4) {
                         Image(systemName: "phone")
-                            .font(.system(size: 9))
+                            .font(.system(size: 11))
                         Text(matched?.phone ?? "Outgoing call")
                             .font(.system(size: 12))
                     }
@@ -146,10 +146,12 @@ struct PhoneDialerView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(note.createdDate.map(relativeLabel) ?? "")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.inkSecondary)
                     if let d = note.durationLabel {
                         Text(d)
-                            .font(.system(size: 10))
+                            .font(.system(size: 11))
+                            .monospacedDigit()
                             .foregroundStyle(Theme.inkSecondary.opacity(0.6))
                     }
                 }

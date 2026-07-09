@@ -82,12 +82,13 @@ struct PipelineView: View {
                 HStack(spacing: 5) {
                     Circle().fill(color).frame(width: 7, height: 7)
                     Text(stage.name)
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
                 }
                 Text("\(count)")
                     .font(.system(size: 17, weight: .bold))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.ink)
                     .contentTransition(.numericText())
                 GeometryReader { geo in
@@ -155,6 +156,7 @@ struct PipelineView: View {
                     Spacer()
                     Text("\(contacts.count)")
                         .font(.system(size: 13))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.inkSecondary)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 12, weight: .semibold))
@@ -199,7 +201,7 @@ struct PipelineView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Theme.inkSecondary)
             Text("Move contacts here from other stages")
-                .font(.system(size: 10.5))
+                .font(.system(size: 11))
                 .foregroundStyle(Theme.inkSecondary.opacity(0.6))
         }
         .frame(maxWidth: .infinity)
@@ -233,7 +235,7 @@ private struct PipelineContactCard: View {
                         .lineLimit(1)
                     if !contact.subtitle.isEmpty {
                         Text(contact.subtitle)
-                            .font(.system(size: 10.5))
+                            .font(.system(size: 11))
                             .foregroundStyle(Theme.inkSecondary)
                             .lineLimit(1)
                     }
@@ -252,9 +254,10 @@ private struct PipelineContactCard: View {
             if let raw = contact.followUpDate, let label = Self.followUp(raw) {
                 HStack(spacing: 4) {
                     Image(systemName: "calendar")
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                     Text("Follow-up: \(label)")
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
+                        .monospacedDigit()
                     Spacer()
                 }
                 .foregroundStyle(Theme.warning)
@@ -346,6 +349,7 @@ private struct StageSettingsView: View {
                             Spacer()
                             Text("\(data.contacts(in: stage.id).count)")
                                 .font(.system(size: 12))
+                                .monospacedDigit()
                                 .foregroundStyle(Theme.inkSecondary)
                             Button {
                                 Task { await data.deleteStage(stage) }

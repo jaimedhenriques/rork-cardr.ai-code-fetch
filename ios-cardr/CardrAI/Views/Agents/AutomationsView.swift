@@ -208,7 +208,7 @@ struct AutomationsView: View {
             }
         }()
         return Text(status.capitalized)
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(tint)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -218,7 +218,7 @@ struct AutomationsView: View {
 
     private func chip(_ text: String, _ tint: Color) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(tint)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)

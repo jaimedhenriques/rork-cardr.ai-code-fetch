@@ -272,7 +272,7 @@ struct ContactImportView: View {
                         Spacer(minLength: 0)
                         if let event = row.eventName, !event.isEmpty {
                             Text(event)
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(Theme.accent)
                                 .lineLimit(1)
                                 .padding(.horizontal, 7)

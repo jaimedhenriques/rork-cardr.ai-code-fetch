@@ -65,7 +65,7 @@ struct BrandingEditorView: View {
     private func labeledField(_ label: String, icon: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(label.uppercased(), systemImage: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(Theme.inkSecondary)
             TextField(placeholder, text: text)
@@ -77,7 +77,7 @@ struct BrandingEditorView: View {
     private var colorGroup: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("BRAND COLORS", systemImage: "paintpalette.fill")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(Theme.inkSecondary)
             colorRow("Primary", hsl: $primaryColor)
@@ -97,7 +97,7 @@ struct BrandingEditorView: View {
             ), supportsOpacity: false)
             .labelsHidden()
             Text(hsl.wrappedValue)
-                .font(.system(size: 10, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(Theme.inkSecondary)
             Spacer()
         }
@@ -106,7 +106,7 @@ struct BrandingEditorView: View {
     private var assetGroup: some View {
         VStack(alignment: .leading, spacing: 14) {
             Label("ASSETS", systemImage: "photo.fill")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(Theme.inkSecondary)
             assetRow("Logo (recommended 200×50 PNG)", url: data.branding.logoUrl, type: "logo", selection: $logoItem)
@@ -184,7 +184,7 @@ struct BrandingEditorView: View {
         CardSurface(padding: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("PREVIEW")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .tracking(1)
                     .foregroundStyle(Theme.inkSecondary)
                 HStack(spacing: 12) {

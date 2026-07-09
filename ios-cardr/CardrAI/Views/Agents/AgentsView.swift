@@ -177,7 +177,7 @@ struct AgentsView: View {
 
     private func statusPill(_ active: Bool) -> some View {
         Text(active ? "Active" : "Paused")
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(active ? Theme.success : Theme.inkSecondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

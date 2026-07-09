@@ -118,7 +118,7 @@ struct AgentActivityFeed: View {
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
                     Text("· \(meta.label)")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .textCase(.uppercase)
                         .tracking(0.5)
                         .foregroundStyle(Theme.inkSecondary)

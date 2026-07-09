@@ -354,10 +354,11 @@ struct MyCardView: View {
                 .foregroundStyle(color)
             Text(loadingAnalytics ? "—" : "\(value ?? 0)")
                 .font(.title3.weight(.bold))
+                .monospacedDigit()
                 .foregroundStyle(Theme.ink)
                 .contentTransition(.numericText())
             Text(label.uppercased())
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .tracking(0.5)
                 .foregroundStyle(Theme.inkSecondary)
         }

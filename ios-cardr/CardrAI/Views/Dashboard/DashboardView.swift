@@ -221,7 +221,7 @@ struct DashboardView: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(tint ?? Theme.ink.opacity(0.75))
                 Text(label)
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Theme.ink.opacity(0.7))
                     .lineLimit(1)
             }
@@ -336,6 +336,7 @@ struct DashboardView: View {
                         .foregroundStyle(Theme.ink)
                     Text(subtitle)
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundStyle(Theme.inkSecondary)
                         .lineLimit(1)
                 }
@@ -352,6 +353,7 @@ struct DashboardView: View {
                     .foregroundStyle(tint)
                 Text(value)
                     .font(.title2.weight(.bold))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.ink)
                     .contentTransition(.numericText())
                 Text(label)
@@ -467,10 +469,11 @@ struct DashboardView: View {
             Circle().fill(tier.color).frame(width: 7, height: 7)
             Text("\(count)")
                 .font(.system(size: 13, weight: .bold))
+                .monospacedDigit()
                 .foregroundStyle(tier.color)
                 .contentTransition(.numericText())
             Text(tier.label)
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .foregroundStyle(Theme.inkSecondary)
         }
     }

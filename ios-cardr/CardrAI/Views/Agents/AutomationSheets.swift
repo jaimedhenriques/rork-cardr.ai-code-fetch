@@ -180,7 +180,7 @@ struct CreateSequenceSheet: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Body — use {{name}}, {{company}}, {{title}}")
-                        .font(.system(size: 10)).foregroundStyle(Theme.inkSecondary)
+                        .font(.system(size: 11)).foregroundStyle(Theme.inkSecondary)
                     TextField("Message body", text: Binding(
                         get: { steps[index].bodyTemplate },
                         set: { steps[index].bodyTemplate = $0 }
@@ -427,11 +427,11 @@ struct ReviewRunSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Text("Step \(index + 1)")
-                        .font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.inkSecondary)
+                        .font(.system(size: 11, weight: .bold)).monospacedDigit().foregroundStyle(Theme.inkSecondary)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Theme.surfaceMuted).clipShape(Capsule())
                     Label(AutomationChannel.label(message.channel), systemImage: AutomationChannel.icon(message.channel))
-                        .font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkSecondary)
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkSecondary)
                     statusBadge(message.status)
                     Spacer()
                 }
@@ -535,7 +535,7 @@ struct ReviewRunSheet: View {
             }
         }()
         return Text(status.capitalized)
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(tint)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(tint.opacity(0.12)).clipShape(Capsule())

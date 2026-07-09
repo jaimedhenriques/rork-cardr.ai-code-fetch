@@ -80,7 +80,7 @@ struct TeamAnalyticsSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(label.uppercased())
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .tracking(0.8)
                         .foregroundStyle(Theme.inkSecondary)
                     Spacer(minLength: 0)
@@ -90,9 +90,12 @@ struct TeamAnalyticsSection: View {
                 }
                 Text(value)
                     .font(.system(size: 24, weight: .bold))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.ink)
+                    .contentTransition(.numericText())
                 Text(caption)
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
+                    .monospacedDigit()
                     .foregroundStyle(Theme.inkSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -112,6 +115,7 @@ struct TeamAnalyticsSection: View {
                         HStack(spacing: 12) {
                             Text("\(index + 1)")
                                 .font(.system(size: 12, weight: .bold))
+                                .monospacedDigit()
                                 .foregroundStyle(Theme.inkSecondary)
                                 .frame(width: 16, alignment: .trailing)
                             VStack(alignment: .leading, spacing: 3) {
@@ -120,13 +124,15 @@ struct TeamAnalyticsSection: View {
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
                                 Text(memberCaption(member))
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
+                                    .monospacedDigit()
                                     .foregroundStyle(Theme.inkSecondary)
                             }
                             Spacer(minLength: 0)
                             if let sentiment = member.avgSentiment {
                                 Text("\(Int(sentiment * 100))%")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(.system(size: 11, weight: .bold))
+                                    .monospacedDigit()
                                     .foregroundStyle(Theme.primary)
                                     .padding(.horizontal, 7)
                                     .padding(.vertical, 3)
@@ -181,7 +187,8 @@ struct TeamAnalyticsSection: View {
                                     .foregroundStyle(Theme.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Text(itemCaption(item))
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 11))
+                                    .monospacedDigit()
                                     .foregroundStyle(Theme.inkSecondary)
                                     .lineLimit(1)
                             }

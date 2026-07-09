@@ -316,7 +316,7 @@ struct ContactsView: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: icon).font(.system(size: 18, weight: .semibold))
-                Text(label).font(.system(size: 10, weight: .medium))
+                Text(label).font(.system(size: 11, weight: .medium))
             }
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
@@ -412,6 +412,7 @@ struct ContactsView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("\(data.unenrichedCount) need enriching")
                             .font(.system(size: 13, weight: .semibold))
+                            .monospacedDigit()
                             .foregroundStyle(Theme.ink)
                         Text("Fill in missing details with AI")
                             .font(.system(size: 11))

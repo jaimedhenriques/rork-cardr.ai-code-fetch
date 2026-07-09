@@ -93,7 +93,7 @@ struct DashboardCustomizerView: View {
                             .foregroundStyle(Theme.primary)
                             .lineLimit(1)
                         Text(preset.description)
-                            .font(.system(size: 9))
+                            .font(.system(size: 11))
                             .foregroundStyle(Theme.inkSecondary)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)

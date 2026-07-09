@@ -66,7 +66,7 @@ struct IntegrationsView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("CONNECT EVERYTHING")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(1.4)
                 .foregroundStyle(Theme.primary)
                 .padding(.horizontal, 10)

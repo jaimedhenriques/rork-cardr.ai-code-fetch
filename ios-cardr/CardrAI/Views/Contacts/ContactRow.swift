@@ -28,7 +28,7 @@ struct ContactRow: View {
                     if showEngagement {
                         let tier = Engagement.tier(for: contact)
                         Text(tier.rawValue)
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(tier.color)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1.5)
