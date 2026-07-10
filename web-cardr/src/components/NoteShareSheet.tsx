@@ -107,7 +107,7 @@ const NoteShareSheet = ({ note, open, onClose }: NoteShareSheetProps) => {
     md.split("\n").map(line => {
       const t = line.trim();
       if (!t) return "";
-      const bolded = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      const bolded = t.replace(/\*\*(.+?)\*\*/g, (_m, inner: string) => `<strong>${inner}</strong>`);
       if (/^#{1,4}\s/.test(bolded)) return `<p><strong>${bolded.replace(/^#{1,4}\s*/, "")}</strong></p>`;
       if (/^[-*]\s/.test(bolded)) return `<p>• ${bolded.replace(/^[-*]\s/, "")}</p>`;
       return `<p>${bolded}</p>`;
