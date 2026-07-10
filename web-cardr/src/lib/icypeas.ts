@@ -1,19 +1,20 @@
 // Icypeas data-enrichment service.
-// Finds a verified professional email (and phone / LinkedIn when available)
-// from a person's name + company/domain, calling the Icypeas API directly.
-// Docs: https://api-doc.icypeas.com/getting-started
 //
-// The flow is asynchronous: we submit a single email-search, get back an `_id`,
-// then poll the read endpoint until the search reaches a terminal status.
+// Security rule: Icypeas credentials must never be shipped in the browser bundle.
+// The browser may only call a server-side Supabase Edge Function that owns the
+// ICYPEAS_API_KEY secret. The feature is disabled unless explicitly enabled with
+// VITE_ENABLE_SERVER_ICYPEAS_ENRICHMENT=true after the Edge Function is deployed.
 
-const ICYPEAS_API_KEY = import.meta.env.VITE_ICYPEAS_API_KEY as string | undefined;
-const BASE_URL = "https://app.icypeas.com/api";
+import { supabase } from "@/integrations/supabase/client";
+
+const SERVER_ENRICHMENT_ENABLED =
+  import.meta.env.VITE_ENABLE_SERVER_ICYPEAS_ENRICHMENT === "true";
 
 /**
  * Result of an Icypeas enrichment, shaped to match the rest of the app's
  * enrichment consumers. Icypeas only populates the verified email/phone/LinkedIn
  * fields; the remaining optional fields exist so existing call sites that also
- * read company metadata keep compiling (they simply stay undefined).
+ * read company metadata keep compiling.
  */
 export interface IcypeasEnrichment {
   email?: string;
@@ -47,120 +48,37 @@ export interface IcypeasContactInput {
   website?: string;
 }
 
-/** Whether Icypeas is configured (API key present). */
-export const isIcypeasConfigured = (): boolean => Boolean(ICYPEAS_API_KEY);
-
-/** Statuses that mean the search has finished (successfully or not). */
-const TERMINAL_STATUSES = new Set([
-  "FOUND",
-  "DEBITED",
-  "COMPLETED",
-  "NOT_FOUND",
-  "DEBITED_NOT_FOUND",
-  "BAD_INPUT",
-  "INSUFFICIENT_FUNDS",
-  "ABORTED",
-]);
-
-function splitName(name?: string): { firstname: string; lastname: string } {
-  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return { firstname: "", lastname: "" };
-  if (parts.length === 1) return { firstname: parts[0], lastname: "" };
-  return { firstname: parts[0], lastname: parts.slice(1).join(" ") };
+interface IcypeasFunctionResponse {
+  enriched?: IcypeasEnrichment | null;
+  error?: string;
 }
 
-/** Derive the company domain (or company name) Icypeas needs to scope a search. */
-function deriveDomainOrCompany(input: IcypeasContactInput): string | null {
-  const emailDomain = input.email?.split("@")[1]?.trim();
-  if (emailDomain) return emailDomain;
-  if (input.website) {
-    try {
-      const url = input.website.startsWith("http") ? input.website : `https://${input.website}`;
-      const host = new URL(url).hostname.replace(/^www\./, "");
-      if (host) return host;
-    } catch {
-      // fall through to company name
-    }
-  }
-  if (input.company?.trim()) return input.company.trim();
-  return null;
-}
-
-async function icypeasFetch(path: string, body: unknown): Promise<any> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: ICYPEAS_API_KEY ?? "",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    throw new Error(`Icypeas request failed (${res.status})`);
-  }
-  return res.json();
-}
-
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+/** Whether server-side Icypeas enrichment is enabled for this build. */
+export const isIcypeasConfigured = (): boolean => SERVER_ENRICHMENT_ENABLED;
 
 /**
- * Enrich a contact via Icypeas. Returns verified email/phone/LinkedIn when found,
- * or `null` when nothing could be resolved (missing input, no result, or error).
- * Best-effort and safe to fire-and-forget — never throws.
+ * Enrich a contact through the Supabase Edge Function. Returns verified
+ * email/phone/LinkedIn when found, or `null` when enrichment is unavailable,
+ * unconfigured, missing input, or no result is found.
  */
 export async function enrichContactViaIcypeas(
   contact: IcypeasContactInput,
 ): Promise<{ enriched: IcypeasEnrichment } | null> {
-  if (!ICYPEAS_API_KEY) return null;
-
-  const { firstname, lastname } = splitName(contact.name);
-  const domainOrCompany = deriveDomainOrCompany(contact);
-  // Icypeas needs at least a last name (or first name) plus a company/domain.
-  if (!domainOrCompany || (!firstname && !lastname)) return null;
+  if (!SERVER_ENRICHMENT_ENABLED) return null;
 
   try {
-    const submit = await icypeasFetch("/email-search", {
-      firstname,
-      lastname,
-      domainOrCompany,
-    });
-    const searchId: string | undefined = submit?.item?._id;
-    if (!submit?.success || !searchId) return null;
+    const { data, error } = await supabase.functions.invoke<IcypeasFunctionResponse>(
+      "icypeas-enrich",
+      { body: contact },
+    );
 
-    // Poll for the result (up to ~24s).
-    let item: any = null;
-    for (let attempt = 0; attempt < 12; attempt++) {
-      await sleep(2000);
-      const read = await icypeasFetch("/bulk-single-searchs/read", { id: searchId });
-      const candidate = read?.items?.[0];
-      if (candidate && TERMINAL_STATUSES.has(candidate.status)) {
-        item = candidate;
-        break;
-      }
-    }
-    if (!item) return null;
-
-    const results = item.results ?? {};
-    const enriched: IcypeasEnrichment = {};
-
-    const bestEmail: string | undefined = Array.isArray(results.emails)
-      ? results.emails.find((e: any) => e?.email)?.email
-      : undefined;
-    if (bestEmail) enriched.email = bestEmail;
-
-    if (Array.isArray(results.phones) && results.phones.length > 0) {
-      const phoneValue = typeof results.phones[0] === "string"
-        ? results.phones[0]
-        : results.phones[0]?.phone ?? results.phones[0]?.number;
-      if (phoneValue) enriched.mobilePhone = phoneValue;
+    if (error) {
+      console.warn("Icypeas enrichment function failed:", error.message);
+      return null;
     }
 
-    if (typeof results.li === "string" && results.li.trim()) {
-      enriched.linkedin = results.li.trim();
-    }
-
-    if (!enriched.email && !enriched.mobilePhone && !enriched.linkedin) return null;
-    return { enriched };
+    if (!data?.enriched) return null;
+    return { enriched: data.enriched };
   } catch (err) {
     console.warn("Icypeas enrichment failed:", err);
     return null;
