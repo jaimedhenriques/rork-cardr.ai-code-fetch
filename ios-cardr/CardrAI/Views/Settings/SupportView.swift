@@ -24,9 +24,9 @@ struct SupportView: View {
                 supportCard(
                     icon: "creditcard.fill",
                     title: "Account & billing",
-                    description: "Manage your subscription at cardr.ai in any browser. Plan changes sync back to the app automatically."
+                    description: "Questions about your plan or billing? Email us and we'll sort it out quickly."
                 ) {
-                    openURL(URL(string: "https://cardr.ai")!)
+                    openURL(URL(string: "mailto:support@cardr.ai")!)
                 }
 
                 supportCard(
