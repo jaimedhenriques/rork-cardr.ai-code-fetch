@@ -1,0 +1,100 @@
+{
+  "theme": {
+    "style": "A premium networking-tech world built on electric blues, violets, and warm coral counterpoints — glossy, energetic, and confident like a high-end conference badge under stage lighting. Surfaces feel like polished glass and liquid metal with soft volumetric glow, subtle grain, and clean geometric motifs evoking connection points and data links without literal UI. Calm dark zones at the top of every frame keep headlines crisp against a vivid, colorful canvas.",
+    "headlineFont": "'Plus Jakarta Sans', sans-serif — import via @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap')",
+    "headlineFontSize": 124,
+    "mockupIds": {
+      "iphone": "deep-blue",
+      "ipad": "space-gray"
+    },
+    "palette": {
+      "primary": "#1E3A8A",
+      "secondary": "#F97316",
+      "accent": "#7C3AED"
+    }
+  },
+  "slides": [
+    {
+      "label": "Scan",
+      "backgroundPrompt": "Abstract digital art of a vivid electric-blue gradient field with sweeping ribbons of glossy cobalt and sapphire light curving diagonally across the frame, small luminous particles drifting like scanned data points. Colors range from deep navy blue to bright electric blue to a hint of violet at the edges, with cinematic light rays beaming from the top-right creating dramatic highlights on smooth liquid-glass surfaces. The upper 30% stays darker and calmer for text clarity, with fine grain texture and soft depth-of-field blur toward the lower corners, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/4ef817bb-a4ab-46f9-9d81-4ae47d31f218.png"
+    },
+    {
+      "label": "Dashboard",
+      "backgroundPrompt": "Abstract 3D rendered scene of interlocking translucent geometric shards in bright cyan and deep blue floating above a smooth glass plane, with thin glowing threads connecting distant points of light like a constellation network. Colors flow from bright cyan through royal blue to a touch of violet accent glow, lit by soft volumetric light from the upper-left casting cool reflections across frosted glass layers. The top portion of the frame is darker and uncluttered for headline space, with subtle depth blur and fine light grain, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/e0373881-37ac-4653-806a-884ad2ff3a92.png"
+    },
+    {
+      "label": "Contacts",
+      "backgroundPrompt": "Warm abstract digital art featuring flowing silk ribbons in coral, tangerine, and burnt orange twisting gently across a sunlit gradient backdrop, with soft glowing orbs scattered like collected sparks of light. Colors move from deep coral at the base to warm orange to a golden highlight near the center, lit with soft diffused sunset lighting from the right creating gentle rim glow on the ribbon edges. The upper 30% fades into a darker muted amber tone for text legibility, with fine grain and soft bokeh blur at the frame edges, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/0b13288b-7d04-456d-9efc-60a53d312b05.png"
+    },
+    {
+      "label": "Pipeline",
+      "backgroundPrompt": "Abstract digital art of bold blue-violet liquid metal arcs flowing upward across a rich gradient canvas, with sharp shards of light suggesting forward momentum and growth. Colors blend from deep indigo through vivid violet to electric blue accents, illuminated by dramatic rim lighting from below that traces the edges of each flowing arc with bright highlights. The top of the frame stays darker and calm for text overlay, with subtle floating particles and smooth depth-of-field blur in the background, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/46f98987-ac16-4a78-b1ac-14ce40eb34d2.png"
+    },
+    {
+      "label": "cardr-appstore-2",
+      "backgroundPrompt": "Abstract digital art of soft glowing spheres of electric blue and violet light suspended in a dark navy void, connected by thin luminous filaments drifting gently across the frame. Colors shift from deep navy blue to bright cobalt to a faint violet glow at the core, lit by a single soft diffused light source from the top creating gentle gradients and long soft shadows. The upper region remains dark and calm for text clarity, with fine atmospheric haze and smooth depth blur toward the lower edges, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/0d930753-726b-44fa-86d4-0de32e3d045a.png"
+    },
+    {
+      "label": "cardr-wordmark",
+      "backgroundPrompt": "Abstract digital art of a clean minimal gradient wash from deep royal blue to electric violet, with a single soft beam of light sweeping diagonally across polished glass-like surface. Colors flow smoothly from navy blue through cobalt to a subtle violet edge glow, lit with soft cinematic lighting from the upper-left casting gentle reflections. The top third of the frame is darker and calmer for logo placement, with subtle grain and smooth blur at the lower corners, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/44f4f2f2-3e68-494c-94a3-f8c08b03f79a.png"
+    },
+    {
+      "label": "cardr-phone-mockup",
+      "backgroundPrompt": "Abstract 3D rendered scene of frosted glass panels stacked at gentle angles in electric blue and violet tones, catching thin lines of bright light along each edge with deep shadowed gaps between layers. Colors range from deep sapphire blue to bright violet highlights with a touch of coral warmth in the lower corner, lit by soft directional light from the right creating dramatic depth. The upper 30% fades to a darker cool tone for text overlay, with fine texture grain and smooth background blur, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/d87bb1ac-4176-43c5-a06a-a8d941f0366f.png"
+    },
+    {
+      "label": "cardr-og",
+      "backgroundPrompt": "Abstract digital art of a vast dark navy expanse dotted with tiny glowing points of electric blue and coral light, connected by hair-thin luminous threads forming a loose constellation pattern. Colors blend deep indigo blue with warm coral pinpoints and violet undertones, lit by a soft diffused glow pooling in the lower center of the frame. The top region stays open, dark, and uncluttered for text, with subtle grain and soft atmospheric haze, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/7fa0a7db-b2ea-470b-aff3-6cf908187910.png"
+    },
+    {
+      "label": "cardr-appstore-3",
+      "backgroundPrompt": "Abstract digital art of smooth liquid metal ribbons in coral and violet swirling gently across a warm-to-cool gradient backdrop, with soft glowing highlights tracing each curve. Colors shift from warm burnt orange through coral to a cool violet-blue at the edges, lit by soft rim lighting from the top-right creating glossy reflections on the ribbon surfaces. The upper 30% is darker and calmer for headline space, with fine grain texture and gentle depth-of-field blur, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/e3516698-8518-40d0-9129-1771cd424fec.png"
+    },
+    {
+      "label": "cardr-logo",
+      "backgroundPrompt": "Abstract digital art of a radiant core of violet and electric blue light pulsing softly at the center of a dark gradient canvas, with fine particle trails swirling outward like data in motion. Colors flow from deep navy blue background to bright violet core with faint coral sparks at the edges, lit by soft volumetric glow radiating outward from the center. The top portion of the frame remains dark and calm for text overlay, with subtle grain and smooth depth blur at the outer edges, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/9bac30b6-54ac-4ec7-ae92-59ccc8796438.png"
+    },
+    {
+      "label": "cardr-hero-mobile",
+      "backgroundPrompt": "Abstract digital art of layered translucent glass shards in electric blue and violet tones floating above a smooth gradient plane, each shard catching a thin edge of bright light against deep shadow. Colors range from deep cobalt blue to vivid violet with a subtle coral rim highlight, lit by dramatic side lighting from the left creating strong depth contrast. The upper 30% stays darker for text clarity, with soft grain and smooth background blur, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/2b504bb0-68bf-4b6f-a8cd-7f450ecb037f.png"
+    },
+    {
+      "label": "cardr-hero-desktop",
+      "backgroundPrompt": "Abstract digital art of bold sweeping arcs of electric blue and coral light crossing diagonally over a rich dark gradient base, with fine dust particles catching the light along each arc. Colors move from deep navy blue through bright cobalt to warm coral highlights, lit by dramatic rim lighting from below creating a glossy premium sheen. The top section of the frame is calmer and darker for text overlay, with subtle grain and smooth blur toward the edges, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/41968d0b-4daf-4e6d-9df4-71401bba25e3.png"
+    },
+    {
+      "label": "cardr-appstore-1",
+      "backgroundPrompt": "Abstract digital art of a bold vivid gradient sweeping from deep violet through electric blue to warm coral across a smooth glossy canvas, with soft glowing particles suspended mid-air catching the light. Colors blend deep indigo violet, bright cobalt blue, and warm coral in a smooth diagonal flow, lit by soft cinematic light from the top-left casting gentle highlights across the surface. The upper 30% remains darker and calm for text overlay, with fine grain texture and smooth depth-of-field blur at the lower edges, 8K quality, ultra smooth gradients, premium feel, no text, no letters, no UI elements, no device mockups",
+      "backgroundUrl": "https://r2-pub.rork.com/app-store-screenshots/64d276d8-0f95-47ca-a10a-18a1bca46468.png"
+    }
+  ],
+  "headlines": {
+    "en": {
+      "Scan": "Scan Any Card",
+      "Dashboard": "Your Network<br>At A Glance",
+      "Contacts": "Everyone<br>Organized",
+      "Pipeline": "Turn Leads<br>Into Deals",
+      "cardr-appstore-2": "Meet Smarter",
+      "cardr-wordmark": "Cardr.AI",
+      "cardr-phone-mockup": "Contacts<br>In Seconds",
+      "cardr-og": "Networking<br>Reimagined",
+      "cardr-appstore-3": "Every Detail<br>Captured",
+      "cardr-logo": "Powered<br>By AI",
+      "cardr-hero-mobile": "Never Lose<br>A Contact",
+      "cardr-hero-desktop": "Built For<br>Business",
+      "cardr-appstore-1": "Start<br>Connecting"
+    }
+  }
+}
