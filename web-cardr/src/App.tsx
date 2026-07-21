@@ -119,6 +119,7 @@ const AppRoutes = () => {
             <Route path="/landing" element={<Navigate to="/" replace />} />
             <Route path="/landing-preview" element={<Navigate to="/" replace />} />
             <Route path="/index" element={<Navigate to="/app" replace />} />
+            <Route path="/login" element={<Navigate to="/auth" replace />} />
 
             {/* Public utility routes (no auth) */}
             <Route path="/auth" element={<Auth />} />
