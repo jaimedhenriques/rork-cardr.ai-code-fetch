@@ -1,15 +1,15 @@
 import { format, isSameDay, isToday, isFuture, isPast, startOfDay } from "date-fns";
-import CalendarEventCard from "./CalendarEventCard";
+import CalendarEventCard, { type CalendarEvent } from "./CalendarEventCard";
 
 interface CalendarListViewProps {
-  events: any[];
+  events: CalendarEvent[];
   timeRange: "day" | "week" | "month" | "year";
   currentDate: Date;
 }
 
 const CalendarListView = ({ events, timeRange, currentDate }: CalendarListViewProps) => {
   // Group events by date
-  const grouped = events.reduce((acc: Record<string, any[]>, event: any) => {
+  const grouped = events.reduce((acc: Record<string, CalendarEvent[]>, event: CalendarEvent) => {
     const dateKey = format(new Date(event.start_time), "yyyy-MM-dd");
     if (!acc[dateKey]) acc[dateKey] = [];
     acc[dateKey].push(event);
@@ -44,7 +44,7 @@ const CalendarListView = ({ events, timeRange, currentDate }: CalendarListViewPr
               )}
             </div>
             <div className="space-y-2">
-              {grouped[dateKey].map((event: any) => (
+              {grouped[dateKey].map((event) => (
                 <CalendarEventCard key={event.id} event={event} />
               ))}
             </div>

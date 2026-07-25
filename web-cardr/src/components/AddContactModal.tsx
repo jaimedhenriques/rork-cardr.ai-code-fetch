@@ -74,9 +74,10 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
         enrichedAt: new Date().toISOString(),
       });
       toast.success("Contact info extracted!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Scan error:", err);
-      toast.error(err.message || "Failed to extract contact info.");
+      const message = err instanceof Error ? err.message : "Failed to extract contact info.";
+      toast.error(message);
       setCapturedImage(null);
     } finally {
       setScanning(false);
@@ -158,8 +159,8 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
       title: scannedData.title,
       linkedin: scannedData.linkedin,
       notes: scannedData.notes,
-      industry: scannedData.industry as any,
-      location: scannedData.location as any,
+      industry: scannedData.industry,
+      location: scannedData.location,
     });
     onClose();
   };

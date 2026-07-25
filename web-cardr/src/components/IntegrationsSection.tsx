@@ -4,6 +4,7 @@ import {
   Lock, Check, ChevronRight, ChevronDown, ExternalLink,
   MessageSquare, Calendar, Globe, BarChart3, Users, Workflow
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import SlackSettingsPanel from "@/components/SlackSettingsPanel";
 import PipedriveSettingsPanel from "@/components/PipedriveSettingsPanel";
@@ -59,7 +60,7 @@ const INTEGRATIONS: Integration[] = [
   { id: "zoominfo", name: "ZoomInfo", descriptionKey: "integrations.zoominfoDesc", logo: "🔍", category: "enrichment", status: "coming_soon" },
 ];
 
-const CATEGORIES: { key: string; labelKey: string; icon: any }[] = [
+const CATEGORIES: { key: string; labelKey: string; icon: LucideIcon }[] = [
   { key: "automation", labelKey: "integrations.categoryAutomation", icon: Workflow },
   { key: "crm", labelKey: "integrations.categoryCrm", icon: BarChart3 },
   { key: "communication", labelKey: "integrations.categoryCommunication", icon: MessageSquare },
