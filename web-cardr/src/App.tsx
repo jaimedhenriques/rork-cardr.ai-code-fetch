@@ -101,6 +101,13 @@ const LegacyFlatRedirect = () => {
   );
 };
 
+// Legacy /login → /auth, keeping any query string and fragment intact
+// (e.g. /login?next=%2Fapp#section → /auth?next=%2Fapp#section).
+export const LoginRedirect = () => {
+  const location = useLocation();
+  return <Navigate to={`/auth${location.search}${location.hash}`} replace />;
+};
+
 const wrap = (node: JSX.Element) => <ProtectedRoute>{node}</ProtectedRoute>;
 
 const AppRoutes = () => {
@@ -119,6 +126,7 @@ const AppRoutes = () => {
             <Route path="/landing" element={<Navigate to="/" replace />} />
             <Route path="/landing-preview" element={<Navigate to="/" replace />} />
             <Route path="/index" element={<Navigate to="/app" replace />} />
+            <Route path="/login" element={<LoginRedirect />} />
 
             {/* Public utility routes (no auth) */}
             <Route path="/auth" element={<Auth />} />
