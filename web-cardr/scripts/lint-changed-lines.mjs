@@ -84,8 +84,9 @@ export function resolveBase(candidates, cwd) {
 
 /**
  * Split an ESLint JSON report into failures and advisories, keeping only
- * messages that sit on an added line. A message with no line is a file-level
- * parse or config error and always fails.
+ * messages that sit on an added line. Fatal messages are the exception: a
+ * parse or config failure means the file was never linted reliably, so it
+ * fails whatever line ESLint attaches it to (including none at all).
  *
  * @param {{filePath: string, messages?: {line?: number, column?: number, severity?: number, fatal?: boolean, message?: string, ruleId?: string|null}[]}[]} report
  * @param {Map<string, Set<number>>} targets absolute path -> added line numbers
@@ -98,9 +99,10 @@ export function selectAddedLineMessages(report, targets, relativize = (value) =>
     const lines = targets.get(path.resolve(result.filePath));
     if (!lines) continue;
     for (const message of result.messages || []) {
+      const fatal = message.fatal === true;
       const onAddedLine = message.line === undefined || lines.has(message.line);
-      if (!onAddedLine) continue;
-      if (message.severity === 2 || message.fatal) {
+      if (!fatal && !onAddedLine) continue;
+      if (message.severity === 2 || fatal) {
         failures.push(
           `${relativize(result.filePath)}:${message.line ?? "?"}:${message.column ?? "?"}` +
             `  ${message.message}  ${message.ruleId ?? "fatal"}`,

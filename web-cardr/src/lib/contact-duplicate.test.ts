@@ -104,3 +104,59 @@ describe("buildMergeUpdates", () => {
     expect(updates.notes).toBeUndefined();
   });
 });
+
+describe("findDuplicateContact across alternate phone fields", () => {
+  const enriched: ExistingContact = {
+    id: "c2",
+    name: "Ravi Patel",
+    email: "ravi@globex.com",
+    mobilePhone: "+1 (312) 555-7788",
+    workPhone: "212-555-9000",
+  };
+
+  it("matches a candidate primary phone against a saved mobile phone", () => {
+    const match = findDuplicateContact(
+      { name: "R. Patel", phone: "3125557788" },
+      [enriched],
+    );
+    expect(match?.contact.id).toBe("c2");
+    expect(match?.reason).toBe("phone");
+  });
+
+  it("matches a candidate primary phone against a saved work phone", () => {
+    const match = findDuplicateContact({ name: "R. Patel", phone: "+1 212 555 9000" }, [enriched]);
+    expect(match?.contact.id).toBe("c2");
+  });
+
+  it("matches a candidate mobile phone against a saved primary phone", () => {
+    const match = findDuplicateContact(
+      { name: "D. Reed", mobilePhone: "(415) 555-1212" },
+      [existing],
+    );
+    expect(match?.contact.id).toBe("c1");
+    expect(match?.reason).toBe("phone");
+  });
+
+  it("matches a candidate work phone against a saved mobile phone", () => {
+    const match = findDuplicateContact({ name: "R. Patel", workPhone: "312 555 7788" }, [enriched]);
+    expect(match?.contact.id).toBe("c2");
+  });
+
+  it("still returns null when no phone slot overlaps", () => {
+    expect(
+      findDuplicateContact(
+        { name: "Sam Cole", mobilePhone: "+1 646 555 0000", workPhone: "" },
+        [existing, enriched],
+      ),
+    ).toBeNull();
+  });
+
+  it("fills a blank alternate phone field on merge without overwriting a populated one", () => {
+    const updates = buildMergeUpdates(
+      { id: "c2", name: "Ravi Patel", mobilePhone: "+1 (312) 555-7788" },
+      { mobilePhone: "999 999 9999", workPhone: "212-555-9000" },
+    );
+    expect(updates.mobilePhone).toBeUndefined();
+    expect(updates.workPhone).toBe("212-555-9000");
+  });
+});

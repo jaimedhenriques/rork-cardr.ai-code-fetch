@@ -15,6 +15,8 @@ export interface DuplicateCandidate {
   title?: string;
   email?: string;
   phone?: string;
+  mobilePhone?: string;
+  workPhone?: string;
   notes?: string;
   linkedin?: string;
   website?: string;
@@ -41,9 +43,27 @@ export function normalizeEmail(input?: string | null): string {
 }
 
 /**
+ * Every phone slot a contact can occupy. A scanned badge often lands in
+ * `phone` while the saved contact carries the same number under `mobilePhone`
+ * or `workPhone` after enrichment, so all three have to be compared.
+ */
+const PHONE_FIELDS = ["phone", "mobilePhone", "workPhone"] as const;
+
+/** Normalized keys for every phone slot on a contact, blanks dropped. */
+function phoneKeys(contact: DuplicateCandidate): Set<string> {
+  const keys = new Set<string>();
+  for (const field of PHONE_FIELDS) {
+    const key = normalizePhone(contact[field]);
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+
+/**
  * Find the first saved contact that shares a normalized email or phone with
  * the candidate. Email is checked before phone so the reported reason matches
- * the strongest signal.
+ * the strongest signal. A phone match counts when any candidate phone field
+ * normalizes to any saved phone field.
  */
 export function findDuplicateContact(
   candidate: DuplicateCandidate,
@@ -60,9 +80,12 @@ export function findDuplicateContact(
     if (byEmail) return { contact: byEmail, reason: "email" };
   }
 
-  const phone = normalizePhone(candidate.phone);
-  if (phone) {
-    const byPhone = pool.find((c) => normalizePhone(c.phone) === phone);
+  const phones = phoneKeys(candidate);
+  if (phones.size > 0) {
+    const byPhone = pool.find((c) => {
+      for (const key of phoneKeys(c)) if (phones.has(key)) return true;
+      return false;
+    });
     if (byPhone) return { contact: byPhone, reason: "phone" };
   }
 
@@ -76,6 +99,8 @@ const MERGEABLE_FIELDS = [
   "title",
   "email",
   "phone",
+  "mobilePhone",
+  "workPhone",
   "notes",
   "linkedin",
   "website",

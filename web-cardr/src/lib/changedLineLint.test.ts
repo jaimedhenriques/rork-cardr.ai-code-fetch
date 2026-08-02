@@ -136,3 +136,35 @@ describe("resolveBase", () => {
     expect(resolveBase(["", "deadbee".repeat(6)], process.cwd())).toBeNull();
   });
 });
+
+describe("selectAddedLineMessages fatal handling", () => {
+  const changed = path.resolve("src/changed.ts");
+  const targets = new Map([[changed, new Set([12, 40])]]);
+
+  it("fails a fatal parser message reported on an unchanged line", () => {
+    const report = [
+      {
+        filePath: changed,
+        messages: [
+          { line: 3, column: 1, severity: 2, fatal: true, message: "Parsing error: Unexpected token", ruleId: null },
+        ],
+      },
+    ];
+    const { failures, advisory } = selectAddedLineMessages(report, targets);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain("Parsing error");
+    expect(advisory).toBe(0);
+  });
+
+  it("still ignores an ordinary baseline error on an unchanged line", () => {
+    const report = [
+      {
+        filePath: changed,
+        messages: [
+          { line: 3, column: 1, severity: 2, message: "Unexpected any", ruleId: "no-explicit-any" },
+        ],
+      },
+    ];
+    expect(selectAddedLineMessages(report, targets).failures).toEqual([]);
+  });
+});

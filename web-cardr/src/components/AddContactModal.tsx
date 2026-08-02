@@ -1,10 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Upload, UserPlus, Camera, Loader2, Image, Sparkles, Globe, Linkedin, MapPin, Users } from "lucide-react";
 import { useApp, type Contact } from "@/context/AppContext";
 
 import { supabase } from "@/integrations/supabase/client";
-import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { buildMergeUpdates, findDuplicateContact, type DuplicateMatch } from "@/lib/contact-duplicate";
 import { toast } from "sonner";
 import UpgradePrompt from "@/components/UpgradePrompt";
@@ -127,30 +126,16 @@ const AddContactModal = ({ open, onClose, stages = [] }: AddContactModalProps) =
     e.target.value = "";
   };
 
-  const autoEnrich = useCallback(async (contactId: string, contact: Partial<Contact>) => {
-    try {
-      const data = await enrichContactViaIcypeas({ name: contact.name, company: contact.company, title: contact.title, email: contact.email, linkedin: contact.linkedin, website: contact.website });
-      if (!data?.enriched) return;
-      const updates: Partial<Contact> = { enriched: true, enrichedAt: new Date().toISOString() };
-      if (data.enriched.linkedin) updates.linkedin = data.enriched.linkedin;
-      if (data.enriched.website) updates.website = data.enriched.website;
-      if (data.enriched.location) updates.location = data.enriched.location;
-      if (data.enriched.industry) updates.industry = data.enriched.industry;
-      if (data.enriched.companySize) updates.companySize = data.enriched.companySize;
-      if (data.enriched.title && !contact.title) updates.title = data.enriched.title;
-      if (data.enriched.email && !contact.email) updates.email = data.enriched.email;
-      if (data.enriched.phone && !contact.phone) updates.phone = data.enriched.phone;
-      if (data.enriched.mobilePhone) updates.mobilePhone = data.enriched.mobilePhone;
-      if (data.enriched.workPhone) updates.workPhone = data.enriched.workPhone;
-      updateContact(contactId, updates);
-      toast.success(`${contact.name} enriched with verified data!`);
-    } catch {
-      // Silent fail — enrichment is best-effort
-    }
-  }, [updateContact]);
-
-  /** Persist a candidate that is known to be unique, and only then report success. */
+  /**
+   * Persist a candidate that is known to be unique, and only then report
+   * success. This is the only path that inserts a row, so the free-plan
+   * capacity check belongs here rather than ahead of duplicate detection.
+   *
+   * Background enrichment is owned by `AppContext.addContact`; starting a
+   * second Icypeas run here would double-spend the buyer's enrichment quota.
+   */
   const persistCandidate = async (candidate: Contact) => {
+    if (!canAddContact) { setShowUpgrade(true); return; }
     setSaving(true);
     try {
       const saved = await addContact(candidate);
@@ -159,10 +144,6 @@ const AddContactModal = ({ open, onClose, stages = [] }: AddContactModalProps) =
         return;
       }
       toast.success(`${candidate.name} saved!`);
-      // Auto-enrich in the background if not already enriched
-      if (!candidate.enriched) {
-        autoEnrich(saved.id, candidate);
-      }
       // Show LinkedIn connection prompt
       setSavedContactForLinkedIn({
         name: candidate.name,
@@ -184,10 +165,10 @@ const AddContactModal = ({ open, onClose, stages = [] }: AddContactModalProps) =
   /**
    * Single entry point for both capture paths: check the candidate against
    * saved contacts first, and hand the buyer a decision instead of silently
-   * creating a second record.
+   * creating a second record. Duplicate detection runs even at the free-plan
+   * limit, because merging needs no extra row.
    */
   const saveCandidate = async (candidate: Contact) => {
-    if (!canAddContact) { setShowUpgrade(true); return; }
     const match = findDuplicateContact(candidate, contacts);
     if (match) {
       setPendingCandidate(candidate);
@@ -210,8 +191,9 @@ const AddContactModal = ({ open, onClose, stages = [] }: AddContactModalProps) =
         return;
       }
       toast.success(`Merged into ${duplicate.contact.name}.`);
-      setPendingCandidate(null);
-      setDuplicate(null);
+      // Clear the capture form as well as the decision, so reopening the modal
+      // does not resurrect the candidate that was just merged away.
+      reset();
       onClose();
     } finally {
       setSaving(false);

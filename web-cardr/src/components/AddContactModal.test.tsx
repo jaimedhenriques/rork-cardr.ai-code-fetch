@@ -19,13 +19,14 @@ interface TestContact {
 }
 
 let contacts: TestContact[] = [];
+let canAddContact = true;
 
 vi.mock("@/context/AppContext", () => ({
   useApp: () => ({
     addContact,
     updateContact,
     folders: [],
-    canAddContact: true,
+    canAddContact,
     contacts,
     contactLimit: 50,
     isGuest: true,
@@ -43,8 +44,10 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: { functions: { invoke: vi.fn() } },
 }));
 
+const enrichContactViaIcypeas = vi.fn().mockResolvedValue(null);
+
 vi.mock("@/lib/icypeas", () => ({
-  enrichContactViaIcypeas: vi.fn().mockResolvedValue(null),
+  enrichContactViaIcypeas: (...args: unknown[]) => enrichContactViaIcypeas(...args),
 }));
 
 vi.mock("@/components/UpgradePrompt", () => ({ default: () => null }));
@@ -96,8 +99,10 @@ const save = () => fireEvent.click(screen.getByRole("button", { name: /save cont
 beforeEach(() => {
   vi.clearAllMocks();
   contacts = [];
+  canAddContact = true;
   addContact.mockResolvedValue({ id: "server-1", name: "Saved" });
   updateContact.mockResolvedValue(true);
+  enrichContactViaIcypeas.mockResolvedValue(null);
 });
 
 describe("AddContactModal duplicate gate", () => {
@@ -226,5 +231,88 @@ describe("AddContactModal persistence result", () => {
     await waitFor(() => expect(toastError).toHaveBeenCalled());
     expect(toastSuccess).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
+  });
+});
+
+describe("AddContactModal free-plan limit", () => {
+  it("still offers the merge decision and completes it at the contact limit", async () => {
+    canAddContact = false;
+    contacts = [EXISTING];
+    openManualTab();
+    fill("John Doe", "Dana R.");
+    fill("john@company.com", "dana@acme.com");
+    save();
+
+    expect(await screen.findByTestId("duplicate-decision")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /merge into existing/i }));
+
+    await waitFor(() => expect(updateContact).toHaveBeenCalledTimes(1));
+    expect(updateContact.mock.calls[0][0]).toBe("c1");
+    expect(addContact).not.toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("blocks a unique insertion at the contact limit", async () => {
+    canAddContact = false;
+    openManualTab();
+    fill("John Doe", "Sam Cole");
+    fill("john@company.com", "sam@globex.com");
+    save();
+
+    await waitFor(() => expect(screen.getByTestId("stage-select")).toBeInTheDocument());
+    expect(addContact).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("blocks saving a duplicate separately at the contact limit", async () => {
+    canAddContact = false;
+    contacts = [EXISTING];
+    openManualTab();
+    fill("John Doe", "Dana R.");
+    fill("john@company.com", "dana@acme.com");
+    save();
+
+    await screen.findByTestId("duplicate-decision");
+    fireEvent.click(screen.getByRole("button", { name: /save separately/i }));
+
+    await waitFor(() => expect(screen.getByTestId("duplicate-decision")).toBeInTheDocument());
+    expect(addContact).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});
+
+describe("AddContactModal post-merge state", () => {
+  it("clears the capture form after a successful merge", async () => {
+    contacts = [EXISTING];
+    openManualTab();
+    fill("John Doe", "Dana R.");
+    fill("john@company.com", "dana@acme.com");
+    selectStage("stage-qualified");
+    save();
+
+    await screen.findByTestId("duplicate-decision");
+    fireEvent.click(screen.getByRole("button", { name: /merge into existing/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(screen.queryByTestId("duplicate-decision")).not.toBeInTheDocument();
+
+    // Reopening the capture form must not resurrect the merged candidate.
+    fireEvent.click(screen.getByText("Manual Entry"));
+    expect((screen.getByPlaceholderText("John Doe") as HTMLInputElement).value).toBe("");
+    expect((screen.getByPlaceholderText("john@company.com") as HTMLInputElement).value).toBe("");
+    expect((screen.getByTestId("stage-select") as HTMLSelectElement).value).toBe("");
+  });
+});
+
+describe("AddContactModal enrichment ownership", () => {
+  it("leaves enrichment to the store on a unique save", async () => {
+    openManualTab();
+    fill("John Doe", "Sam Cole");
+    fill("john@company.com", "sam@globex.com");
+    save();
+
+    await waitFor(() => expect(addContact).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(enrichContactViaIcypeas).not.toHaveBeenCalled();
   });
 });
