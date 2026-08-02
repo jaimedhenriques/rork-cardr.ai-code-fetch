@@ -82,6 +82,37 @@ export function resolveBase(candidates, cwd) {
   return null;
 }
 
+/**
+ * Split an ESLint JSON report into failures and advisories, keeping only
+ * messages that sit on an added line. A message with no line is a file-level
+ * parse or config error and always fails.
+ *
+ * @param {{filePath: string, messages?: {line?: number, column?: number, severity?: number, fatal?: boolean, message?: string, ruleId?: string|null}[]}[]} report
+ * @param {Map<string, Set<number>>} targets absolute path -> added line numbers
+ * @returns {{failures: string[], advisory: number}}
+ */
+export function selectAddedLineMessages(report, targets, relativize = (value) => value) {
+  const failures = [];
+  let advisory = 0;
+  for (const result of report || []) {
+    const lines = targets.get(path.resolve(result.filePath));
+    if (!lines) continue;
+    for (const message of result.messages || []) {
+      const onAddedLine = message.line === undefined || lines.has(message.line);
+      if (!onAddedLine) continue;
+      if (message.severity === 2 || message.fatal) {
+        failures.push(
+          `${relativize(result.filePath)}:${message.line ?? "?"}:${message.column ?? "?"}` +
+            `  ${message.message}  ${message.ruleId ?? "fatal"}`,
+        );
+      } else {
+        advisory += 1;
+      }
+    }
+  }
+  return { failures, advisory };
+}
+
 function parseArgs(argv) {
   const args = { base: process.env.CHANGED_LINES_BASE || "" };
   for (let i = 0; i < argv.length; i += 1) {
@@ -150,25 +181,9 @@ function main() {
     process.exit(2);
   }
 
-  const failures = [];
-  let advisory = 0;
-  for (const result of report) {
-    const lines = targets.get(path.resolve(result.filePath));
-    if (!lines) continue;
-    for (const message of result.messages || []) {
-      // A message without a line is a file-level failure (parse/config error).
-      const onAddedLine = message.line === undefined || lines.has(message.line);
-      if (!onAddedLine) continue;
-      if (message.severity === 2 || message.fatal) {
-        failures.push(
-          `${path.relative(cwd, result.filePath)}:${message.line ?? "?"}:${message.column ?? "?"}` +
-            `  ${message.message}  ${message.ruleId ?? "fatal"}`,
-        );
-      } else {
-        advisory += 1;
-      }
-    }
-  }
+  const { failures, advisory } = selectAddedLineMessages(report, targets, (file) =>
+    path.relative(cwd, file),
+  );
 
   console.log(
     `changed-line lint: base ${base}, ${targets.size} changed file(s), ` +

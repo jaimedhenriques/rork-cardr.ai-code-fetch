@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import path from "node:path";
+
 import {
   isLintable,
   parseAddedLines,
   resolveBase,
+  selectAddedLineMessages,
 } from "../../scripts/lint-changed-lines.mjs";
 
 const DIFF = [
@@ -71,6 +74,55 @@ describe("isLintable", () => {
     expect(isLintable("scripts/a.mjs")).toBe(true);
     expect(isLintable("scripts/schema.sql")).toBe(false);
     expect(isLintable(".github/workflows/ci.yml")).toBe(false);
+  });
+});
+
+describe("selectAddedLineMessages", () => {
+  const changed = path.resolve("src/changed.ts");
+  const untouched = path.resolve("src/untouched.ts");
+  const targets = new Map([[changed, new Set([12, 40])]]);
+  const report = [
+    {
+      filePath: changed,
+      messages: [
+        // Baseline debt on an untouched line: ignored.
+        { line: 5, column: 1, severity: 2, message: "Unexpected any", ruleId: "no-explicit-any" },
+        // New debt on an added line: fails the gate.
+        { line: 12, column: 3, severity: 2, message: "Unexpected any", ruleId: "no-explicit-any" },
+        // Warning on an added line: advisory only.
+        { line: 40, column: 1, severity: 1, message: "Fast refresh", ruleId: "react-refresh" },
+      ],
+    },
+    {
+      filePath: untouched,
+      messages: [{ line: 1, column: 1, severity: 2, message: "Unexpected any", ruleId: "no-explicit-any" }],
+    },
+  ];
+
+  it("fails only on errors that land on added lines", () => {
+    const { failures, advisory } = selectAddedLineMessages(report, targets);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain(":12:3");
+    expect(failures[0]).toContain("no-explicit-any");
+    expect(advisory).toBe(1);
+  });
+
+  it("ignores files with no added lines", () => {
+    const { failures } = selectAddedLineMessages(report, targets);
+    expect(failures.some((entry) => entry.includes("untouched"))).toBe(false);
+  });
+
+  it("fails a file-level message that carries no line", () => {
+    const fatal = [
+      { filePath: changed, messages: [{ severity: 2, fatal: true, message: "Parsing error", ruleId: null }] },
+    ];
+    const { failures } = selectAddedLineMessages(fatal, targets);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain("Parsing error");
+  });
+
+  it("passes a clean report", () => {
+    expect(selectAddedLineMessages([{ filePath: changed, messages: [] }], targets).failures).toEqual([]);
   });
 });
 
