@@ -1,0 +1,204 @@
+{
+  "issue": "CAR-46",
+  "issueId": "07f85e63-cb2a-43c4-9d45-6e111c3f7f1c",
+  "maker": "Claude Code CAR-46 maker",
+  "codingTool": "claude-code",
+  "startedAt": "2026-08-02T16:12:14Z",
+  "workspace": "/Volumes/HELIX-4TB/Helix-Labs/Agent-Workspaces/cardr-mvp-20260802",
+
+  "baseline": {
+    "headBeforeWork": "9e900ac52d78792e686b3ab1699a655d8691679b",
+    "branch": "helix/cardr-mvp-scan-pipeline-20260802",
+    "initialStatus": "untracked .helix/ only",
+    "remote": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch.git",
+    "scopedLintBaseline": {
+      "command": "bunx eslint src/components/AddContactModal.tsx src/pages/Contacts.tsx src/context/AppContext.tsx",
+      "result": "67 problems (64 errors, 3 warnings)",
+      "perFileErrors": {
+        "src/components/AddContactModal.tsx": 3,
+        "src/context/AppContext.tsx": 12,
+        "src/pages/Contacts.tsx": 49
+      }
+    },
+    "typecheckBaseline": {
+      "command": "bunx tsc --noEmit -p tsconfig.app.json",
+      "result": "clean"
+    }
+  },
+
+  "prDisposition": {
+    "pr4": {
+      "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/pull/4",
+      "headVerified": "7fcd91bd0b0e6ecc47af1eeccf7def087ac0f7da",
+      "shapeVerified": "OPEN, base main, 5 files, +27/-12",
+      "appliedBy": "git cherry-pick -n 7fcd91bd0b0e6ecc47af1eeccf7def087ac0f7da",
+      "intermediateCommit": false,
+      "carriedOnce": true,
+      "preservationChecks": {
+        "asAnyOccurrencesInAddContactModal": 0,
+        "catchUnknownPresent": "AddContactModal.tsx:95 catch (err: unknown)",
+        "otherFourFilesDiffVsPr4Head": "empty (byte-identical)"
+      }
+    },
+    "pr3": {
+      "retained": "nothing",
+      "webCardrVercelJsonCreated": false,
+      "trackedVercelConfigs": ["vercel.json"]
+    }
+  },
+
+  "implementation": {
+    "newFiles": [
+      "web-cardr/src/lib/contact-duplicate.ts",
+      "web-cardr/src/lib/contact-insert.ts",
+      "web-cardr/src/lib/contact-duplicate.test.ts",
+      "web-cardr/src/lib/contact-insert.test.ts",
+      "web-cardr/src/components/AddContactModal.test.tsx",
+      ".github/workflows/cardr-web-ci.yml"
+    ],
+    "modifiedFiles": [
+      "web-cardr/src/components/AddContactModal.tsx",
+      "web-cardr/src/pages/Contacts.tsx",
+      "web-cardr/src/context/AppContext.tsx",
+      "web-cardr/src/components/IntegrationsSection.tsx",
+      "web-cardr/src/components/calendar/CalendarEventCard.tsx",
+      "web-cardr/src/components/calendar/CalendarListView.tsx",
+      "web-cardr/src/components/ui/textarea.tsx"
+    ],
+    "migrationRequired": false,
+    "scannerTouched": false,
+    "notes": "Client-side duplicate protection only; no database uniqueness constraint exists, so this is not race-proof enforcement."
+  },
+
+  "tdd": {
+    "redCommand": "bunx vitest run src/lib/contact-duplicate.test.ts src/lib/contact-insert.test.ts src/components/AddContactModal.test.tsx",
+    "redResult": "3 test files failed, 7 tests failed (two lib suites failed to collect: modules not yet implemented)",
+    "greenResult": "3 test files passed, 19 tests passed",
+    "coveredBehaviours": [
+      "duplicate email shows a duplicate decision and does not call addContact",
+      "phone normalizing to an existing +1 number shows a duplicate decision and does not call addContact",
+      "merge fills only blank fields, preserves existing non-empty fields, and calls updateContact(existing.id, ...) with the selected stageId",
+      "save-separately after a duplicate calls addContact once and never updateContact",
+      "unique candidate with a selected stage calls addContact once with that stageId",
+      "stage selector defaults to Unassigned and sends no stageId",
+      "authenticated insertion maps stageId to Supabase stage_id and sends null when unassigned",
+      "null insertion result does not toast success and does not close the modal"
+    ]
+  },
+
+  "verification": {
+    "install": {
+      "command": "bun install --frozen-lockfile",
+      "cwd": "web-cardr",
+      "result": "572 packages installed, exit 0",
+      "lockfileChanged": false
+    },
+    "tests": {
+      "command": "bun run test",
+      "result": "11 test files passed, 54 tests passed"
+    },
+    "typecheck": {
+      "command": "bunx tsc --noEmit -p tsconfig.app.json",
+      "result": "clean"
+    },
+    "build": {
+      "command": "bun run build",
+      "result": "built in 1.48s, exit 0"
+    },
+    "scopedLintAfter": {
+      "command": "bunx eslint <12 changed files>",
+      "result": "64 problems (61 errors, 3 warnings)",
+      "perFileErrors": {
+        "src/components/AddContactModal.tsx": 0,
+        "src/components/AddContactModal.test.tsx": 0,
+        "src/lib/contact-duplicate.ts": 0,
+        "src/lib/contact-duplicate.test.ts": 0,
+        "src/lib/contact-insert.ts": 0,
+        "src/lib/contact-insert.test.ts": 0,
+        "src/components/IntegrationsSection.tsx": 0,
+        "src/components/calendar/CalendarEventCard.tsx": 0,
+        "src/components/calendar/CalendarListView.tsx": 0,
+        "src/components/ui/textarea.tsx": 0,
+        "src/context/AppContext.tsx": 12,
+        "src/pages/Contacts.tsx": 49
+      },
+      "assessment": "Every new file and every file PR #4 touches is clean. AddContactModal.tsx dropped 3 to 0. AppContext.tsx and Contacts.tsx are unchanged from their pre-existing baseline; the known 592-error backlog was not touched."
+    },
+    "whitespace": {
+      "command": "git diff --check",
+      "result": "clean"
+    },
+    "secretScan": {
+      "command": "git diff --cached | grep -inE '^\\+.*(api[_-]?key|secret|password|token|bearer |sk-…|eyJ…|BEGIN PRIVATE KEY)'",
+      "result": "no matches"
+    }
+  },
+
+  "delivery": {
+    "productCommit": "172346641adf9e400b04a7a2b88c21829f284ca2",
+    "commitSubject": "feat(cardr): prevent duplicate capture and assign pipeline stage",
+    "filesInCommit": 13,
+    "diffstat": "783 insertions(+), 59 deletions(-)",
+    "pushedBranch": "helix/cardr-mvp-scan-pipeline-20260802",
+    "mainPushed": false,
+    "forcePushed": false,
+    "pullRequest": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/pull/5",
+    "prHeadReadback": "172346641adf9e400b04a7a2b88c21829f284ca2",
+    "merged": false,
+    "productionPromoted": false
+  },
+
+  "checks": {
+    "requiredCheck": "Cardr web CI",
+    "state": "pass",
+    "durations": "1m0s",
+    "runs": [
+      "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756478204/job/91519403130",
+      "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756491911/job/91519438540"
+    ],
+    "otherChecks": {
+      "Vercel": "pass",
+      "Vercel Preview Comments": "pass",
+      "Vercel Agent Review": "skipping",
+      "CodeRabbit": "pass"
+    },
+    "note": "The workflow triggers on both push and pull_request, so two identically named runs appear. Both passed."
+  },
+
+  "vercel": {
+    "teamId": "team_pe74HMcqhmeKmVMl8AGbuX2F",
+    "projectId": "prj_aCV2ZbhhvJAQoJfW29oQWXHGFZY9",
+    "deploymentId": "dpl_CJ2LCaDPhJMzmHC24gpxM9wEHZFN",
+    "deploymentUrl": "https://web-cardr-obyiad017-jaime-henriques-projects.vercel.app",
+    "branchAlias": "https://web-cardr-git-helix-cardr-mvp-s-88fbe1-jaime-henriques-projects.vercel.app",
+    "inspectorUrl": "https://vercel.com/jaime-henriques-projects/web-cardr/CJ2LCaDPhJMzmHC24gpxM9wEHZFN",
+    "state": "READY",
+    "target": null,
+    "productionPromotion": false,
+    "deploymentCommit": "172346641adf9e400b04a7a2b88c21829f284ca2",
+    "commitBindingVerified": true,
+    "createdBy": "Vercel Git integration (no manual CLI deploy)",
+    "readbackSource": "Vercel MCP list_deployments"
+  },
+
+  "smoke": {
+    "attempted": [
+      "GET / on the preview",
+      "GET /contacts on the preview",
+      "GET /auth on the preview"
+    ],
+    "result": "All three return HTTP 302 to https://vercel.com/sso-api",
+    "blocker": "Vercel deployment protection (SSO) fronts this preview. Unauthenticated buyer-path smoke on the deployed URL is not possible, and authenticating would require a browser OAuth flow plus a deployment-protection change, both of which are hard-gated for this maker.",
+    "compensatingEvidence": "The buyer path is covered end to end by the 19 focused automated tests listed under tdd.coveredBehaviours, plus the full 54-test suite, typecheck, and build, all green on this exact commit in CI.",
+    "uiEvidenceFabricated": false
+  },
+
+  "stopPoint": "Stopped before merge and before any production promotion. Awaiting independent Codex checker approval.",
+
+  "openItems": [
+    "Independent Codex checker approval is pending.",
+    "Deployed-URL buyer-path smoke remains unverified because of Vercel SSO deployment protection.",
+    "Clearing a stage with stageId: undefined is still not persisted by AppContext.updateContact (AppContext.tsx maps only defined values). Known adjacent defect, out of CAR-46 scope.",
+    "Duplicate policy remains inconsistent across the scanner, bulk import, and post-hoc merge; only the AddContactModal path was unified."
+  ]
+}

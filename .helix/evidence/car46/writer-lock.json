@@ -1,0 +1,31 @@
+{
+  "issue": "CAR-46",
+  "issueId": "07f85e63-cb2a-43c4-9d45-6e111c3f7f1c",
+  "workspace": "/Volumes/HELIX-4TB/Helix-Labs/Agent-Workspaces/cardr-mvp-20260802",
+  "repo": "jaimedhenriques/rork-cardr.ai-code-fetch",
+  "branch": "helix/cardr-mvp-scan-pipeline-20260802",
+  "expectedBaseline": {
+    "head": "9e900ac52d78792e686b3ab1699a655d8691679b",
+    "verifiedHead": "9e900ac52d78792e686b3ab1699a655d8691679b",
+    "initialStatus": "untracked .helix/ only",
+    "pr4Head": "7fcd91bd0b0e6ecc47af1eeccf7def087ac0f7da",
+    "pr4Verified": "OPEN, base main, 5 files, +27/-12"
+  },
+  "owner": "Claude Code CAR-46 maker",
+  "startedAt": "2026-08-02T16:12:14Z",
+  "releasedAt": "2026-08-02T16:27:00Z",
+  "state": "released",
+  "productCommit": "172346641adf9e400b04a7a2b88c21829f284ca2",
+  "pullRequest": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/pull/5",
+  "scope": "web-cardr buyer slice (duplicate detection + pipeline stage on capture), PR #4 carry-once, Cardr web CI workflow",
+  "forbidden": [
+    "merge PR",
+    "production promotion",
+    "push main",
+    "force push",
+    "lockfile changes",
+    "supabase schema or migrations",
+    "ios-cardr / cardscapro edits",
+    "broad lint cleanup"
+  ]
+}

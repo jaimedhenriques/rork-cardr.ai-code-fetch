@@ -1,0 +1,37 @@
+{
+  "issue": "CAR-46",
+  "checkName": "Cardr web CI",
+  "commit": "172346641adf9e400b04a7a2b88c21829f284ca2",
+  "branch": "helix/cardr-mvp-scan-pipeline-20260802",
+  "pullRequest": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/pull/5",
+  "state": "pass",
+  "readbackCommand": "gh pr checks 5",
+  "readbackAt": "2026-08-02T16:26:00Z",
+  "runs": [
+    {
+      "trigger": "pull_request",
+      "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756478204/job/91519403130",
+      "conclusion": "pass",
+      "duration": "1m0s"
+    },
+    {
+      "trigger": "push",
+      "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756491911/job/91519438540",
+      "conclusion": "pass",
+      "duration": "1m0s"
+    }
+  ],
+  "workflowFile": ".github/workflows/cardr-web-ci.yml",
+  "jobSteps": [
+    "actions/checkout@v4",
+    "oven-sh/setup-bun@v2",
+    "bun install --frozen-lockfile",
+    "bunx tsc --noEmit -p tsconfig.app.json",
+    "bun run test",
+    "bun run build"
+  ],
+  "lintStrategy": "Whole-repo ESLint carries a known 592-error baseline, so CI gates on the project typecheck. ESLint is run scoped to changed files during delivery; see execution.json verification.scopedLintAfter.",
+  "annotations": [
+    "Node.js 20 deprecation notice for actions/checkout@v4 (informational, non-failing)"
+  ]
+}
