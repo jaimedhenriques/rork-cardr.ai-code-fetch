@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { triggerWebhooks } from "@/lib/webhook";
 import { fireWebhook } from "@/lib/webhooks";
 import { dedupePhonePatch } from "@/lib/phone-dedup";
+import { buildContactInsert } from "@/lib/contact-insert";
 import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { cleanFolderName, findFolderByName } from "@/lib/folder-match";
 
@@ -343,15 +344,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return c;
     }
     if (!user) return null;
-    const { data, error } = await supabase.from("contacts").insert({
-      user_id: user.id, name: c.name, company: c.company, title: c.title,
-      email: c.email, phone: c.phone, avatar: c.avatar,
-      folder_id: c.folderId || null, notes: c.notes,
-      linkedin: c.linkedin, website: c.website, location: c.location,
-      industry: c.industry, company_size: c.companySize,
-      enriched: c.enriched || false, enriched_at: c.enrichedAt || null,
-      scanned_at: c.scannedAt,
-    }).select().single();
+    const { data, error } = await supabase
+      .from("contacts")
+      .insert(buildContactInsert(user.id, c))
+      .select()
+      .single();
     if (data) {
       const mapped = mapContact(data);
       setContacts((prev) => [mapped, ...prev]);

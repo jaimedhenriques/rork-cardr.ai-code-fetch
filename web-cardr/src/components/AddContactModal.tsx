@@ -1,31 +1,45 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Upload, UserPlus, Camera, Loader2, Image, Sparkles, Globe, Linkedin, MapPin } from "lucide-react";
+import { X, Check, Upload, UserPlus, Camera, Loader2, Image, Sparkles, Globe, Linkedin, MapPin, Users } from "lucide-react";
 import { useApp, type Contact } from "@/context/AppContext";
 
 import { supabase } from "@/integrations/supabase/client";
 import { enrichContactViaIcypeas } from "@/lib/icypeas";
+import { buildMergeUpdates, findDuplicateContact, type DuplicateMatch } from "@/lib/contact-duplicate";
 import { toast } from "sonner";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import LinkedInConnectModal from "@/components/LinkedInConnectModal";
 
 type Tab = "manual" | "image";
 
+export interface PipelineStageOption {
+  id: string;
+  name: string;
+  color: string;
+  sort_order: number;
+}
+
 interface AddContactModalProps {
   open: boolean;
   onClose: () => void;
+  /** Pipeline stages already loaded by the parent page. */
+  stages?: PipelineStageOption[];
 }
 
-const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
+const AddContactModal = ({ open, onClose, stages = [] }: AddContactModalProps) => {
   const { addContact, updateContact, folders, canAddContact, contacts, contactLimit, isGuest } = useApp();
   const [tab, setTab] = useState<Tab>("image");
   const [scanning, setScanning] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [scannedData, setScannedData] = useState<Partial<Contact> | null>(null);
   const [selectedFolder, setSelectedFolder] = useState("");
+  const [selectedStage, setSelectedStage] = useState("");
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [manualData, setManualData] = useState({ name: "", company: "", title: "", email: "", phone: "", notes: "" });
   const [savedContactForLinkedIn, setSavedContactForLinkedIn] = useState<Partial<Contact> | null>(null);
+  const [pendingCandidate, setPendingCandidate] = useState<Contact | null>(null);
+  const [duplicate, setDuplicate] = useState<DuplicateMatch | null>(null);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -34,7 +48,11 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
     setScanning(false);
     setManualData({ name: "", company: "", title: "", email: "", phone: "", notes: "" });
     setSelectedFolder("");
+    setSelectedStage("");
     setSavedContactForLinkedIn(null);
+    setPendingCandidate(null);
+    setDuplicate(null);
+    setSaving(false);
     setTab("image");
   };
 
@@ -74,9 +92,10 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
         enrichedAt: new Date().toISOString(),
       });
       toast.success("Contact info extracted!");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Scan error:", err);
-      toast.error(err.message || "Failed to extract contact info.");
+      const message = err instanceof Error ? err.message : "Failed to extract contact info.";
+      toast.error(message);
       setCapturedImage(null);
     } finally {
       setScanning(false);
@@ -130,12 +149,83 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
     }
   }, [updateContact]);
 
+  /** Persist a candidate that is known to be unique, and only then report success. */
+  const persistCandidate = async (candidate: Contact) => {
+    setSaving(true);
+    try {
+      const saved = await addContact(candidate);
+      if (!saved) {
+        toast.error(`Could not save ${candidate.name}. Please try again.`);
+        return;
+      }
+      toast.success(`${candidate.name} saved!`);
+      // Auto-enrich in the background if not already enriched
+      if (!candidate.enriched) {
+        autoEnrich(saved.id, candidate);
+      }
+      // Show LinkedIn connection prompt
+      setSavedContactForLinkedIn({
+        name: candidate.name,
+        company: candidate.company,
+        title: candidate.title,
+        linkedin: candidate.linkedin,
+        notes: candidate.notes,
+        industry: candidate.industry,
+        location: candidate.location,
+      });
+      setPendingCandidate(null);
+      setDuplicate(null);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Single entry point for both capture paths: check the candidate against
+   * saved contacts first, and hand the buyer a decision instead of silently
+   * creating a second record.
+   */
+  const saveCandidate = async (candidate: Contact) => {
+    if (!canAddContact) { setShowUpgrade(true); return; }
+    const match = findDuplicateContact(candidate, contacts);
+    if (match) {
+      setPendingCandidate(candidate);
+      setDuplicate(match);
+      return;
+    }
+    await persistCandidate(candidate);
+  };
+
+  const handleMergeDuplicate = async () => {
+    if (!duplicate || !pendingCandidate) return;
+    setSaving(true);
+    try {
+      const updates = buildMergeUpdates(duplicate.contact, pendingCandidate);
+      await updateContact(duplicate.contact.id, updates);
+      toast.success(`Merged into ${duplicate.contact.name}.`);
+      setPendingCandidate(null);
+      setDuplicate(null);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveSeparately = async () => {
+    if (!pendingCandidate) return;
+    await persistCandidate(pendingCandidate);
+  };
+
+  const handleCancelDuplicate = () => {
+    setPendingCandidate(null);
+    setDuplicate(null);
+  };
+
   const handleSaveScanned = () => {
     if (!scannedData?.name) return;
-    if (!canAddContact) { setShowUpgrade(true); return; }
-    const contactId = Date.now().toString();
-    addContact({
-      id: contactId,
+    void saveCandidate({
+      id: Date.now().toString(),
       name: scannedData.name || "", company: scannedData.company || "",
       title: scannedData.title || "", email: scannedData.email || "",
       phone: scannedData.phone || "",
@@ -144,47 +234,38 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
       companySize: scannedData.companySize, enriched: scannedData.enriched,
       enrichedAt: scannedData.enrichedAt, notes: scannedData.notes,
       folderId: selectedFolder || undefined,
+      stageId: selectedStage || undefined,
       scannedAt: new Date().toISOString(),
     });
-    toast.success(`${scannedData.name} saved!`);
-    // Auto-enrich in the background if not already enriched
-    if (!scannedData.enriched) {
-      autoEnrich(contactId, scannedData);
-    }
-    // Show LinkedIn connection prompt
-    setSavedContactForLinkedIn({
-      name: scannedData.name,
-      company: scannedData.company,
-      title: scannedData.title,
-      linkedin: scannedData.linkedin,
-      notes: scannedData.notes,
-      industry: scannedData.industry as any,
-      location: scannedData.location as any,
-    });
-    onClose();
   };
 
   const handleManualSave = () => {
     if (!manualData.name.trim()) { toast.error("Name is required"); return; }
-    if (!canAddContact) { setShowUpgrade(true); return; }
-    addContact({
+    void saveCandidate({
       id: Date.now().toString(),
       name: manualData.name.trim(), company: manualData.company.trim(),
       title: manualData.title.trim(), email: manualData.email.trim(),
       phone: manualData.phone.trim(), notes: manualData.notes.trim() || undefined,
       folderId: selectedFolder || undefined,
+      stageId: selectedStage || undefined,
       scannedAt: new Date().toISOString(),
     });
-    toast.success(`${manualData.name} saved!`);
-    // Show LinkedIn connection prompt
-    setSavedContactForLinkedIn({
-      name: manualData.name.trim(),
-      company: manualData.company.trim(),
-      title: manualData.title.trim(),
-      notes: manualData.notes.trim() || undefined,
-    });
-    onClose();
   };
+
+  const stageSelector = (
+    <div>
+      <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1 block">Pipeline Stage</label>
+      <select
+        data-testid="stage-select"
+        value={selectedStage}
+        onChange={(e) => setSelectedStage(e.target.value)}
+        className="input-field"
+      >
+        <option value="">Unassigned</option>
+        {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+      </select>
+    </div>
+  );
 
   return (
     <>
@@ -213,8 +294,57 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
                 </button>
               </div>
 
+              {/* Duplicate decision — shown before anything is written */}
+              {duplicate && pendingCandidate && (
+                <div data-testid="duplicate-decision" className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-warning-light flex items-center justify-center">
+                      <Users size={12} className="text-warning" />
+                    </div>
+                    <span className="text-xs font-semibold text-warning">Possible duplicate</span>
+                  </div>
+
+                  <p className="text-sm text-foreground">
+                    <span className="font-semibold">{duplicate.contact.name}</span> is already in your contacts with the same{" "}
+                    {duplicate.reason === "email" ? "email address" : "phone number"}.
+                  </p>
+
+                  <div className="p-3 rounded-xl bg-secondary/50 space-y-1 text-xs text-muted-foreground">
+                    {duplicate.contact.company && <div>{duplicate.contact.company}</div>}
+                    {duplicate.contact.email && <div>{duplicate.contact.email}</div>}
+                    {duplicate.contact.phone && <div>{duplicate.contact.phone}</div>}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Merging fills in blank fields on the saved contact and keeps everything it already has.
+                  </p>
+
+                  <button
+                    onClick={handleMergeDuplicate}
+                    disabled={saving}
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                  >
+                    <Check size={16} /> Merge into existing
+                  </button>
+                  <button
+                    onClick={handleSaveSeparately}
+                    disabled={saving}
+                    className="btn-secondary w-full flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                  >
+                    <UserPlus size={16} /> Save separately
+                  </button>
+                  <button
+                    onClick={handleCancelDuplicate}
+                    disabled={saving}
+                    className="btn-secondary w-full flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                  >
+                    <X size={16} /> Cancel
+                  </button>
+                </div>
+              )}
+
               {/* Tabs */}
-              {!scannedData && (
+              {!scannedData && !duplicate && (
                 <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-4">
                   {([
                     { id: "image" as Tab, icon: Image, label: "From Image" },
@@ -237,7 +367,7 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
               )}
 
               {/* Image Upload Tab */}
-              {tab === "image" && !scannedData && (
+              {tab === "image" && !scannedData && !duplicate && (
                 <div className="space-y-4">
                   {capturedImage ? (
                     <div className="relative rounded-xl overflow-hidden border border-border aspect-[4/3]">
@@ -271,7 +401,7 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
               )}
 
               {/* Manual Entry Tab */}
-              {tab === "manual" && !scannedData && (
+              {tab === "manual" && !scannedData && !duplicate && (
                 <div className="space-y-3">
                   {(["name", "company", "title", "email", "phone"] as const).map((field) => (
                     <div key={field}>
@@ -306,9 +436,11 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
                     </select>
                   </div>
 
+                  {stageSelector}
+
                   <button
                     onClick={handleManualSave}
-                    disabled={!manualData.name.trim()}
+                    disabled={!manualData.name.trim() || saving}
                     className="btn-primary w-full flex items-center justify-center gap-2 text-sm disabled:opacity-50"
                   >
                     <Check size={16} /> Save Contact
@@ -317,7 +449,7 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
               )}
 
               {/* Scanned Result (editable) */}
-              {scannedData && (
+              {scannedData && !duplicate && (
                 <div className="space-y-3">
                   {capturedImage && (
                     <div className="rounded-xl overflow-hidden border border-border h-24">
@@ -388,11 +520,13 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
                     </select>
                   </div>
 
+                  {stageSelector}
+
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => { setScannedData(null); setCapturedImage(null); }} className="btn-secondary flex items-center justify-center gap-2 text-sm">
                       <X size={16} /> Try Again
                     </button>
-                    <button onClick={handleSaveScanned} className="btn-primary flex items-center justify-center gap-2 text-sm">
+                    <button onClick={handleSaveScanned} disabled={saving} className="btn-primary flex items-center justify-center gap-2 text-sm disabled:opacity-50">
                       <Check size={16} /> Save
                     </button>
                   </div>

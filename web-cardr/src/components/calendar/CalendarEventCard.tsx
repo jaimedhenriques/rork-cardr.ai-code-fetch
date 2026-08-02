@@ -1,10 +1,23 @@
 import { format } from "date-fns";
 import { Bot, Clock, MapPin, Video, Users, Pencil, Trash2 } from "lucide-react";
 
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  start_time: string;
+  end_time?: string | null;
+  all_day?: boolean | null;
+  location?: string | null;
+  meeting_url?: string | null;
+  bot_enabled?: boolean | null;
+  linked_contacts?: { id: string; name: string }[] | null;
+}
+
 interface CalendarEventCardProps {
-  event: any;
+  event: CalendarEvent;
   contacts?: { id: string; name: string }[];
-  onEdit?: (event: any) => void;
+  onEdit?: (event: CalendarEvent) => void;
   onDelete?: (eventId: string) => void;
 }
 

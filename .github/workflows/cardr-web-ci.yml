@@ -1,0 +1,42 @@
+name: Cardr web CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: cardr-web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cardr-web-ci:
+    # The job name is the status-check name required by CAR-46. Keep it exact
+    # and keep this job matrix-free, or the check name gains a suffix.
+    name: Cardr web CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-cardr
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Whole-repo ESLint carries a known 592-error baseline, so CI gates on
+      # the project typecheck instead of a lint run that can never go green.
+      # Lint is run scoped to changed files during delivery.
+      - name: Typecheck
+        run: bunx tsc --noEmit -p tsconfig.app.json
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
