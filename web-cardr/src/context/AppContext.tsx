@@ -5,6 +5,7 @@ import { triggerWebhooks } from "@/lib/webhook";
 import { fireWebhook } from "@/lib/webhooks";
 import { dedupePhonePatch } from "@/lib/phone-dedup";
 import { buildContactInsert } from "@/lib/contact-insert";
+import { contactWriteSucceeded } from "@/lib/contact-update";
 import { enrichContactViaIcypeas } from "@/lib/icypeas";
 import { cleanFolderName, findFolderByName } from "@/lib/folder-match";
 
@@ -104,7 +105,8 @@ interface AppState {
   enrichingIds: Set<string>;
   setContacts: (c: Contact[]) => void;
   addContact: (c: Contact) => Promise<Contact | null> | void;
-  updateContact: (id: string, updates: Partial<Contact>) => void;
+  /** Resolves true only when the update was persisted; false when it was rejected. */
+  updateContact: (id: string, updates: Partial<Contact>) => Promise<boolean>;
   deleteContact: (id: string) => void;
   setFolders: (f: Folder[]) => void;
   addFolder: (f: Folder) => Promise<Folder | null>;
@@ -449,14 +451,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, [user, isGuest, contacts]);
 
-  const updateContact = useCallback(async (id: string, updates: Partial<Contact>) => {
+  const updateContact = useCallback(async (id: string, updates: Partial<Contact>): Promise<boolean> => {
     if (isGuest) {
       const updated = contacts.map((c) => (c.id === id ? { ...c, ...updates } : c));
       setContacts(updated);
       saveLocal(GUEST_CONTACTS_KEY, updated);
-      return;
+      return true;
     }
-    if (!user) return;
+    if (!user) return false;
     const dbUpdates: any = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.company !== undefined) dbUpdates.company = updates.company;
@@ -488,7 +490,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (updates.foundingYear !== undefined) dbUpdates.founding_year = updates.foundingYear;
     if (updates.annualRevenue !== undefined) dbUpdates.annual_revenue = updates.annualRevenue;
     if (updates.companyType !== undefined) dbUpdates.company_type = updates.companyType;
-    await supabase.from("contacts").update(dbUpdates).eq("id", id).eq("user_id", user.id);
+    // Supabase resolves with `{ error }` rather than rejecting, so a rejected
+    // write must be caught here before local state, webhooks, or any caller
+    // treats the contact as updated.
+    const result = await supabase.from("contacts").update(dbUpdates).eq("id", id).eq("user_id", user.id);
+    if (!contactWriteSucceeded(result)) {
+      console.error("Error updating contact:", result?.error);
+      return false;
+    }
     setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     // Trigger contact.updated webhook (legacy + new)
     const existing = contacts.find((c) => c.id === id);
@@ -499,6 +508,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     triggerWebhooks("contact.updated", updatePayload);
     fireWebhook("contact.updated", updatePayload);
+    return true;
   }, [user, isGuest, contacts]);
 
   const deleteContact = useCallback(async (id: string) => {

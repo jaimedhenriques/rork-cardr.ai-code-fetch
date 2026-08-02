@@ -5,6 +5,10 @@ on:
     branches: ["**"]
   pull_request:
 
+# Least privilege: this workflow only reads the checkout.
+permissions:
+  contents: read
+
 concurrency:
   group: cardr-web-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -21,6 +25,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so the changed-line lint can reach its base commit.
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -29,9 +36,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Whole-repo ESLint carries a known 592-error baseline, so CI gates on
-      # the project typecheck instead of a lint run that can never go green.
-      # Lint is run scoped to changed files during delivery.
+      # Whole-repo ESLint carries a known 592-error baseline, so CI cannot gate
+      # on `eslint .`. It gates on lint messages that land on lines this event
+      # added: pull requests compare against the PR base, pushes against the
+      # previous head, and an unusable base fails the job instead of passing.
+      - name: Lint changed lines
+        env:
+          CHANGED_LINES_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/lint-changed-lines.mjs
+
       - name: Typecheck
         run: bunx tsc --noEmit -p tsconfig.app.json
 

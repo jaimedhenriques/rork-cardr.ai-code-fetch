@@ -202,7 +202,13 @@ const AddContactModal = ({ open, onClose, stages = [] }: AddContactModalProps) =
     setSaving(true);
     try {
       const updates = buildMergeUpdates(duplicate.contact, pendingCandidate);
-      await updateContact(duplicate.contact.id, updates);
+      const merged = await updateContact(duplicate.contact.id, updates);
+      if (!merged) {
+        // Leave the decision on screen so the buyer can retry instead of
+        // walking away believing the duplicate was resolved.
+        toast.error(`Could not merge into ${duplicate.contact.name}. Please try again.`);
+        return;
+      }
       toast.success(`Merged into ${duplicate.contact.name}.`);
       setPendingCandidate(null);
       setDuplicate(null);

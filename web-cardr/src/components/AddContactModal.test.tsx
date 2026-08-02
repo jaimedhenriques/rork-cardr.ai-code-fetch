@@ -97,7 +97,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   contacts = [];
   addContact.mockResolvedValue({ id: "server-1", name: "Saved" });
-  updateContact.mockResolvedValue(undefined);
+  updateContact.mockResolvedValue(true);
 });
 
 describe("AddContactModal duplicate gate", () => {
@@ -148,6 +148,29 @@ describe("AddContactModal duplicate gate", () => {
     expect(updates.company).toBeUndefined();
     expect(updates.email).toBeUndefined();
     expect(addContact).not.toHaveBeenCalled();
+    // A merge that the store accepted must still report success and close.
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(toastSuccess).toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("keeps the modal open and reports the failure when the merge write is rejected", async () => {
+    updateContact.mockResolvedValue(false);
+    contacts = [EXISTING];
+    openManualTab();
+    fill("John Doe", "Dana R.");
+    fill("john@company.com", "dana@acme.com");
+    save();
+
+    await screen.findByTestId("duplicate-decision");
+    fireEvent.click(screen.getByRole("button", { name: /merge into existing/i }));
+
+    await waitFor(() => expect(updateContact).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    // The buyer keeps the decision in front of them and can retry.
+    expect(screen.getByTestId("duplicate-decision")).toBeInTheDocument();
   });
 
   it("saves separately when the buyer rejects the merge", async () => {
