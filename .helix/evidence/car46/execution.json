@@ -3,6 +3,8 @@
   "issueId": "07f85e63-cb2a-43c4-9d45-6e111c3f7f1c",
   "maker": "Claude Code CAR-46 maker",
   "codingTool": "claude-code",
+  "commitBindingOwner": "controller",
+  "commitBindingNote": "The delivery gate requires executionEvidence.commit to equal Git HEAD. A maker cannot write the SHA of the commit that carries this file, so no `commit` key is asserted here. Product commit and metadata commit are recorded below; the controller binds the final head.",
   "startedAt": "2026-08-02T16:12:14Z",
   "workspace": "/Volumes/HELIX-4TB/Helix-Labs/Agent-Workspaces/cardr-mvp-20260802",
 
@@ -189,6 +191,7 @@
     ],
     "result": "All three return HTTP 302 to https://vercel.com/sso-api",
     "blocker": "Vercel deployment protection (SSO) fronts this preview. Unauthenticated buyer-path smoke on the deployed URL is not possible, and authenticating would require a browser OAuth flow plus a deployment-protection change, both of which are hard-gated for this maker.",
+    "unblock": "Set VERCEL_AUTOMATION_BYPASS_SECRET for the delivery gate. The gate's own smoke path sends it as the x-vercel-protection-bypass header, which reaches the protected preview without changing project deployment protection.",
     "compensatingEvidence": "The buyer path is covered end to end by the 19 focused automated tests listed under tdd.coveredBehaviours, plus the full 54-test suite, typecheck, and build, all green on this exact commit in CI.",
     "uiEvidenceFabricated": false
   },

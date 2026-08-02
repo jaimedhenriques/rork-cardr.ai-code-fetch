@@ -1,7 +1,10 @@
 {
   "issue": "CAR-46",
   "checkName": "Cardr web CI",
-  "commit": "172346641adf9e400b04a7a2b88c21829f284ca2",
+  "productCommit": "172346641adf9e400b04a7a2b88c21829f284ca2",
+  "metadataCommit": "806874aa7f5300d7f4d0563aa0cbf28852df480c",
+  "headShaBindingOwner": "controller",
+  "headShaNote": "The delivery gate requires this file's headSha to equal Git HEAD. A maker cannot write the SHA of the commit that carries this file, so no `headSha` key is asserted. Cardr web CI passed on every head listed under runs.",
   "branch": "helix/cardr-mvp-scan-pipeline-20260802",
   "pullRequest": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/pull/5",
   "state": "pass",
@@ -9,18 +12,35 @@
   "readbackAt": "2026-08-02T16:26:00Z",
   "runs": [
     {
+      "head": "172346641adf9e400b04a7a2b88c21829f284ca2",
       "trigger": "pull_request",
       "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756478204/job/91519403130",
       "conclusion": "pass",
       "duration": "1m0s"
     },
     {
+      "head": "172346641adf9e400b04a7a2b88c21829f284ca2",
       "trigger": "push",
       "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756491911/job/91519438540",
       "conclusion": "pass",
       "duration": "1m0s"
+    },
+    {
+      "head": "806874aa7f5300d7f4d0563aa0cbf28852df480c",
+      "trigger": "push",
+      "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756619088/job/91519778102",
+      "conclusion": "pass",
+      "duration": "51s"
+    },
+    {
+      "head": "806874aa7f5300d7f4d0563aa0cbf28852df480c",
+      "trigger": "pull_request",
+      "url": "https://github.com/jaimedhenriques/rork-cardr.ai-code-fetch/actions/runs/30756621189/job/91519783427",
+      "conclusion": "pass",
+      "duration": "1m4s"
     }
   ],
+  "duplicateRunNote": "The workflow triggers on both push and pull_request, so each head produces two identically named `Cardr web CI` runs. This is cosmetic; every run passed.",
   "workflowFile": ".github/workflows/cardr-web-ci.yml",
   "jobSteps": [
     "actions/checkout@v4",
