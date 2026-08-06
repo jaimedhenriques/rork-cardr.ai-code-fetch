@@ -123,10 +123,17 @@ const AddContactModal = ({ open, onClose }: AddContactModalProps) => {
       if (data.enriched.phone && !contact.phone) updates.phone = data.enriched.phone;
       if (data.enriched.mobilePhone) updates.mobilePhone = data.enriched.mobilePhone;
       if (data.enriched.workPhone) updates.workPhone = data.enriched.workPhone;
+      if (data.enriched.companyDescription) updates.companyDescription = data.enriched.companyDescription;
+      if (data.enriched.companyLinkedin) updates.companyLinkedin = data.enriched.companyLinkedin;
+      if (data.enriched.foundingYear) updates.foundingYear = Number(data.enriched.foundingYear);
+      if (data.enriched.companyType) updates.companyType = data.enriched.companyType;
       updateContact(contactId, updates);
       toast.success(`${contact.name} enriched with verified data!`);
-    } catch {
-      // Silent fail — enrichment is best-effort
+    } catch (err: any) {
+      if (err?.limitReached) {
+        toast.error("Enrichment limit reached. Upgrade your plan for more.");
+      }
+      // Silent fail otherwise — enrichment is best-effort
     }
   }, [updateContact]);
 
