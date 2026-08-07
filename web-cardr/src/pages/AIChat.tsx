@@ -195,7 +195,13 @@ const AIChat = () => {
                 updateContact(contact.id, updates);
                 enriched++;
               }
-            } catch { /* skip */ }
+            } catch (err: any) {
+              if (err?.limitReached) {
+                results.push("Enrichment limit reached — upgrade your plan for more.");
+                break;
+              }
+              /* skip individual failures */
+            }
           }
           results.push(`Enriched ${enriched} contacts`);
           if (enriched > 0) toast.success(`Enriched ${enriched} contacts`);

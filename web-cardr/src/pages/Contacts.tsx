@@ -342,12 +342,20 @@ const Contacts = () => {
         if (data.enriched.avatar && !contact.avatar) updates.avatar = data.enriched.avatar;
         if (data.enriched.mobilePhone) updates.mobilePhone = data.enriched.mobilePhone;
         if (data.enriched.workPhone) updates.workPhone = data.enriched.workPhone;
+        if (data.enriched.companyDescription) updates.companyDescription = data.enriched.companyDescription;
+        if (data.enriched.companyLinkedin) updates.companyLinkedin = data.enriched.companyLinkedin;
+        if (data.enriched.foundingYear) updates.foundingYear = Number(data.enriched.foundingYear);
+        if (data.enriched.companyType) updates.companyType = data.enriched.companyType;
         updateContact(contact.id, updates);
         setSelectedContact({ ...contact, ...updates });
         toast.success(`${contact.name} ${t("contacts.enrichedWith")}`);
       }
     } catch (err: any) {
-      toast.error(err.message || t("contacts.failedEnrich"));
+      if (err?.limitReached) {
+        toast.error("You've reached your enrichment limit. Upgrade to Pro for 150/month.");
+      } else {
+        toast.error(err.message || t("contacts.failedEnrich"));
+      }
     } finally {
       setEnriching(null);
     }
@@ -380,10 +388,20 @@ const Contacts = () => {
           if (data.enriched.avatar && !contact.avatar) updates.avatar = data.enriched.avatar;
           if (data.enriched.mobilePhone) updates.mobilePhone = data.enriched.mobilePhone;
           if (data.enriched.workPhone) updates.workPhone = data.enriched.workPhone;
+          if (data.enriched.companyDescription) updates.companyDescription = data.enriched.companyDescription;
+          if (data.enriched.companyLinkedin) updates.companyLinkedin = data.enriched.companyLinkedin;
+          if (data.enriched.foundingYear) updates.foundingYear = Number(data.enriched.foundingYear);
+          if (data.enriched.companyType) updates.companyType = data.enriched.companyType;
           updateContact(contact.id, updates);
           enrichedCount++;
         }
-      } catch { failed++; }
+      } catch (err: any) {
+        if (err?.limitReached) {
+          toast.error("Enrichment limit reached. Upgrade your plan to continue.");
+          break;
+        }
+        failed++;
+      }
       await new Promise((r) => setTimeout(r, 200));
     }
     setBulkEnriching(false);

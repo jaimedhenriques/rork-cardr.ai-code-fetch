@@ -1036,37 +1036,61 @@ final class DataStore {
 
     // MARK: - Enrichment
 
-    /// Enriches a contact via the `enrich-contact` edge function and persists any
-    /// new fields, mirroring the web flow. Returns true on success.
+    /// Enriches a contact via the `icypeas-enrich` edge function (secure
+    /// server-side waterfall: Icypeas → AI company research → smart merge)
+    /// and persists any new fields. Returns true on success.
     @discardableResult
     func enrichContact(_ contact: Contact) async -> Bool {
         guard let token else {
             loadError = "You need to be signed in to enrich contacts."
             return false
         }
-        var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("enrich-contact"))
+        var request = URLRequest(url: SupabaseConfig.functionsURL.appendingPathComponent("icypeas-enrich"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(SupabaseConfig.anonKey, forHTTPHeaderField: "apikey")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let payload: [String: Any] = [
-            "contact": [
-                "name": contact.name,
-                "company": contact.company ?? "",
-                "title": contact.title ?? "",
-                "email": contact.email ?? "",
-            ],
+            "name": contact.name,
+            "company": contact.company ?? "",
+            "title": contact.title ?? "",
+            "email": contact.email ?? "",
+            "linkedin": contact.linkedin ?? "",
+            "website": contact.website ?? "",
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
 
         do {
             let (respData, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            guard let http = response as? HTTPURLResponse else {
                 loadError = "Enrichment is unavailable right now."
                 return false
             }
-            guard let obj = try? JSONSerialization.jsonObject(with: respData) as? [String: Any],
-                  let enriched = obj["enriched"] as? [String: Any] else {
+
+            // 402 = plan limit reached
+            if http.statusCode == 402 {
+                loadError = "You've reached your enrichment plan limit. Upgrade to Pro for 150/month."
+                return false
+            }
+            guard (200...299).contains(http.statusCode) else {
+                loadError = "Enrichment is unavailable right now."
+                return false
+            }
+
+            guard let obj = try? JSONSerialization.jsonObject(with: respData) as? [String: Any] else {
+                loadError = "No enrichment found for this contact."
+                return false
+            }
+
+            // The waterfall may return enriched=null when nothing was found.
+            // Mark the contact as enriched so it doesn't retry endlessly.
+            guard let enriched = obj["enriched"] as? [String: Any] else {
+                let searchedValues: [String: AnyEncodable] = [
+                    "enriched": AnyEncodable(true),
+                    "enriched_at": AnyEncodable(ISO8601DateFormatter().string(from: Date())),
+                ]
+                try await service.update(table: "contacts", token: token, match: ["id": contact.id], values: searchedValues)
+                await loadContacts()
                 loadError = "No enrichment found for this contact."
                 return false
             }
@@ -1080,6 +1104,7 @@ final class DataStore {
                 if let existing, !existing.isEmpty { return }
                 values[key] = AnyEncodable(str)
             }
+            // Contact info from Icypeas (only fill if missing)
             put("linkedin", enriched["linkedin"])
             put("website", enriched["website"])
             put("location", enriched["location"])
@@ -1090,6 +1115,14 @@ final class DataStore {
             put("email", enriched["email"], onlyIfEmpty: contact.email)
             put("phone", enriched["phone"], onlyIfEmpty: contact.phone)
             put("avatar", enriched["avatar"], onlyIfEmpty: contact.avatar)
+            // Company metadata from AI research
+            put("company_description", enriched["companyDescription"])
+            put("company_linkedin", enriched["companyLinkedin"])
+            put("company_type", enriched["companyType"])
+            if let fy = enriched["foundingYear"] {
+                let fyStr = "\(fy)"
+                if !fyStr.isEmpty { values["founding_year"] = AnyEncodable(fyStr) }
+            }
 
             try await service.update(table: "contacts", token: token, match: ["id": contact.id], values: values)
             await loadContacts()

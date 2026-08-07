@@ -335,13 +335,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             if (phonePatch.mobilePhone) updates.mobilePhone = phonePatch.mobilePhone;
             if (phonePatch.workPhone) updates.workPhone = phonePatch.workPhone;
             if (phonePatch.phone && !c.phone) updates.phone = phonePatch.phone;
+            if (e.companyDescription) updates.companyDescription = e.companyDescription;
+            if (e.companyLinkedin) updates.companyLinkedin = e.companyLinkedin;
+            if (e.foundingYear) updates.foundingYear = Number(e.foundingYear);
+            if (e.companyType) updates.companyType = e.companyType;
             setContacts((prev) => {
               const newList = prev.map((ct) => ct.id === c.id ? { ...ct, ...updates } : ct);
               saveLocal(GUEST_CONTACTS_KEY, newList);
               return newList;
             });
           }
-        }).catch((err) => console.warn("Auto-enrich failed:", err)).finally(() => markEnriching(c.id, false));
+        }).catch((err) => {
+          if (err?.limitReached) return; // silent for auto-enrich
+          console.warn("Auto-enrich failed:", err);
+        }).finally(() => markEnriching(c.id, false));
       }
       return c;
     }
@@ -442,7 +449,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             supabase.from("contacts").update(dbUpdates).eq("id", mapped.id).eq("user_id", user!.id).then(() => {});
             setContacts((prev) => prev.map((ct) => ct.id === mapped.id ? { ...ct, ...updates } : ct));
           }
-        }).catch((err) => console.warn("Auto-enrich failed:", err)).finally(() => markEnriching(mapped.id, false));
+        }).catch((err) => {
+          if (err?.limitReached) return; // silent for auto-enrich
+          console.warn("Auto-enrich failed:", err);
+        }).finally(() => markEnriching(mapped.id, false));
       }
       if (error) console.error("Error adding contact:", error);
       return mapped;
