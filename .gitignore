@@ -4,3 +4,9 @@ node_modules
 .expo
 .rork
 .vercel
+
+# Helix delivery bookkeeping stays local. Evidence is generated after the
+# delivered commit exists, and the manifest records deployment ids that are
+# only knowable after that commit, so neither can be accurate on the remote.
+.helix/evidence/
+.helix/revenue-product-delivery.json

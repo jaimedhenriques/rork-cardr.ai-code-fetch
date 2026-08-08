@@ -2,11 +2,12 @@ import SwiftUI
 
 /// Pricing screen — mirrors the web `Pricing` page. Shows three tiers
 /// (Starter/Pro/Business) with feature lists and a billing toggle.
+/// CTAs are informational only — no external purchase links (Apple 3.1.1).
 struct PricingView: View {
-    @Environment(\.openURL) private var openURL
     @State private var annual = true
+    @State private var upgradeTarget: Plan? = nil
 
-    private struct Plan: Identifiable {
+    fileprivate struct Plan: Identifiable {
         let id: String
         let name: String
         let icon: String
@@ -67,6 +68,10 @@ struct PricingView: View {
         .background(Theme.background)
         .navigationTitle("Pricing")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $upgradeTarget) { plan in
+            UpgradeInfoSheet(plan: plan)
+                .presentationDetents([.medium])
+        }
     }
 
     private var billingToggle: some View {
@@ -146,7 +151,7 @@ struct PricingView: View {
 
                 Button {
                     if plan.id != "starter" {
-                        openURL(URL(string: "https://cardr.ai/pricing")!)
+                        upgradeTarget = plan
                     }
                 } label: {
                     Text(plan.cta)
@@ -165,5 +170,59 @@ struct PricingView: View {
             RoundedRectangle(cornerRadius: Theme.cardRadius)
                 .stroke(plan.isPopular ? Theme.primary.opacity(0.3) : .clear, lineWidth: 2)
         )
+    }
+}
+
+/// In-app sheet explaining how to upgrade — no external purchase link.
+/// Shows the plan details and directs users to the website for billing,
+/// without being a direct purchase call-to-action.
+private struct UpgradeInfoSheet: View {
+    let plan: PricingView.Plan
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: plan.icon)
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 64, height: 64)
+                .background(Theme.brandGradient)
+                .clipShape(.rect(cornerRadius: 16))
+
+            Text(plan.name)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(Theme.ink)
+
+            Text(plan.isPopular
+                 ? "Pro unlocks unlimited contacts, AI enrichments, meeting notes, CRM integrations, and custom branding."
+                 : "Business includes everything in Pro plus unlimited enrichments, transcription, API access, white-label, and SSO.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.inkSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(plan.features, id: \.self) { feature in
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.success)
+                        Text(feature)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                    }
+                }
+            }
+            .padding(.horizontal, 4)
+
+            Spacer()
+
+            Text("To upgrade, sign in to your account at cardr.ai on the web.")
+                .font(.footnote)
+                .foregroundStyle(Theme.inkSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.top, 12)
+        .padding(.horizontal, 24)
+        .padding(.bottom, 24)
     }
 }
