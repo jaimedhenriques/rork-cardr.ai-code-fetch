@@ -1064,7 +1064,7 @@ const Contacts = () => {
       )}
 
       <MeetingRecorder open={!!meetingContactId} onClose={() => setMeetingContactId(null)} onTranscript={handleMeetingTranscript} />
-      <AddContactModal open={showAddContact} onClose={() => setShowAddContact(false)} />
+      <AddContactModal open={showAddContact} onClose={() => setShowAddContact(false)} stages={stages} />
       <ContactImportModal open={showImport} onClose={() => setShowImport(false)} />
 
       {activeTab === "contacts" && !bulkMode && (
