@@ -21,6 +21,11 @@ final class DataStore {
     var sequences: [AutomationSequence] = []
     var sequenceRuns: [SequenceRun] = []
 
+    // Subscription & usage
+    var userSubscription: UserSubscription = UserSubscription(plan: "starter", status: "active", cancelAtPeriodEnd: false, currentPeriodEnd: nil)
+    var userUsage: UserUsage = UserUsage(enrichmentsUsed: 0, notesCreated: 0, transcriptionMinutesUsed: 0, contactsCount: 0)
+    var isLoadingPlan = false
+
     /// The event new scans are auto-assigned to, persisted across launches.
     var activeEventId: String? {
         didSet {
@@ -135,7 +140,76 @@ final class DataStore {
         async let e: Void = loadEvents()
         async let f: Void = loadFolders()
         async let ct: Void = loadCustomTemplates()
-        _ = await (c, n, p, s, t, e, f, ct)
+        async let pl: Void = loadPlanUsage()
+        _ = await (c, n, p, s, t, e, f, ct, pl)
+    }
+
+    // MARK: - Subscription & Usage
+
+    /// Loads the signed-in user's subscription and usage-tracking rows so the
+    /// plan tier and remaining credits can be shown in Settings.
+    func loadPlanUsage() async {
+        guard let token, let userId = currentUserId else { return }
+        isLoadingPlan = true
+        defer { isLoadingPlan = false }
+        do {
+            let periodStart = currentPeriodStart()
+            async let subRow = service.fetch(
+                [UserSubscription].self,
+                table: "subscriptions",
+                token: token,
+                query: [URLQueryItem(name: "user_id", value: "eq.\(userId)"), URLQueryItem(name: "limit", value: "1")]
+            )
+            async let usageRow = service.fetch(
+                [UserUsage].self,
+                table: "usage_tracking",
+                token: token,
+                query: [
+                    URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+                    URLQueryItem(name: "period_start", value: "eq.\(periodStart)"),
+                    URLQueryItem(name: "limit", value: "1"),
+                ]
+            )
+            let (subs, usages) = try await (subRow, usageRow)
+            if let sub = subs.first {
+                userSubscription = sub
+            }
+            // Live contact count is the source of truth; usage_tracking is a floor.
+            let tracked = usages.first
+            userUsage = UserUsage(
+                enrichmentsUsed: max(tracked?.enrichmentsUsed ?? 0, contacts.filter { $0.enriched == true }.count),
+                notesCreated: max(tracked?.notesCreated ?? 0, notes.count),
+                transcriptionMinutesUsed: tracked?.transcriptionMinutesUsed ?? 0,
+                contactsCount: contacts.count
+            )
+        } catch {
+            // Non-critical — plan usage is informational only.
+        }
+    }
+
+    /// Computes the first-of-month ISO date string for the current billing period.
+    private func currentPeriodStart() -> String {
+        let cal = Calendar(identifier: .gregorian)
+        let now = Date()
+        let comps = cal.dateComponents([.year, .month], from: now)
+        let firstOfMonth = cal.date(from: comps) ?? now
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: firstOfMonth)
+    }
+
+    /// The resolved plan type from the subscription row.
+    var currentPlan: PlanType { userSubscription.planType }
+
+    /// Builds the display metrics for the plan usage card.
+    var usageMetrics: [UsageMetric] {
+        let plan = currentPlan
+        return [
+            UsageMetric(id: "contacts", label: "Contacts", icon: "person.2", used: userUsage.contactsCount, limit: plan.contactsLimit),
+            UsageMetric(id: "enrichments", label: "AI Enrichments", icon: "sparkles", used: userUsage.enrichmentsUsed, limit: plan.enrichmentsLimit),
+            UsageMetric(id: "notes", label: "Meeting Notes", icon: "note.text", used: userUsage.notesCreated, limit: plan.notesLimit),
+            UsageMetric(id: "transcription", label: "Transcription", icon: "waveform", used: userUsage.transcriptionMinutesUsed, limit: plan.transcriptionLimit, unit: "min"),
+        ]
     }
 
     func loadContacts() async {

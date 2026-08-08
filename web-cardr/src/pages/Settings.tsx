@@ -35,6 +35,7 @@ import ContactImportModal from "@/components/ContactImportModal";
 
 import ExportTimezoneSection from "@/components/ExportTimezoneSection";
 import PreprocessStatsCard from "@/components/settings/PreprocessStatsCard";
+import UsageCreditsCard from "@/components/UsageCreditsCard";
 import { APP_LANGUAGES, TRANSCRIPTION_LANGUAGES } from "@/lib/translations";
 
 type SettingsView = "main" | "profile" | "appLanguage" | "transcriptionLanguage" | "meeting" | "templates" | "tags" | "nav" | "integrations" | "apiKeys" | "exportTimezone";
@@ -676,27 +677,10 @@ const Settings = () => {
       {/* PLAN & USAGE Section */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }}>
         <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-2 px-1">{t("settings.planUsage")}</p>
+        <UsageCreditsCard />
         <div className="card-elevated overflow-hidden p-4 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap size={14} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{t("settings.freePlan")}</p>
-                <p className="text-[11px] text-muted-foreground">{t("misc.upTo")} 100 {t("misc.contacts")}</p>
-              </div>
-            </div>
-            {isIosNative() ? (
-              <IosManagePlanNotice compact />
-            ) : (
-              <button onClick={() => navigate("/pricing")} className="text-[11px] font-semibold text-primary flex items-center gap-1">
-                {t("settings.upgrade")} <ChevronRight size={13} />
-              </button>
-            )}
-          </div>
           {hidePaidSurfaces() && (
-            <div className="mt-3 mb-1 space-y-3">
+            <div className="space-y-3">
               <IosPlanStatusCard />
               {isIosPlatform() && <IosSubscriptionStatusPanel />}
               <IosManagePlanNotice />
@@ -760,22 +744,6 @@ const Settings = () => {
               </div>
             </div>
           </div>
-          {!isIosNative() && (
-            <>
-              <div className="mb-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] text-muted-foreground">{t("settings.contactsUsed")}</span>
-                  <span className={`text-[11px] font-semibold tabular-nums ${contacts.length >= 80 ? "text-amber-400" : "text-foreground"}`}>{contacts.length}/100</span>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${contacts.length >= 80 ? "bg-amber-400" : "bg-primary"}`} style={{ width: `${Math.min((contacts.length / 100) * 100, 100)}%` }} />
-                </div>
-              </div>
-              {contacts.length >= 80 && (
-                <p className="text-[11px] text-amber-400 mt-1">{t("settings.upgradeMsg")}</p>
-              )}
-            </>
-          )}
         </div>
       </motion.div>
 

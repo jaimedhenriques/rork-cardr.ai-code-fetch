@@ -9,8 +9,6 @@ struct SettingsView: View {
     @State private var showSignOutConfirm = false
     @State private var showImport = false
 
-    private var contactLimit: Int { 100 }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -134,70 +132,26 @@ struct SettingsView: View {
     // MARK: - Plan & usage
 
     private var planSection: some View {
-        SettingsSection(title: "Plan & usage") {
-            NavigationLink { PricingView() } label: {
-                SettingsRow(icon: "creditcard", tint: Theme.primary, label: "Upgrade plan")
-            }
-            .buttonStyle(.plain)
-            Divider().background(Theme.border).padding(.leading, 52)
-            NavigationLink { ReferralView() } label: {
-                SettingsRow(icon: "gift", tint: Theme.success, label: "Refer a friend")
-            }
-            .buttonStyle(.plain)
-            Divider().background(Theme.border).padding(.leading, 52)
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 12) {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Theme.primary.opacity(0.12))
-                        .frame(width: 36, height: 36)
-                        .overlay {
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(Theme.primary)
-                        }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Free plan")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.ink)
-                        Text("Up to \(contactLimit) contacts")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.inkSecondary)
-                    }
-                    Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Plan & usage")
+                .font(.system(size: 11, weight: .bold))
+                .textCase(.uppercase)
+                .tracking(1.2)
+                .foregroundStyle(Theme.primary)
+                .padding(.leading, 4)
+            PlanUsageCard()
+            SettingsSection(title: "") {
+                NavigationLink { PricingView() } label: {
+                    SettingsRow(icon: "creditcard", tint: Theme.primary, label: "View all plans")
                 }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Contacts used")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.inkSecondary)
-                        Spacer()
-                        Text("\(data.contacts.count)/\(contactLimit)")
-                            .font(.system(size: 12, weight: .semibold))
-                            .monospacedDigit()
-                            .foregroundStyle(usageColor)
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.surfaceMuted)
-                            Capsule()
-                                .fill(usageColor)
-                                .frame(width: max(6, geo.size.width * usageFraction))
-                        }
-                    }
-                    .frame(height: 6)
+                .buttonStyle(.plain)
+                Divider().background(Theme.border).padding(.leading, 52)
+                NavigationLink { ReferralView() } label: {
+                    SettingsRow(icon: "gift", tint: Theme.success, label: "Refer a friend")
                 }
+                .buttonStyle(.plain)
             }
-            .padding(16)
         }
-    }
-
-    private var usageFraction: CGFloat {
-        min(CGFloat(data.contacts.count) / CGFloat(contactLimit), 1)
-    }
-
-    private var usageColor: Color {
-        data.contacts.count >= 80 ? Theme.warning : Theme.primary
     }
 
     // MARK: - Account
