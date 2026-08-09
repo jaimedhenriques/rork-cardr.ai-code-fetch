@@ -53,6 +53,7 @@ import Desktop from "@/pages/Desktop";
 import Privacy from "@/pages/Privacy";
 import Support from "@/pages/Support";
 import IosReceiptSyncMount from "@/components/IosReceiptSyncMount";
+import { getLegacyFlatRedirectTarget } from "@/lib/route-normalization";
 
 import CommandPalette from "@/components/CommandPalette";
 import OnboardingWalkthrough from "@/components/OnboardingWalkthrough";
@@ -93,12 +94,18 @@ const LegacyFlatRedirect = () => {
   if (isPublicFlatPath(location.pathname)) {
     return <NotFound />;
   }
-  return (
-    <Navigate
-      to={`/app${location.pathname}${location.search}${location.hash}`}
-      replace
-    />
+
+  const redirectTarget = getLegacyFlatRedirectTarget(
+    location.pathname,
+    location.search,
+    location.hash,
   );
+
+  if (!redirectTarget) {
+    return <NotFound />;
+  }
+
+  return <Navigate to={redirectTarget} replace />;
 };
 
 // Legacy /login → /auth, keeping any query string and fragment intact

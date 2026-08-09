@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { LoginRedirect } from "@/App";
+import { getLegacyFlatRedirectTarget } from "@/lib/route-normalization";
 
 const LocationProbe = () => {
   const location = useLocation();
@@ -43,5 +44,27 @@ describe("LoginRedirect", () => {
   ])("redirects %s to %s", (entry, expected) => {
     renderRedirect(entry);
     expect(screen.getByTestId("location")).toHaveTextContent(expected);
+  });
+});
+
+describe("getLegacyFlatRedirectTarget", () => {
+  it("maps an unknown flat path into the app namespace once", () => {
+    expect(getLegacyFlatRedirectTarget("/campaigns", "", "")).toBe(
+      "/app/campaigns",
+    );
+  });
+
+  it("preserves the query string and fragment", () => {
+    expect(
+      getLegacyFlatRedirectTarget(
+        "/campaigns",
+        "?status=active",
+        "#overview",
+      ),
+    ).toBe("/app/campaigns?status=active#overview");
+  });
+
+  it("does not remap an unknown path already in the app namespace", () => {
+    expect(getLegacyFlatRedirectTarget("/app/campaigns", "", "")).toBeNull();
   });
 });
