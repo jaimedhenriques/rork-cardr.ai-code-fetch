@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Webhook, Zap, Slack as SlackIcon, Calendar as CalIcon, Briefcase, Mail, Database, Building2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { Webhook, Zap, Slack as SlackIcon, Calendar as CalIcon, Briefcase, Mail, Database, Building2, ArrowRight, ArrowLeft, Sparkles, Plug } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import WebhookManager from "@/components/WebhookManager";
 import PipedreamPanel from "@/components/PipedreamPanel";
+import ComposioPanel from "@/components/ComposioPanel";
 import { FeatureGate } from "@/components/ComingSoonBadge";
 
 interface IntegrationCard {
@@ -22,9 +23,21 @@ interface IntegrationCard {
 
 const Integrations = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState<"grid" | "zapier" | "pipedream" | "webhooks">("grid");
+  const [view, setView] = useState<"grid" | "zapier" | "pipedream" | "webhooks" | "composio">("grid");
 
   const integrations: IntegrationCard[] = [
+    {
+      id: "composio",
+      name: "Composio — 250+ Apps",
+      tagline: "One-click OAuth: HubSpot, Salesforce, Gmail, Slack, Notion & more",
+      category: "automation",
+      status: "live",
+      icon: Plug,
+      iconColor: "#3D82F5",
+      bg: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
+      action: () => setView("composio"),
+      actionLabel: "Connect",
+    },
     {
       id: "zapier",
       name: "Zapier",
@@ -100,40 +113,56 @@ const Integrations = () => {
     {
       id: "hubspot",
       name: "HubSpot",
-      tagline: "Push notes as engagements (coming soon)",
+      tagline: "Push contacts as HubSpot engagements via Composio",
       category: "crm",
-      status: "soon",
+      status: "live",
       icon: Building2,
       iconColor: "#FF7A59",
       bg: "linear-gradient(135deg, #FFF1ED 0%, #FFE0D6 100%)",
-      action: () => setView("zapier"),
-      actionLabel: "Use Zapier",
+      action: () => setView("composio"),
+      actionLabel: "Connect",
     },
     {
       id: "salesforce",
       name: "Salesforce",
-      tagline: "Sync contacts & activities (coming soon)",
+      tagline: "Sync contacts & activities via Composio",
       category: "crm",
-      status: "soon",
+      status: "live",
       icon: Database,
       iconColor: "#00A1E0",
       bg: "linear-gradient(135deg, #E6F5FB 0%, #CFEBF5 100%)",
-      action: () => setView("zapier"),
-      actionLabel: "Use Zapier",
+      action: () => setView("composio"),
+      actionLabel: "Connect",
     },
     {
       id: "gmail",
       name: "Gmail",
-      tagline: "Send follow-ups from notes (via Zapier)",
+      tagline: "Send follow-ups from notes via Composio",
       category: "communication",
-      status: "soon",
+      status: "live",
       icon: Mail,
       iconColor: "#EA4335",
       bg: "linear-gradient(135deg, #FCE9E7 0%, #F9D7D3 100%)",
-      action: () => setView("zapier"),
-      actionLabel: "Use Zapier",
+      action: () => setView("composio"),
+      actionLabel: "Connect",
     },
   ];
+
+  if (view === "composio") {
+    return (
+      <div className="min-h-screen pb-40 px-5 pt-12">
+        <PageHeader />
+        <button onClick={() => setView("grid")} className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4 mt-2">
+          <ArrowLeft size={14} /> All integrations
+        </button>
+        <h1 className="text-title-1 mb-1">Composio — 250+ Apps</h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          Connect HubSpot, Salesforce, Gmail, Slack, Notion, Google Calendar and 250+ more apps with one-click OAuth. AI agents can use your connected tools to sync contacts, send emails, and create tasks — automatically.
+        </p>
+        <ComposioPanel />
+      </div>
+    );
+  }
 
   if (view !== "grid") {
     return (
@@ -178,7 +207,7 @@ const Integrations = () => {
           <Sparkles size={10} /> Integrations
         </div>
         <h1 className="text-title-1">Connect everything</h1>
-        <p className="text-sm text-muted-foreground mt-1">Sync notes & contacts to your CRM in one click. 6,000+ apps via Zapier and Pipedream.</p>
+        <p className="text-sm text-muted-foreground mt-1">One-click OAuth for 250+ apps via Composio. Sync contacts to your CRM, send follow-up emails, create tasks — all powered by AI agents.</p>
       </motion.div>
 
       {(["automation", "crm", "communication", "calendar"] as const).map((cat, idx) => (
