@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "project": "Cardr",
+  "company": "Cardr",
+  "artifactType": "web-product",
+  "icp": "Independent automotive dealers and small dealer groups that need reliable buyer follow-up and relationship context",
+  "pain": "Fragmented customer and contact context makes follow-up inconsistent and loses sales opportunities",
+  "revenueHypothesis": "Dealers will pay for a trusted workflow that preserves relationship context and reduces missed follow-up",
+  "mvpAcceptance": [
+    "For CAR-52, requesting /campaigns settles once at /app/campaigns.",
+    "No redirect or navigation grows the route into /app/app/.",
+    "CAR-52 route tests, the full test suite, lint, and build pass for the final manifest-bearing commit.",
+    "A deployed buyer-path smoke for web-cardr is bound to the final manifest-bearing commit and verifies the /campaigns route behavior."
+  ],
+  "maker": "codex-maker",
+  "codingTool": "codex",
+  "rollback": "Revert this manifest-bearing commit and restore the last verified Vercel deployment for web-cardr.",
+  "stopConditions": [
+    "Stop on any target ambiguity affecting the repository, branch, commit, Vercel project, or deployment.",
+    "Stop if duplicate work is detected for the CAR-52 manifest-only governance follow-up.",
+    "Stop on any secret exposure or request to access secret values.",
+    "Stop if the delivery gate preflight fails; do not weaken the manifest or gate.",
+    "Stop after 2 attempts.",
+    "Stop if this non-retroactive follow-up is represented as proof that the manifest existed before CAR-52 was merged or that the prior commit already passed the delivery contract."
+  ],
+  "evidenceDestination": ".helix/evidence",
+  "executionEvidence": ".helix/evidence/execution.json",
+  "copySafety": {
+    "publicPatternSources": [],
+    "proprietaryAssetsExcluded": true
+  },
+  "limits": {
+    "maxMinutes": 20,
+    "maxAgents": 2,
+    "maxAttempts": 2
+  },
+  "github": {
+    "repo": "jaimedhenriques/rork-cardr.ai-code-fetch",
+    "remote": "origin",
+    "branch": "helix/cardr-car52-delivery-manifest-20260809",
+    "baseBranch": "main",
+    "commit": "HEAD"
+  },
+  "vercel": {
+    "mode": "required",
+    "teamId": "team_pe74HMcqhmeKmVMl8AGbuX2F",
+    "projectId": "prj_aCV2ZbhhvJAQoJfW29oQWXHGFZY9",
+    "deploymentId": "dpl_GtzyH5PswmtG9XZ1YGjp1uBUuug5",
+    "deploymentUrl": "https://web-cardr-h8uvmc11v-jaime-henriques-projects.vercel.app",
+    "deploymentCommit": "HEAD",
+    "evidence": "controller://vercel/cardr-car52-manifest-20260809"
+  },
+  "verification": {
+    "checks": [
+      {
+        "name": "Cardr web CI",
+        "evidence": ".helix/evidence/checks.json"
+      }
+    ],
+    "checker": "independent-controller-checker",
+    "checkerEvidence": "controller://checker/cardr-car52-manifest-20260809"
+  }
+}
