@@ -89,7 +89,7 @@ const isPublicFlatPath = (path: string) => {
 };
 
 // Catches any legacy flat path (/contacts, /notes/123, etc.) and forwards to /app/<same>.
-const LegacyFlatRedirect = () => {
+export const LegacyFlatRedirect = () => {
   const location = useLocation();
   if (isPublicFlatPath(location.pathname)) {
     return <NotFound />;
